@@ -1,85 +1,150 @@
 import { NextResponse, NextRequest } from "next/server";
 import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
 import jwt from "jsonwebtoken";
 import pool from "@/lib/db";
-import errorMap from "zod/locales/en.js";
-import { resolve } from "path";
-import { error, profile } from "console";
 
+// Initialize passport with Google strategy
 passport.use(
     new GoogleStrategy(
         {
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            callbackURL: "/api/auth/google/callback",
-            clientID: process.env.GOOGLE_CLIENT_ID,
+            clientID: process.env.GOOGLE_CLIENT_ID || "",
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+            callbackURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`,
+            passReqToCallback: true,
         },
-        async (accessToken, refreshToken, profile, done) => {
+        async (_req: any, accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
             try {
-                const { email, name } = profile._json;
+                // Ensure emails array exists and has at least one entry
+                if (!profile.emails || profile.emails.length === 0) {
+                    return done(new Error("No email found in profile"), undefined);
+                }
+                
+                const email = profile.emails[0].value;
+                const name = profile.displayName;
 
-                // check if user already exists
+                // Check if user already exists
                 const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
                 let user;
                 if (existingUser.rows.length === 0) {
-                    // create new user
+                    // Create new user
                     const newUser = await pool.query(
                         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *",
                         [name, email]
                     );
-                    user = newUser.rows[0]
+                    user = newUser.rows[0];
                 } else {
                     user = existingUser.rows[0];
                 }
 
-                // Generate JWT tokens
-                const jwtSecret = process.env.JWT_SECRET;
-                const accessToken = jwt.sign({ id: user.id, email: user.email, name: user.name }, jwtSecret, { expiresIn: "1h" });
-                const refreshToken = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: "7d" });
-
-                const response = NextResponse.json({ message: "Google login successful"})
-
-                // Set cookies
-                response.cookies.set("accesss_token", accessToken, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === "production",
-                    sameSite: 'lax',
-                    path: '/',
-                    maxAge: 60 * 60, // How many days are these?
-                })
-
-                response.cookies.set("refresh_token", refreshToken, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === "production",
-                    sameSite: "lax",
-                    path: "/",
-                    maxAge: 7 * 24 * 60 * 60 // how many days are this now?
-                })
-
-                return done(null, user)
+                return done(null, user);
             } catch (error) {
-                console.error("Google auth error:", error)
-                return done(error, null)
+                console.error("Google auth error:", error);
+                return done(error as Error, undefined);
             }
         }
     )
 );
 
+// Configure passport session handling
+passport.serializeUser((user: any, done: (err: any, id?: any) => void) => {
+    done(null, user.id);
+});
+
+passport.deserializeUser(async (id: string, done: (err: any, user?: any) => void) => {
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+        done(null, result.rows[0]);
+    } catch (error) {
+        done(error, null);
+    }
+});
+
+// Helper function to initialize passport middleware
+const initializePassport = () => {
+    return (req: any, res: any, next: any) => {
+        passport.initialize()(req, res, next);
+    };
+};
+
 export async function GET(request: NextRequest) {
-    return new Promise((resolve, reject) => {
-        passport.authenticate("google", {scope: ["profile", "email"]}, (err, user) => {
+    // Create a URL object from the request URL
+    const url = new URL(request.url);
+    
+    // Create a custom handler for the passport authenticate
+    return new Promise((resolve) => {
+        const authenticate = passport.authenticate('google', { 
+            scope: ['profile', 'email'],
+            session: false,
+        }, (err: Error | null, user: any) => {
             if (err || !user) {
-                resolve(
-                    NextResponse.json(
-                        { error: "Google login failed" },
-                        { status: 400}
-                    )
-                );
+                // Redirect to login page with error
+                return resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=google_auth_failed`));
             }
-            resolve(
-                NextResponse.json({ message: "Google login successful"})
+            
+            // Generate JWT tokens
+            const jwtSecret = process.env.JWT_SECRET;
+            if (!jwtSecret) {
+                console.error("JWT_SECRET is not defined");
+                return resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=server_error`));
+            }
+            
+            const accessToken = jwt.sign(
+                { id: user.id, email: user.email, name: user.name }, 
+                jwtSecret, 
+                { expiresIn: "1h" }
             );
-        });(request)
+            
+            const refreshToken = jwt.sign(
+                { id: user.id }, 
+                jwtSecret, 
+                { expiresIn: "7d" }
+            );
+            
+            // Create response with redirect
+            const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
+            
+            // Set cookies
+            response.cookies.set("access_token", accessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: 'lax',
+                path: '/',
+                maxAge: 60 * 60, // 1 hour in seconds
+            });
+            
+            response.cookies.set("refresh_token", refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: 7 * 24 * 60 * 60 // 7 days in seconds
+            });
+            
+            return resolve(response);
+        });
+        
+        // Create mock request and response objects that passport can work with
+        const req: any = {
+            url: url.toString(),
+            method: request.method,
+            headers: Object.fromEntries(request.headers),
+            body: null,
+            query: Object.fromEntries(url.searchParams),
+        };
+        
+        const res: any = {
+            statusCode: 200,
+            setHeader: () => {},
+            end: () => {},
+            getHeader: () => {},
+        };
+        
+        // Initialize passport and run authenticate
+        initializePassport()(req, res, () => {
+            // Use type assertion to resolve the "not callable" error
+            (authenticate as any)(req, res);
+        });
     });
 }

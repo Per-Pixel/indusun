@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
         const response = NextResponse.json({ message: "Logout successful" }, { status: 200 });
 
         //  Clear authentication cookies
-        response.cookies.set("accessToken", "", { 
+        response.cookies.set("access_token", "", { 
             httpOnly: true, 
             secure: process.env.NODE_ENV === "production",
             path: "/", 
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
             maxAge: 0, // expire the cookie immediately
         }); 
 
-        response.cookies.set("refreshToken", "", {
+        response.cookies.set("refresh_token", "", {
             httpOnly: true, 
             secure: process.env.NODE_ENV === "production" ,
             path: "/", 

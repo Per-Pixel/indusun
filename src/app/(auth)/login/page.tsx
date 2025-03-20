@@ -7,11 +7,13 @@ import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 
 const Login = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const message = searchParams.get('message');
+  const error = searchParams.get('error');
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -24,7 +26,16 @@ const Login = () => {
     if (message) {
       toast.success(message);
     }
-  }, [message]);
+    if (error) {
+      // Handle error messages from social auth
+      const errorMessages = {
+        'google_auth_failed': 'Google authentication failed',
+        'facebook_auth_failed': 'Facebook authentication failed',
+        'server_error': 'Server error occurred',
+      };
+      toast.error(errorMessages[error as keyof typeof errorMessages] || 'Authentication error');
+    }
+  }, [message, error]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -150,25 +161,7 @@ const Login = () => {
             </h1>
             
             {/* Social Login Buttons */}
-            <div className="space-y-3 mb-6">
-              <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2 bg-[#2A323C] p-3 rounded-lg hover:bg-[#2A323C]/80 transition-colors group"
-              >
-                <img src="/google-icon.svg" alt="Google" className="w-5 h-5" />
-                <span className="group-hover:text-yellow-500 transition-colors">Continue with Google</span>
-              </motion.button>
-              
-              <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2 bg-[#2A323C] p-3 rounded-lg hover:bg-[#2A323C]/80 transition-colors group"
-              >
-                <img src="/facebook-icon.svg" alt="Facebook" className="w-5 h-5" />
-                <span className="group-hover:text-yellow-500 transition-colors">Continue with Facebook</span>
-              </motion.button>
-            </div>
+            <SocialLoginButtons className="mb-6" />
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
@@ -202,47 +195,32 @@ const Login = () => {
                   className="w-full p-3 bg-[#2A323C] rounded-lg border border-gray-600 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all"
                   required
                 />
+                <div className="flex justify-end">
+                  <Link href="/forgot-password" className="text-sm text-gray-400 hover:text-yellow-500 transition-colors">
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
-
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input type="checkbox" className="form-checkbox bg-[#2A323C] border-gray-600 rounded text-yellow-500 focus:ring-yellow-500" />
-                  <span className="ml-2 text-sm text-gray-400">Remember me</span>
-                </label>
-                <Link 
-                  href="/forgot-password" 
-                  className="text-sm text-yellow-500 hover:text-yellow-400 transition-colors"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-
+              
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isLoading}
-                className={`w-full bg-gradient-to-r from-yellow-500 to-pink-500 text-white font-bold py-3 px-4 rounded-lg transition-all
-                  ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:from-yellow-400 hover:to-pink-400'}`}
+                className="w-full bg-gradient-to-r from-yellow-500 to-pink-500 p-3 rounded-lg font-medium text-white hover:from-yellow-600 hover:to-pink-600 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Logging in...
-                  </div>
-                ) : 'Login'}
+                {isLoading ? 'Logging in...' : 'Login'}
               </motion.button>
             </form>
-
-            <p className="mt-6 text-center text-gray-400">
-              Don't have an account?{' '}
-              <Link 
-                href="/sign-up" 
-                className="text-yellow-500 hover:text-yellow-400 transition-colors font-semibold"
-              >
-                Sign Up
-              </Link>
-            </p>
+            
+            <div className="mt-6 text-center">
+              <p className="text-gray-400">
+                Don't have an account?{' '}
+                <Link href="/sign-up" className="text-yellow-500 hover:text-yellow-400 transition-colors">
+                  Sign up
+                </Link>
+              </p>
+            </div>
           </motion.div>
         </div>
       </div>

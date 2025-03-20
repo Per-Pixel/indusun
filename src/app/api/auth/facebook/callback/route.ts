@@ -16,12 +16,12 @@ export async function GET(request: NextRequest) {
   
   // Create a custom handler for the passport authenticate
   return new Promise((resolve) => {
-    const authenticate = passport.authenticate('google', { 
+    const authenticate = passport.authenticate('facebook', { 
       session: false,
     }, async (err: Error | null, user: any) => {
       if (err || !user) {
         // Redirect to login page with error
-        return resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=google_auth_failed`));
+        return resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=facebook_auth_failed`));
       }
       
       try {
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         
         return resolve(response);
       } catch (error) {
-        console.error("Error in Google callback:", error);
+        console.error("Error in Facebook callback:", error);
         return resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=server_error`));
       }
     });
