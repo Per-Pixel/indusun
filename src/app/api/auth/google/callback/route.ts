@@ -10,16 +10,30 @@ const initializePassport = () => {
   };
 };
 
+// Add debug logging
+console.log("Google callback route loaded");
+console.log("Environment variables check:", {
+  hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+  hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+  hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL,
+  hasJwtSecret: !!process.env.JWT_SECRET
+});
+
 export async function GET(request: NextRequest) {
   // Create a URL object from the request URL
   const url = new URL(request.url);
+  console.log("Google callback URL:", url.toString());
+  console.log("Google callback query params:", Object.fromEntries(url.searchParams));
   
   // Create a custom handler for the passport authenticate
   return new Promise((resolve) => {
+    console.log("Creating passport authenticate handler in callback");
     const authenticate = passport.authenticate('google', { 
       session: false,
     }, async (err: Error | null, user: any) => {
+      console.log("Google callback auth result:", { error: !!err, hasUser: !!user });
       if (err || !user) {
+        console.error("Authentication error in callback:", err);
         // Redirect to login page with error
         return resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=google_auth_failed`));
       }
@@ -32,6 +46,7 @@ export async function GET(request: NextRequest) {
           return resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=server_error`));
         }
         
+        console.log("Generating JWT tokens for user:", { id: user.id, email: user.email });
         const accessToken = jwt.sign(
           { id: user.id, email: user.email, name: user.name }, 
           jwtSecret, 
@@ -45,6 +60,7 @@ export async function GET(request: NextRequest) {
         );
         
         // Create response with redirect
+        console.log("Creating redirect response to dashboard");
         const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
         
         // Set cookies
@@ -64,6 +80,7 @@ export async function GET(request: NextRequest) {
           maxAge: 7 * 24 * 60 * 60 // 7 days in seconds
         });
         
+        console.log("Authentication successful, redirecting to dashboard");
         return resolve(response);
       } catch (error) {
         console.error("Error in Google callback:", error);
@@ -72,6 +89,7 @@ export async function GET(request: NextRequest) {
     });
     
     // Create mock request and response objects that passport can work with
+    console.log("Creating mock request and response objects in callback");
     const req: any = {
       url: url.toString(),
       method: request.method,
@@ -85,12 +103,23 @@ export async function GET(request: NextRequest) {
       setHeader: () => {},
       end: () => {},
       getHeader: () => {},
+      redirect: (url: string) => {
+        console.log("Redirect called with URL in callback:", url);
+        resolve(NextResponse.redirect(url));
+      }
     };
     
     // Initialize passport and run authenticate
-    initializePassport()(req, res, () => {
-      // Use type assertion to resolve the "not callable" error
-      (authenticate as any)(req, res);
-    });
+    try {
+      console.log("Initializing passport and running authenticate in callback");
+      initializePassport()(req, res, () => {
+        // Use type assertion to resolve the "not callable" error
+        console.log("Calling authenticate function in callback");
+        (authenticate as any)(req, res);
+      });
+    } catch (error) {
+      console.error("Error during passport initialization in callback:", error);
+      resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=server_error`));
+    }
   });
 }

@@ -4,19 +4,35 @@ import { Strategy as FacebookStrategy, Profile } from "passport-facebook";
 import jwt from "jsonwebtoken";
 import pool from "@/lib/db";
 
+// Add debug logging
+console.log("Facebook auth route loaded");
+console.log("Environment variables check:", {
+    hasAppId: !!process.env.FACEBOOK_CLIENT_ID,
+    hasAppSecret: !!process.env.FACEBOOK_CLIENT_SECRET,
+    hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    appUrl: process.env.NEXT_PUBLIC_APP_URL
+});
+
 // Initialize passport with Facebook strategy
 passport.use(
     new FacebookStrategy(
         {
-            clientID: process.env.FACEBOOK_APP_ID || "",
-            clientSecret: process.env.FACEBOOK_APP_SECRET || "",
+            clientID: process.env.FACEBOOK_CLIENT_ID || "",
+            clientSecret: process.env.FACEBOOK_CLIENT_SECRET || "",
             callbackURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/facebook/callback`,
             profileFields: ['id', 'displayName', 'email'],
             passReqToCallback: true,
         },
         async (_req: any, accessToken: string, refreshToken: string, profile: Profile, done: (error: any, user?: any) => void) => {
             try {
-                // Facebook sometimes doesn't provide email directly
+                console.log("Facebook auth callback received profile:", { 
+                    id: profile.id,
+                    displayName: profile.displayName,
+                    emails: profile.emails 
+                });
+                
+                // Get email from profile
                 const email = profile.emails && profile.emails[0] ? profile.emails[0].value : `${profile.id}@facebook.com`;
                 const name = profile.displayName;
 
@@ -25,6 +41,7 @@ passport.use(
 
                 let user;
                 if (existingUser.rows.length === 0) {
+                    console.log("Creating new user with email:", email);
                     // Create new user
                     const newUser = await pool.query(
                         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *",
@@ -32,6 +49,7 @@ passport.use(
                     );
                     user = newUser.rows[0];
                 } else {
+                    console.log("Found existing user with email:", email);
                     user = existingUser.rows[0];
                 }
 
@@ -68,16 +86,22 @@ const initializePassport = () => {
 };
 
 export async function GET(request: NextRequest) {
+    console.log("Facebook auth GET request received");
     // Create a URL object from the request URL
     const url = new URL(request.url);
+    console.log("Request URL:", url.toString());
     
     // Create a custom handler for the passport authenticate
     return new Promise((resolve) => {
+        console.log("Creating passport authenticate handler");
         const authenticate = passport.authenticate('facebook', { 
-            scope: ['email'],
+            scope: ['email', 'public_profile'],
             session: false,
+            display: 'popup',
         }, (err: Error | null, user: any) => {
+            console.log("Facebook auth callback result:", { error: !!err, hasUser: !!user });
             if (err || !user) {
+                console.error("Authentication error:", err);
                 // Redirect to login page with error
                 return resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=facebook_auth_failed`));
             }
@@ -141,9 +165,16 @@ export async function GET(request: NextRequest) {
         };
         
         // Initialize passport and run authenticate
-        initializePassport()(req, res, () => {
-            // Use type assertion to resolve the "not callable" error
-            (authenticate as any)(req, res);
-        });
+        try {
+            console.log("Initializing passport and running authenticate");
+            initializePassport()(req, res, () => {
+                // Use type assertion to resolve the "not callable" error
+                console.log("Calling authenticate function");
+                (authenticate as any)(req, res);
+            });
+        } catch (error) {
+            console.error("Error during passport initialization:", error);
+            resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=server_error`));
+        }
     });
 }

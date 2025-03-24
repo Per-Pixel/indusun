@@ -10,17 +10,31 @@ const initializePassport = () => {
   };
 };
 
+// Add debug logging
+console.log("Facebook callback route loaded");
+console.log("Environment variables check:", {
+  hasClientId: !!process.env.FACEBOOK_CLIENT_ID,
+  hasClientSecret: !!process.env.FACEBOOK_CLIENT_SECRET,
+  hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL,
+  hasJwtSecret: !!process.env.JWT_SECRET
+});
+
 export async function GET(request: NextRequest) {
   // Create a URL object from the request URL
   const url = new URL(request.url);
+  console.log("Facebook callback URL:", url.toString());
   
   // Create a custom handler for the passport authenticate
   return new Promise((resolve) => {
     const authenticate = passport.authenticate('facebook', { 
+      clientID: process.env.FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+      callbackURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/facebook/callback`,
       session: false,
     }, async (err: Error | null, user: any) => {
       if (err || !user) {
         // Redirect to login page with error
+        console.error("Facebook callback authentication error:", err);
         return resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=facebook_auth_failed`));
       }
       
@@ -88,9 +102,16 @@ export async function GET(request: NextRequest) {
     };
     
     // Initialize passport and run authenticate
-    initializePassport()(req, res, () => {
-      // Use type assertion to resolve the "not callable" error
-      (authenticate as any)(req, res);
-    });
+    try {
+      console.log("Initializing passport and running authenticate in callback");
+      initializePassport()(req, res, () => {
+        // Use type assertion to resolve the "not callable" error
+        console.log("Calling authenticate function in callback");
+        (authenticate as any)(req, res);
+      });
+    } catch (error) {
+      console.error("Error during passport initialization in callback:", error);
+      resolve(NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=server_error`));
+    }
   });
 }
