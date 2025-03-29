@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import pool from '@/lib/db';
 import { z as zod } from "zod";
 import { hasTooManyAttempts, recordFailedAttempt } from "@/lib/auth-utils";
+import { generateToken } from "@/lib/jwt-utils";
 
 // schema validation with zod
 const loginSchema = zod.object({
@@ -54,15 +55,12 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate short-lived access token
-        const accessToken = jwt.sign(
-            { 
-                id: user.id, 
-                email: user.email,
-                name: user.name 
-            },
-            process.env.JWT_SECRET as string,
-            { expiresIn: '1h' }
-        );
+        const accessToken = generateToken({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role
+        }, '1h');
 
         // Generate long-lived refresh token
         const refreshToken = jwt.sign(
