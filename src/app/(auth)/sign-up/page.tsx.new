@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
+import { FaHome } from 'react-icons/fa';
 
 const SignUp = () => {
   const router = useRouter();
@@ -35,13 +36,13 @@ const SignUp = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
-
+    
     setIsLoading(true);
 
     try {
@@ -57,7 +58,7 @@ const SignUp = () => {
             phone: formData.phone,
             password: formData.password
           };
-
+      
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
@@ -145,9 +146,9 @@ const SignUp = () => {
 
   const handleResendCode = async () => {
     if (resendCooldown > 0) return;
-
+    
     setIsLoading(true);
-
+    
     try {
       const response = await fetch('/api/auth/send-verification-email', {
         method: 'POST',
@@ -180,51 +181,44 @@ const SignUp = () => {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen flex items-center justify-center bg-white md:overflow-hidden">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row-reverse items-center justify-between scale-[0.85] md:scale-[0.75]">
-          {/* Right side - Image (visible on desktop) */}
-          <div className="hidden md:block md:w-1/2 p-4">
-            <div className="rounded-2xl overflow-hidden" style={{ height: '800px', width: '700px' }}>
-              <Image
-                src="/auth/Sign up Art.png"
-                alt="Signup Background"
-                width={700}
-                height={800}
-                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                className="w-full h-auto object-cover"
-                priority
-              />
-            </div>
+      <div className="min-h-screen flex items-center justify-center relative">
+        {/* Background Image (Full Screen) */}
+        <div className="absolute inset-0 w-full h-screen">
+          <div className="h-full w-full">
+            <Image
+              src="/auth/Sign up Art.png"
+              alt="Signup Background"
+              fill
+              style={{ objectFit: 'cover' }}
+              priority
+              className="hidden md:block"
+            />
+            <Image
+              src="/auth/Sign up Art Mobile.png"
+              alt="Signup Background Mobile"
+              fill
+              style={{ objectFit: 'cover' }}
+              priority
+              className="block md:hidden"
+            />
           </div>
+        </div>
 
-          {/* Mobile Image (visible only on mobile) */}
-          <div className="md:hidden w-full mb-0 mt-4 pt-1">
-            <div className="rounded-2xl overflow-hidden max-h-[30vh] bg-white">
-              <Image
-                src="/auth/Sign up Art Mobile.png"
-                alt="Signup Background Mobile"
-                width={400}
-                height={300}
-                className="w-full h-auto object-cover"
-                priority
-              />
-            </div>
-          </div>
-
-          {/* Left side - Signup Form */}
-          <div className="w-full md:w-1/2 md:pr-6 max-w-sm">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
+        {/* Signup Form Container */}
+        <div className="w-full max-w-md z-10 relative px-4 md:px-0">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white p-6 rounded-lg w-full"
+          >
             <h1 className="text-xl font-semibold text-gray-800 mb-1">
               Welcome <span className="text-yellow-500">👋</span>
             </h1>
             <p className="text-gray-500 text-sm mb-5">
               Create your account to get started with Indusun
             </p>
-
+            
             {step === 1 ? (
               <>
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -241,7 +235,7 @@ const SignUp = () => {
                       required
                     />
                   </div>
-
+                  
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input
@@ -255,7 +249,7 @@ const SignUp = () => {
                       required
                     />
                   </div>
-
+                  
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <input
@@ -269,7 +263,7 @@ const SignUp = () => {
                       required
                     />
                   </div>
-
+                  
                   <div>
                     <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
                     <input
@@ -283,7 +277,7 @@ const SignUp = () => {
                       required
                     />
                   </div>
-
+                  
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -294,7 +288,7 @@ const SignUp = () => {
                     {isLoading ? 'Creating Account...' : 'Sign up'}
                   </motion.button>
                 </form>
-
+                
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-300"></div>
@@ -303,7 +297,7 @@ const SignUp = () => {
                     <span className="px-2 bg-white text-gray-500">or sign up with</span>
                   </div>
                 </div>
-
+                
                 {/* Social Login Buttons */}
                 <SocialLoginButtons />
               </>
@@ -326,7 +320,7 @@ const SignUp = () => {
                       required
                     />
                   </div>
-
+                  
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -336,10 +330,10 @@ const SignUp = () => {
                   >
                     {isLoading ? 'Verifying...' : 'Verify Email'}
                   </motion.button>
-
+                  
                   <div className="mt-4 text-center">
-                    <button
-                      type="button"
+                    <button 
+                      type="button" 
                       onClick={handleResendCode}
                       disabled={isLoading || resendCooldown > 0}
                       className="text-gray-600 hover:text-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -349,7 +343,7 @@ const SignUp = () => {
                   </div>
                 </form>
               )}
-
+            
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 {step === 1 ? (
@@ -361,8 +355,8 @@ const SignUp = () => {
                   </>
                 ) : (
                   <>
-                    <button
-                      type="button"
+                    <button 
+                      type="button" 
                       onClick={() => setStep(1)}
                       className="text-blue-800 hover:text-blue-700 font-medium transition-colors"
                     >
@@ -372,8 +366,7 @@ const SignUp = () => {
                 )}
               </p>
             </div>
-            </motion.div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </PageWrapper>

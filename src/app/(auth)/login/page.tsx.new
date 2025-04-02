@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
+import { FaHome } from 'react-icons/fa';
 
 const Login = () => {
   const router = useRouter();
@@ -23,7 +24,7 @@ const Login = () => {
     password: ''
   });
   const { login } = useAuth();
-
+  
   // Show message if redirected with a message parameter
   React.useEffect(() => {
     if (message) {
@@ -50,13 +51,13 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    
     try {
       // Prepare the request body based on login method
       const requestBody = loginMethod === 'email'
         ? { email: formData.email, password: formData.password }
         : { phone: formData.phone, password: formData.password };
-
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -84,44 +85,37 @@ const Login = () => {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen flex items-center justify-center bg-white md:overflow-hidden">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between scale-[0.85] md:scale-[0.75]">
-          {/* Left side - Image (visible on desktop) */}
-          <div className="hidden md:block md:w-1/2 p-4">
-            <div className="rounded-2xl overflow-hidden" style={{ height: '800px', width: '700px' }}>
-              <Image
-                src="/auth/Login Art.png"
-                alt="Login Background"
-                width={400}
-                height={500}
-                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                className="w-full h-auto object-cover"
-                priority
-              />
-            </div>
+      <div className="min-h-screen flex items-center justify-center relative">
+        {/* Background Image (Full Screen) */}
+        <div className="absolute inset-0 w-full h-screen">
+          <div className="h-full w-full">
+            <Image
+              src="/auth/Login Art.png"
+              alt="Login Background"
+              fill
+              style={{ objectFit: 'cover' }}
+              priority
+              className="hidden md:block"
+            />
+            <Image
+              src="/auth/Login Art Mobile.png"
+              alt="Login Background Mobile"
+              fill
+              style={{ objectFit: 'cover' }}
+              priority
+              className="block md:hidden"
+            />
           </div>
+        </div>
 
-          {/* Mobile Image (visible only on mobile) */}
-          <div className="md:hidden w-full mb-0 mt-4 pt-1">
-            <div className="rounded-2xl overflow-hidden max-h-[30vh] bg-white">
-              <Image
-                src="/auth/Login Art Mobile.png"
-                alt="Login Background Mobile"
-                width={400}
-                height={300}
-                className="w-full h-auto object-cover"
-                priority
-              />
-            </div>
-          </div>
-
-          {/* Right side - Login Form */}
-          <div className="w-full md:w-1/2 md:pl-6 max-w-sm">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
+        {/* Login Form Container */}
+        <div className="w-full max-w-md z-10 relative px-4 md:px-0">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white p-6 rounded-lg w-full"
+          >
             <h1 className="text-xl font-semibold text-gray-800 mb-1">
               Welcome Back <span className="text-yellow-500">👋</span>
             </h1>
@@ -208,7 +202,7 @@ const Login = () => {
                     Forgot password?
                   </Link>
                 </div>
-
+                
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -220,7 +214,7 @@ const Login = () => {
                 </motion.button>
               </form>
             </div>
-
+            
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Don't have an account?{' '}
@@ -229,7 +223,7 @@ const Login = () => {
                 </Link>
               </p>
             </div>
-
+            
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
@@ -241,8 +235,7 @@ const Login = () => {
 
             {/* Social Login Buttons */}
             <SocialLoginButtons />
-            </motion.div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </PageWrapper>

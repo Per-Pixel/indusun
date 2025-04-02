@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaGoogle, FaFacebook } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 interface SocialLoginButtonsProps {
   className?: string;
@@ -11,7 +12,7 @@ const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({ className = '' 
     try {
       // Log the attempt
       console.log(`Attempting to login with ${provider}`);
-      
+
       // Redirect to the auth endpoint
       window.location.href = `/api/auth/${provider}`;
     } catch (error) {
@@ -21,24 +22,28 @@ const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({ className = '' 
   };
 
   return (
-    <div className={`flex flex-col gap-3 w-full ${className}`}>
-      <button
+    <div className={`flex gap-3 w-full ${className}`}>
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => handleSocialLogin('google')}
         type="button"
-        className="flex items-center justify-center gap-2 w-full py-2.5 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="flex-1 flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-800"
       >
         <FaGoogle className="text-red-500" />
-        <span>Continue with Google</span>
-      </button>
-      
-      <button
+        <span className="hidden sm:inline">Google</span>
+      </motion.button>
+
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => handleSocialLogin('facebook')}
         type="button"
-        className="flex items-center justify-center gap-2 w-full py-2.5 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="flex-1 flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-800"
       >
         <FaFacebook className="text-blue-600" />
-        <span>Continue with Facebook</span>
-      </button>
+        <span className="hidden sm:inline">Facebook</span>
+      </motion.button>
     </div>
   );
 };
