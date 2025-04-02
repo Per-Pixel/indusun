@@ -45,7 +45,8 @@ const Navbar = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="whitespace-nowrap px-6 py-2 border-2 border-white rounded-lg text-white 
+                className="whitespace-nowrap px-6 py-2
+                border-2 border-white rounded-lg text-white 
                           hover:bg-white hover:text-blue-600 transition-colors duration-300"
               >
                 For Broker
