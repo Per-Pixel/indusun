@@ -122,35 +122,35 @@ const Login = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-            <h1 className="text-xl font-semibold text-gray-800 mb-1">
+            <h1 className="text-4xl font-semibold text-gray-800 mb-4">
               Welcome Back <span className="text-yellow-500">👋</span>
             </h1>
-            <p className="text-gray-500 text-sm mb-5">
+            <p className="text-gray-500 text-xl mb-8">
               Enter your credentials below & access your account
             </p>
 
             <div className="mb-6">
-              <div className="flex space-x-4 mb-4">
+              <div className="flex space-x-6 mb-6">
                 <button
                   type="button"
                   onClick={() => setLoginMethod('email')}
-                  className={`flex-1 py-2 border-b-2 ${loginMethod === 'email' ? 'border-blue-800 text-blue-800' : 'border-gray-200 text-gray-500 hover:text-blue-800 hover:border-blue-800'} font-medium transition-colors`}
+                  className={`flex-1 py-3 border-b-2 ${loginMethod === 'email' ? 'border-blue-800 text-blue-800' : 'border-gray-200 text-gray-500 hover:text-blue-800 hover:border-blue-800'} font-medium transition-colors text-xl`}
                 >
                   Email
                 </button>
                 <button
                   type="button"
                   onClick={() => setLoginMethod('phone')}
-                  className={`flex-1 py-2 border-b-2 ${loginMethod === 'phone' ? 'border-blue-800 text-blue-800' : 'border-gray-200 text-gray-500 hover:text-blue-800 hover:border-blue-800'} font-medium transition-colors`}
+                  className={`flex-1 py-3 border-b-2 ${loginMethod === 'phone' ? 'border-blue-800 text-blue-800' : 'border-gray-200 text-gray-500 hover:text-blue-800 hover:border-blue-800'} font-medium transition-colors text-xl`}
                 >
                   Phone
                 </button>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-5">
+              <form onSubmit={handleLogin} className="space-y-8">
                 {loginMethod === 'email' ? (
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label htmlFor="email" className="block text-xl font-medium text-gray-700 mb-3">Email</label>
                     <input
                       id="email"
                       type="email"
@@ -158,13 +158,13 @@ const Login = () => {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="example@email.com"
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
                       required
                     />
                   </div>
                 ) : (
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <label htmlFor="phone" className="block text-xl font-medium text-gray-700 mb-3">Phone Number</label>
                     <input
                       id="phone"
                       type="tel"
@@ -172,14 +172,14 @@ const Login = () => {
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="+1 (123) 456-7890"
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
                       required
                     />
                   </div>
                 )}
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <label htmlFor="password" className="block text-xl font-medium text-gray-700 mb-3">Password</label>
                   <input
                     id="password"
                     type="password"
@@ -187,24 +187,24 @@ const Login = () => {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all"
+                    className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
                     required
                   />
                 </div>
 
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <input
                       id="remember-me"
                       name="remember-me"
                       type="checkbox"
-                      className="h-4 w-4 text-blue-800 focus:ring-blue-800 border-gray-300 rounded"
+                      className="h-5 w-5 text-blue-800 focus:ring-blue-800 border-gray-300 rounded"
                     />
-                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                    <label htmlFor="remember-me" className="ml-2 block text-xl text-gray-700">
                       Remember me
                     </label>
                   </div>
-                  <Link href="/forgot-password" className="text-sm font-medium text-blue-800 hover:text-blue-700 transition-colors">
+                  <Link href="/forgot-password" className="text-xl font-medium text-blue-800 hover:text-blue-700 transition-colors">
                     Forgot password?
                   </Link>
                 </div>
@@ -214,7 +214,7 @@ const Login = () => {
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-blue-800 p-2.5 rounded-md font-medium text-white hover:bg-blue-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full bg-blue-800 p-4 rounded-md font-medium text-white text-xl hover:bg-blue-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed h-14"
                 >
                   {isLoading ? 'Logging in...' : 'Log in'}
                 </motion.button>

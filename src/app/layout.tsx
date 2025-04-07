@@ -32,7 +32,6 @@ export default function RootLayout({
       >
         <AuthProvider>
           <Toaster position="top-center" />
-          <Navbar />
           {children}
         </AuthProvider>
       </body>
