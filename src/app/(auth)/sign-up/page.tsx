@@ -218,18 +218,18 @@ const SignUp = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-            <h1 className="text-xl font-semibold text-gray-800 mb-1">
+            <h1 className="text-4xl font-semibold text-gray-800 mb-4">
               Welcome <span className="text-yellow-500">👋</span>
             </h1>
-            <p className="text-gray-500 text-sm mb-5">
+            <p className="text-gray-500 text-xl mb-8">
               Create your account to get started with Indusun
             </p>
 
             {step === 1 ? (
               <>
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-8">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <label htmlFor="name" className="block text-xl font-medium text-gray-700 mb-3">Full Name</label>
                     <input
                       id="name"
                       type="text"
@@ -237,13 +237,13 @@ const SignUp = () => {
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="John Doe"
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label htmlFor="email" className="block text-xl font-medium text-gray-700 mb-3">Email</label>
                     <input
                       id="email"
                       type="email"
@@ -251,13 +251,13 @@ const SignUp = () => {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="example@email.com"
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <label htmlFor="password" className="block text-xl font-medium text-gray-700 mb-3">Password</label>
                     <input
                       id="password"
                       type="password"
@@ -265,13 +265,13 @@ const SignUp = () => {
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                    <label htmlFor="confirmPassword" className="block text-xl font-medium text-gray-700 mb-3">Confirm Password</label>
                     <input
                       id="confirmPassword"
                       type="password"
@@ -279,7 +279,7 @@ const SignUp = () => {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
                       required
                     />
                   </div>
@@ -289,7 +289,7 @@ const SignUp = () => {
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-blue-800 p-2.5 rounded-md font-medium text-white hover:bg-blue-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full bg-blue-800 p-4 rounded-md font-medium text-white text-xl hover:bg-blue-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed h-14"
                   >
                     {isLoading ? 'Creating Account...' : 'Sign up'}
                   </motion.button>
@@ -299,8 +299,8 @@ const SignUp = () => {
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-300"></div>
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">or sign up with</span>
+                  <div className="relative flex justify-center text-xl">
+                    <span className="px-3 bg-white text-gray-500 text-xl">or sign up with</span>
                   </div>
                 </div>
 
@@ -310,11 +310,11 @@ const SignUp = () => {
               ) : (
                 <form onSubmit={handleVerification} className="space-y-5">
                   <div>
-                    <p className="text-gray-700 mb-4 text-center">
+                    <p className="text-gray-700 mb-6 text-center text-xl">
                       We've sent a verification code to <span className="text-blue-600 font-medium">{formData.email}</span>.
                       Please enter the code below to verify your email address.
                     </p>
-                    <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700 mb-1">Verification Code</label>
+                    <label htmlFor="verificationCode" className="block text-xl font-medium text-gray-700 mb-3">Verification Code</label>
                     <input
                       id="verificationCode"
                       type="text"
@@ -351,11 +351,11 @@ const SignUp = () => {
               )}
 
             <div className="mt-6 text-center">
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-xl">
                 {step === 1 ? (
                   <>
                     Already have an account?{' '}
-                    <Link href="/login" className="text-blue-800 hover:text-blue-700 font-medium transition-colors">
+                    <Link href="/login" className="text-blue-800 hover:text-blue-700 font-medium transition-colors text-xl">
                       Log in
                     </Link>
                   </>
@@ -364,7 +364,7 @@ const SignUp = () => {
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className="text-blue-800 hover:text-blue-700 font-medium transition-colors"
+                      className="text-blue-800 hover:text-blue-700 font-medium transition-colors text-xl"
                     >
                       Back to signup
                     </button>
