@@ -75,7 +75,8 @@ export async function POST(request: NextRequest) {
             user: {
                 id: user.id,
                 name: user.name,
-                email: user.email
+                email: user.email,
+                role: user.role || 'customer' // Default to customer if role is not set
             }
         });
 
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
         });
 
         return response;
-        
+
     } catch (error) {
         console.error('Login error:', error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
