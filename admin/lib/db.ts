@@ -1,14 +1,6 @@
 import { Pool } from "pg";
 
-// Log database configuration (without sensitive data)
-// console.log('Database configuration:', {
-//     user: process.env.DB_USER,
-//     host: process.env.DB_HOST,
-//     database: process.env.DB_NAME,
-//     port: Number(process.env.DB_PORT) || 5432,
-    // Not logging password for security
-// });
-
+// Create a database connection pool
 const pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,

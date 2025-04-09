@@ -6,16 +6,16 @@ export async function POST(request: NextRequest) {
   try {
     // Get the admin token from cookies
     const adminToken = request.cookies.get("admin_token")?.value;
-    
+
     // If token exists, blacklist it
     if (adminToken) {
       try {
         // Decode token without verification to get payload
-        const decoded = jwt.decode(adminToken) as { 
+        const decoded = jwt.decode(adminToken) as {
           jti?: string;
           exp?: number;
         };
-        
+
         // If token has jti and exp, blacklist it
         if (decoded && decoded.jti && decoded.exp) {
           await blacklistToken(decoded.jti, decoded.exp);
@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
         // Continue with logout even if blacklisting fails
       }
     }
-    
+
     // Create response
     const response = NextResponse.json({ message: "Logged out successfully" });
-    
+
     // Clear the admin token cookie
     response.cookies.set("admin_token", "", {
       httpOnly: true,
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       path: '/',
       maxAge: 0 // Expire immediately
     });
-    
+
     return response;
   } catch (error) {
     console.error("Logout error:", error);
