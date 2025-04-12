@@ -85,7 +85,7 @@ const Sidebar = () => {
     <aside className="text-white h-screen w-64 flex flex-col fixed left-0 top-0" style={{ backgroundColor: '#083830' }}>
       {/* Logo */}
       <div className="p-4 border-b border-green-800">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Image
             src="/navbar/logo.svg"
             alt="Indusun Logo"

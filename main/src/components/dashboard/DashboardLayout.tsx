@@ -6,6 +6,7 @@ import { Bell } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 // Custom Hamburger Menu Component
 const HamburgerMenu = () => {
@@ -69,13 +70,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <div className="md:hidden flex items-center justify-between py-2 px-4 border-b" style={{ background: 'linear-gradient(to right, rgba(186,185,191,0.9), rgba(57,56,56,0.35))' }}>
           <div className="flex items-center gap-2">
             <HamburgerMenu />
-            <Image
-              src="/navbar/logo.png"
-              alt="Indusun Logo"
-              width={32}
-              height={32}
-            />
-            <span className="font-bold text-white text-lg">Indusun</span>
+            <Link href="/" className="flex items-center gap-2">
+              <Image
+                src="/navbar/logo.png"
+                alt="Indusun Logo"
+                width={32}
+                height={32}
+              />
+              <span className="font-bold text-white text-lg">Indusun</span>
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">
