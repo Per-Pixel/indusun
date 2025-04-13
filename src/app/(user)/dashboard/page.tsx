@@ -25,30 +25,30 @@ const mockTransactions = [
   {
     id: '1',
     name: 'Shopping product',
-    price: '54',
+    price: '98',
     image: '/auth/User Profile/Profile Placehlder.png',
-    details: '05 August, 10:00AM'
+    details: 'St. Peter - 10:00AM'
   },
   {
     id: '2',
-    name: 'Seblak Hot Yummy',
+    name: 'Sabda Hot Tummy',
     price: '23',
     image: '/auth/User Profile/Profile Placehlder.png',
-    details: '12 August, 11:00 PM'
+    details: 'St. Peter - 11:30AM'
   },
   {
     id: '3',
-    name: 'Kurupuk Kulit',
+    name: 'Kurapak Kuit',
     price: '33',
     image: '/auth/User Profile/Profile Placehlder.png',
-    details: '13 August, 02:00 AM'
+    details: 'St. Peter - 01:30PM'
   },
   {
     id: '4',
-    name: 'Kurupuk Kulit',
+    name: 'Kurapak Kuit',
     price: '33',
     image: '/auth/User Profile/Profile Placehlder.png',
-    details: '13 August, 02:00 AM'
+    details: 'St. Peter - 01:45PM'
   },
 ];
 
@@ -64,7 +64,7 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       {/* Welcome Section */}
-      <div className="mb-4 w-full">
+      <div className="mb-4">
         <h1 className="text-2xl font-semibold mb-1 text-black">Hello, Chotu</h1>
         <p className="text-gray-500 text-sm">Your current summary and activity.</p>
       </div>
@@ -110,92 +110,74 @@ const Dashboard = () => {
         <SummaryCard
           title="Upcoming Payments"
           amount="INR 6,947.00"
-          badge="9 New"
           onClick={() => router.push('/payments')}
-          viewAlign="left"
         />
 
         <SummaryCard
           title="Your Agent"
-          badge="9 New"
-          customContent={
-            <div className="flex items-center justify-between mt-3 mb-1">
-              <div className="text-sm font-medium text-black">Arshir Patel</div>
-              <div className="h-7 w-7 rounded-full overflow-hidden">
+          image={
+            <div className="flex items-center">
+              <span className="mr-2 text-sm text-black">Arshir Patel</span>
+              <div className="h-8 w-8 rounded-full overflow-hidden">
                 <Image
                   src="/auth/Agents/agent-03.jpg"
                   alt="Agent Profile"
-                  width={28}
-                  height={28}
+                  width={32}
+                  height={32}
                   className="object-cover"
                 />
               </div>
             </div>
           }
           onClick={() => router.push('/agent')}
-          viewAlign="left"
         />
       </div>
 
-      {/* Desktop Layout */}
-      <div className="hidden md:grid md:grid-cols-3 gap-4 mt-6">
-        <div>
+      <div className="grid md:grid-cols-3 gap-4 mt-6">
+        {/* Desktop Layout */}
+        <div className="hidden md:block">
           <RemainingAmount amount="6,071.00" onPayNow={handlePayNow} />
         </div>
 
         <div className="md:col-span-2">
           <PaymentHistory payments={mockPayments} />
         </div>
-      </div>
 
-      {/* Mobile Layout */}
-      <div className="md:hidden space-y-6 mt-6 w-full max-w-full">
-        {/* Remaining Amount Card */}
-        <div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 relative overflow-hidden">
-            <div className="relative z-10">
+        {/* Mobile Layout */}
+        <div className="md:hidden mb-6">
+          <div className="flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 p-4 relative overflow-hidden">
+            <div className="z-10">
               <h3 className="text-sm font-medium text-gray-500">Remaining Amount</h3>
-              <p className="text-lg font-semibold mt-1 text-black">INR 6,071.00</p>
-              <p className="text-xs text-gray-500 mt-1">Lorem ipsum dolor amet, consectetur adipiscing elit.</p>
+              <p className="text-xl font-semibold mt-1 text-black">INR 6,071.00</p>
             </div>
-            <div className="absolute right-0 top-0 w-20 h-20 rounded-bl-3xl overflow-hidden bg-black">
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="w-16 h-16 relative">
-                  {/* Star pattern created with CSS */}
-                  <div className="absolute top-1 left-1 w-2 h-2 bg-yellow-300 rounded-full opacity-70"></div>
-                  <div className="absolute top-3 left-8 w-1 h-1 bg-yellow-300 rounded-full opacity-60"></div>
-                  <div className="absolute top-6 left-3 w-1.5 h-1.5 bg-yellow-300 rounded-full opacity-80"></div>
-                  <div className="absolute top-8 left-10 w-2 h-2 bg-yellow-300 rounded-full opacity-70"></div>
-                  <div className="absolute top-10 left-5 w-1 h-1 bg-yellow-300 rounded-full opacity-60"></div>
-                  <div className="absolute top-12 left-12 w-1.5 h-1.5 bg-yellow-300 rounded-full opacity-80"></div>
-                </div>
-              </div>
+            <div className="absolute right-0 top-0 w-20 h-20">
+              <Image
+                src="/auth/Stars BG.png"
+                alt="Decoration"
+                width={80}
+                height={80}
+                className="object-contain"
+              />
             </div>
           </div>
           <div className="mt-3">
             <button
               onClick={handlePayNow}
-              className="w-full py-3 bg-purple-600 text-white rounded-md font-medium hover:bg-purple-700 transition-colors"
+              className="w-full py-2.5 bg-purple-600 text-white rounded-md font-medium hover:bg-purple-700 transition-colors text-sm"
             >
               Pay Now
             </button>
           </div>
         </div>
 
-        {/* Transaction List */}
-        <div>
+        <div className="md:hidden">
           <TransactionList transactions={mockTransactions} />
-        </div>
-
-        {/* Payment History */}
-        <div>
-          <PaymentHistory payments={mockPayments} />
         </div>
       </div>
 
       {/* New Features Notification */}
       {showNotification && (
-        <div className="fixed bottom-16 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-white rounded-lg shadow-md border border-gray-200 p-4 z-40">
+        <div className="fixed bottom-16 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-white rounded-lg shadow-md border border-gray-200 p-4 z-10">
           <div className="absolute top-0 left-0 w-1 h-full bg-green-950 rounded-l-lg"></div>
           <div className="flex justify-between items-start">
             <div>
