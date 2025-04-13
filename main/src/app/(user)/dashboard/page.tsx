@@ -64,7 +64,7 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       {/* Welcome Section */}
-      <div className="mb-4">
+      <div className="mb-4 w-full">
         <h1 className="text-2xl font-semibold mb-1 text-black">Hello, Chotu</h1>
         <p className="text-gray-500 text-sm">Your current summary and activity.</p>
       </div>
@@ -147,7 +147,7 @@ const Dashboard = () => {
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden space-y-6 mt-6">
+      <div className="md:hidden space-y-6 mt-6 w-full max-w-full">
         {/* Remaining Amount Card */}
         <div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 relative overflow-hidden">

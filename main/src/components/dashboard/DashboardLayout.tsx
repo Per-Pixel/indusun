@@ -98,8 +98,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
 
         {/* Page Content */}
-        <div className="p-4 md:p-6 pb-20 md:pb-6 max-w-full">
-          {children}
+        <div className="p-4 md:p-6 pb-20 md:pb-6 max-w-full overflow-x-hidden">
+          <div className="w-full max-w-full overflow-x-hidden">
+            {children}
+          </div>
         </div>
 
         {/* Mobile Bottom Navigation */}

@@ -42,7 +42,7 @@ const TransactionList = ({ transactions }: TransactionListProps) => {
               <h3 className="text-sm font-medium text-black">{transaction.name}</h3>
               <p className="text-xs text-gray-500 mt-0.5">{transaction.details}</p>
             </div>
-            <div className="text-sm font-medium text-red-500">-${transaction.price}</div>
+            <div className="text-sm font-medium text-red-500">-$<span>{transaction.price}</span></div>
           </div>
         ))}
       </div>
