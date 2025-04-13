@@ -33,14 +33,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     router.push('/profile');
   };
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-x-hidden">
       {/* Sidebar - Desktop only */}
       <div className="hidden md:block">
         <Sidebar />
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto md:ml-64">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden md:ml-64">
         {/* Top Header - Desktop */}
         <div className="hidden md:flex items-center justify-end py-2 px-4 border-b" style={{ backgroundColor: 'rgba(57, 56, 56, 0.35)' }}>
           <div className="flex items-center gap-4">
@@ -98,46 +98,42 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
 
         {/* Page Content */}
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6 pb-20 md:pb-6 max-w-full">
           {children}
         </div>
 
         {/* Mobile Bottom Navigation */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around items-center p-2">
-          <button className="flex flex-col items-center justify-center text-green-800">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around items-center p-2 z-50">
+          <Link href="/dashboard" className="flex flex-col items-center justify-center text-purple-600">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect width="20" height="20" x="2" y="2" rx="5" />
-              <path d="M2 7h20" />
-              <path d="M7 2v20" />
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
             <span className="text-xs mt-1">Home</span>
-          </button>
+          </Link>
 
-          <button className="flex flex-col items-center justify-center text-gray-400">
+          <Link href="/search" className="flex flex-col items-center justify-center text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15V6" />
-              <path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-              <path d="M12 12H3" />
-              <path d="M16 6H3" />
-              <path d="M12 18H3" />
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
             </svg>
             <span className="text-xs mt-1">Search</span>
-          </button>
+          </Link>
 
-          <button className="flex flex-col items-center justify-center text-gray-400">
+          <Link href="/favorites" className="flex flex-col items-center justify-center text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
             </svg>
-            <span className="text-xs mt-1">Favorites</span>
-          </button>
+            <span className="text-xs mt-1">Favorite</span>
+          </Link>
 
-          <button className="flex flex-col items-center justify-center text-gray-400">
+          <Link href="/profile" className="flex flex-col items-center justify-center text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
-            <span className="text-xs mt-1">Profile</span>
-          </button>
+            <span className="text-xs mt-1">User</span>
+          </Link>
         </div>
       </main>
     </div>

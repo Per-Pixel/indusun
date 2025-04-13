@@ -28,21 +28,21 @@ const TransactionList = ({ transactions }: TransactionListProps) => {
 
       <div className="divide-y divide-gray-200">
         {transactions.map((transaction) => (
-          <div key={transaction.id} className="flex items-center p-3">
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+          <div key={transaction.id} className="flex items-center p-4">
+            <div className="h-10 w-10 rounded bg-blue-100 flex items-center justify-center mr-3">
               <Image
-                src={transaction.image}
+                src="/transaction-icons/Transaction icon.png"
                 alt={transaction.name}
-                width={20}
-                height={20}
+                width={24}
+                height={24}
                 className="object-cover"
               />
             </div>
             <div className="flex-1">
-              <h3 className="text-xs font-medium text-black">{transaction.name}</h3>
-              <p className="text-[10px] text-gray-500">{transaction.details}</p>
+              <h3 className="text-sm font-medium text-black">{transaction.name}</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{transaction.details}</p>
             </div>
-            <div className="text-xs font-medium text-black">₹{transaction.price}</div>
+            <div className="text-sm font-medium text-red-500">-${transaction.price}</div>
           </div>
         ))}
       </div>
