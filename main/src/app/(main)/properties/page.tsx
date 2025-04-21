@@ -332,7 +332,7 @@ const PropertiesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Header */}
       <header className="bg-blue-500 py-2">
         <div className="container mx-auto px-4 flex justify-between items-center">
@@ -783,6 +783,8 @@ const PropertiesPage = () => {
 };
 
 export default PropertiesPage;
+
+
 
 
 
