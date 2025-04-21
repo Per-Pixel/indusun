@@ -36,12 +36,12 @@ const RealEstatePage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="relative h-[500px] bg-gray-100">
+      <div className="relative h-[500px] bg-gray-100 rounded-b-[50px]">
         <PlaceholderImage
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover rounded-b-[50px]"
           type="property"
         />
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 bg-black/40 rounded-b-[50px]"></div>
 
         <div className="absolute inset-0 flex flex-col justify-center">
           <div className="container mx-auto px-4">
@@ -603,3 +603,5 @@ const RealEstatePage = () => {
 };
 
 export default RealEstatePage;
+
+

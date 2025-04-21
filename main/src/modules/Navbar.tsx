@@ -27,9 +27,9 @@ const Navbar = () => {
             <HamburgerMenu />
 
             <Link href="/" className="flex items-center gap-2">
-              <img 
-                src="/navbar/logo.svg" 
-                alt="Indusun Logo" 
+              <img
+                src="/navbar/logo.svg"
+                alt="Indusun Logo"
                 className="h-[2rem] sm:h-[2.5rem] md:h-[3rem] lg:h-[3.5rem] w-auto filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"
               />
               <span className="text-sm sm:text-base md:text-xl lg:text-2xl font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]">
@@ -46,7 +46,7 @@ const Navbar = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="whitespace-nowrap px-6 py-2
-                border-2 border-white rounded-lg text-white 
+                border-2 border-white rounded-lg text-white
                           hover:bg-white hover:text-blue-600 transition-colors duration-300"
               >
                 For Broker
@@ -56,7 +56,7 @@ const Navbar = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="whitespace-nowrap px-8 py-2 rounded-lg text-white 
+                className="whitespace-nowrap px-8 py-2 rounded-lg text-white
                           bg-[#D9D9D9]/50 hover:bg-[#c4c4c4]/50
                           transition-colors duration-300"
               >
