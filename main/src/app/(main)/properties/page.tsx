@@ -374,41 +374,59 @@ const PropertiesPage = () => {
           onError={(e) => {
             e.currentTarget.src = '';
             e.currentTarget.onerror = null;
-            e.currentTarget.className = "w-full h-full bg-blue-1  00";
+            e.currentTarget.className = "w-full h-full bg-blue-100";
           }}
         />
+        
+        {/* Added gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent"></div>
 
-        <div className="absolute inset-0 flex flex-col justify-center">
+        <div className="absolute inset-0 flex flex-col justify-between">
           <div className="container mx-auto px-4 flex justify-end">
             <div className="w-full md:w-1/2 text-right">
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
                 Enjoy The Finest Homes
               </h1>
-
-              <button className="border-2 border-white text-white px-6 py-2 rounded-full hover:bg-white hover:text-blue-600 transition-colors">
-                LET US GUIDE YOUR HOME
-              </button>
             </div>
+          </div>
+
+          {/* New container for the button at bottom left */}
+          <div className="container mx-auto px-4 mb-8">
+            <button className="border-2 border-white text-white px-6 py-2 rounded-full hover:bg-white hover:text-blue-600 transition-colors">
+              LET US GUIDE YOUR HOME
+            </button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white py-3">
-          <div className="container mx-auto">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold">680</div>
-                <div className="text-gray-600 text-xs">Awward Winning</div>
-              </div>
+        <div className="absolute bottom-0 right-0 w-1/2">
+          <div className="relative">
+            {/* Diagonal white background */}
+            <div 
+              className="absolute bottom-0 right-0 w-full bg-white h-32 rounded-tl-3xl"
+              style={{
+                transform: 'skew(-45deg)',
+                transformOrigin: 'bottom right'
+              }}
+            ></div>
+            
+            {/* Stats content */}
+            <div className="container mx-auto relative py-8">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold">680</div>
+                  <div className="text-gray-600 text-xs">Awward Winning</div>
+                </div>
 
-              <div>
-                <div className="text-2xl font-bold">8K+</div>
-                <div className="text-gray-600 text-xs">Happy Customer</div>
-              </div>
+                <div>
+                  <div className="text-2xl font-bold">8K+</div>
+                  <div className="text-gray-600 text-xs">Happy Customer</div>
+                </div>
 
-              <div>
-                <div className="text-2xl font-bold">500+</div>
-                <div className="text-gray-600 text-xs">Property Ready</div>
+                <div>
+                  <div className="text-2xl font-bold">500+</div>
+                  <div className="text-gray-600 text-xs">Property Ready</div>
+                </div>
               </div>
             </div>
           </div>
@@ -765,6 +783,23 @@ const PropertiesPage = () => {
 };
 
 export default PropertiesPage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
