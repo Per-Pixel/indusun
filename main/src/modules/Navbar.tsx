@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Bell, Menu } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 // Custom Hamburger Menu Component
 const HamburgerMenu = () => {
@@ -19,10 +20,21 @@ const HamburgerMenu = () => {
 };
 
 const Navbar = () => {
+  const pathname = usePathname();
+  const isPropertiesPage = pathname.includes('/properties');
+
   return (
     <nav className="fixed w-full top-0 z-50">
-      <div className="w-full h-[40px] md:h-[70px] bg-gradient-to-r from-white to-blue-600 px-6 sm:px-8 md:px-12 lg:px-16 rounded-b-2xl">
-        <div className="max-w-7xl mx-auto h-full flex items-center">
+      <div 
+        className={`w-full h-[40px] md:h-[70px] px-6 sm:px-8 md:px-12 lg:px-16 rounded-b-2xl relative`}
+      >
+        {/* Background with opacity */}
+        <div className={`absolute inset-0 bg-gradient-to-r from-white to-blue-600 rounded-b-2xl ${
+          isPropertiesPage ? 'opacity-10' : 'opacity-100'
+        }`}></div>
+
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto h-full flex items-center">
           <div className="flex items-center gap-4 sm:gap-6 md:gap-8">
             <HamburgerMenu />
 

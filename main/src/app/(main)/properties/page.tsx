@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search, Bed, Bath } from 'lucide-react';
+import Image from 'next/image';
 
 // Types
 interface Property {
@@ -333,75 +334,41 @@ const PropertiesPage = () => {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      {/* Header */}
-      <header className="bg-blue-500 py-2">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <button className="text-white mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div className="flex items-center">
-              <div className="bg-white rounded-full p-1 mr-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                </svg>
-              </div>
-              <span className="text-xl font-semibold text-white">Indusun</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button className="text-sm bg-blue-400 text-white px-3 py-1 rounded-md">Pay Bill</button>
-            <button className="text-sm bg-blue-400 text-white px-3 py-1 rounded-md">For Brokers</button>
-            <button className="text-sm bg-white text-blue-600 px-3 py-1 rounded-md">Sign Up</button>
-            <button className="text-sm bg-white text-blue-600 px-3 py-1 rounded-md">Log In</button>
-            <button className="text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section with Search */}
-      <div className="relative h-[500px] bg-gray-100">
-        <img
-          src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1470&auto=format&fit=crop"
-          alt="Modern White House"
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.currentTarget.src = '';
-            e.currentTarget.onerror = null;
-            e.currentTarget.className = "w-full h-full bg-blue-100";
-          }}
+      {/* Hero Section */}
+      <section className="relative h-[600px]">
+        <Image
+          src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop"
+          alt="Hero Image"
+          fill
+          priority
+          className="object-cover"
         />
         
-        {/* Added gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent"></div>
+        {/* Gradient overlay positioned absolutely */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent rounded-bl-[50px]"></div>
 
-        <div className="absolute inset-0 flex flex-col justify-between">
-          <div className="container mx-auto px-4 flex justify-end">
-            <div className="w-full md:w-1/2 text-right">
+        <div className="absolute inset-0">
+          {/* Title positioned absolutely */}
+          <div className="absolute bottom-28 right-0 container mx-auto px-4">
+            <div className="w-full md:w-1/2 ml-auto text-right">
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
                 Enjoy The Finest Homes
               </h1>
             </div>
           </div>
 
-          {/* New container for the button at bottom left */}
-          <div className="container mx-auto px-4 mb-8">
+          {/* Button positioned absolutely */}
+          <div className="absolute bottom-8 left-0 container mx-auto px-4">
             <button className="border-2 border-white text-white px-6 py-2 rounded-full hover:bg-white hover:text-blue-600 transition-colors">
               LET US GUIDE YOUR HOME
             </button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="absolute bottom-0 right-0 w-1/2">
+        {/* Stats positioned absolutely */}
+        <div className="absolute bottom-0 right-0 w-1/2 pl-30">
           <div className="relative">
-            {/* Diagonal white background */}
+            {/* Diagonal white background positioned absolutely */}
             <div 
               className="absolute bottom-0 right-0 w-full bg-white h-32 rounded-tl-3xl"
               style={{
@@ -410,28 +377,34 @@ const PropertiesPage = () => {
               }}
             ></div>
             
-            {/* Stats content */}
-            <div className="container mx-auto relative py-8">
-              <div className="grid grid-cols-3 gap-4 text-center">
+            {/* Stats content positioned absolutely */}
+            <div className="container mx-auto relative py-12 pl-20"> {/* reduced py-4 to py-2 and added pr-8 */}
+              <div className="grid grid-cols-3 gap-12 text-center"> {/* reduced gap-2 to gap-1 */}
                 <div>
-                  <div className="text-2xl font-bold">680</div>
-                  <div className="text-gray-600 text-xs">Awward Winning</div>
+                  <div className="text-2xl font-bold text-blue-600">680</div> {/* changed to blue-600 */}
+                  <div className="text-black text-xs -mt-1"> {/* changed from text-gray-600 to text-black */}
+                    Awward Winning
+                  </div>
                 </div>
 
                 <div>
-                  <div className="text-2xl font-bold">8K+</div>
-                  <div className="text-gray-600 text-xs">Happy Customer</div>
+                  <div className="text-2xl font-bold text-blue-600">8K+</div> {/* changed to blue-600 */}
+                  <div className="text-black text-xs -mt-1"> {/* changed from text-gray-600 to text-black */}
+                    Happy Customer
+                  </div>
                 </div>
 
                 <div>
-                  <div className="text-2xl font-bold">500+</div>
-                  <div className="text-gray-600 text-xs">Property Ready</div>
+                  <div className="text-2xl font-bold text-blue-600">500+</div> {/* changed to blue-600 */}
+                  <div className="text-black text-xs -mt-1"> {/* changed from text-gray-600 to text-black */}
+                    Property Ready
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Search Container */}
       <div className="bg-white shadow-md rounded-lg max-w-2xl mx-auto -mt-7 relative z-10 overflow-hidden">
@@ -517,9 +490,23 @@ const PropertiesPage = () => {
 
       {/* Featured Properties Section */}
       <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-1">Featured Properties</h2>
-          <p className="text-gray-600 mb-6 text-sm">Discover Your Dream Home Today</p>
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-5xl font-bold mb-4 text-black">
+            Featured Properties 
+            Discover Your<br />
+            <span className="relative inline-block">
+              <span className="text-blue-600 relative z-10">Dream Home Today</span>
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 100">
+                <circle className="animate-circle" cx="20" cy="50" r="3" fill="#3B82F6" />
+                <circle className="animate-circle" cx="40" cy="50" r="2" fill="#3B82F6" opacity="0.7" style={{ animationDelay: '0.2s' }} />
+                <circle className="animate-circle" cx="60" cy="50" r="2" fill="#3B82F6" opacity="0.5" style={{ animationDelay: '0.4s' }} />
+                <circle className="animate-circle" cx="80" cy="50" r="1" fill="#3B82F6" opacity="0.3" style={{ animationDelay: '0.6s' }} />
+              </svg>
+            </span>
+          </h2>
+          <p className="text-base text-gray-500 mb-8 max-w-3xl mx-auto line-clamp-2">
+            Explore a curated selection of stunning homes tailored to your lifestyle. From cozy city apartments to spacious family houses, our featured listings offer something for everyone. Start your journey to the perfect home with the best properties on the market right now.
+          </p>
 
           {/* Properties Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -553,34 +540,26 @@ const PropertiesPage = () => {
                   </button>
                 </div>
 
-                {/* Price */}
-                <div className="mt-2">
+                {/* Price and Details - Left aligned */}
+                <div className="mt-4 text-left">
                   <span className="text-gray-900 font-medium">{property.price}</span>
-                </div>
-
-                {/* Property Details */}
-                <div>
                   <h3 className="text-xl font-medium text-green-500">{property.name}</h3>
-                  <div className="flex items-center text-gray-500 mb-3">
+                  <div className="flex items-center text-gray-500">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-sm">{property.location}</span>
+                    {property.location}
                   </div>
 
-                  {/* Property Features */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center justify-center bg-gray-200 rounded-full py-2 px-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
-                      </svg>
-                      <span>{property.bedrooms} Bedrooms</span>
+                  {/* Property Features Boxes - Centered */}
+                  <div className="flex justify-center gap-12 mt-4">
+                    <div className="flex items-center px-12 py-2 bg-[#E5E5E5] rounded-full">
+                      <Bed className="h-4 w-4 text-gray-500 mr-2" />
+                      <span className="text-sm text-black">{property.bedrooms} Bedrooms</span>
                     </div>
-                    <div className="flex items-center justify-center bg-gray-200 rounded-full py-2 px-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd" />
-                      </svg>
-                      <span>{property.bathrooms} Bathrooms</span>
+                    <div className="flex items-center px-12 py-2 bg-[#E5E5E5] rounded-full">
+                      <Bath className="h-4 w-4 text-gray-500 mr-2" />
+                      <span className="text-sm text-black">{property.bathrooms} Bathrooms</span>
                     </div>
                   </div>
                 </div>
@@ -590,7 +569,7 @@ const PropertiesPage = () => {
 
           {/* Load More Button */}
           <div className="text-center mt-6">
-            <button className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-sm">
+            <button className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm">
               Load More
             </button>
           </div>
@@ -664,7 +643,7 @@ const PropertiesPage = () => {
 
           {/* Load More Button */}
           <div className="text-center mt-6">
-            <button className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-sm">
+            <button className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm">
               Load More
             </button>
           </div>
@@ -784,23 +763,25 @@ const PropertiesPage = () => {
 
 export default PropertiesPage;
 
+<style jsx>{`
+  @keyframes moveCircle {
+    0% {
+      transform: translateX(0);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(300px);
+      opacity: 0;
+    }
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  .animate-circle {
+    animation: moveCircle 3s infinite linear;
+  }
+`}</style>
 
 
 

@@ -50,3 +50,28 @@ body {
 .transition-all {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Add these styles for the animated circles */
+.animate-circle {
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+@keyframes moveCircle {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 0;
+  }
+  25% {
+    transform: translateX(100px) translateY(-10px);
+    opacity: 1;
+  }
+  75% {
+    transform: translateX(200px) translateY(10px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(300px) translateY(0);
+    opacity: 0;
+  }
+}
