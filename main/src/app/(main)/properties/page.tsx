@@ -335,13 +335,13 @@ const PropertiesPage = () => {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative h-[600px]">
+      <section className="relative h-[600px] overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop"
           alt="Hero Image"
           fill
           priority
-          className="object-cover"
+          className="object-cover rounded-bl-[50px]"
         />
         
         {/* Gradient overlay positioned absolutely */}
@@ -782,6 +782,10 @@ export default PropertiesPage;
     animation: moveCircle 3s infinite linear;
   }
 `}</style>
+
+
+
+
 
 
 
