@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Property } from '../types'; // Make sure to import your Property type
+import { Property } from '../types';
 
 export default function SearchResultsPage() {
   const searchParams = useSearchParams();
