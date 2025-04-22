@@ -4,6 +4,7 @@ import { Navbar, Footer } from "@/modules";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
+import { BottomNavigation } from '@/components/shared/BottomNavigation';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,35 +23,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <head>
-        <style>
-          {`
-            /* Hide scrollbar for Chrome, Safari and Opera */
-            ::-webkit-scrollbar {
-              display: none;
-            }
-            
-            /* Hide scrollbar for IE, Edge and Firefox */
-            html {
-              -ms-overflow-style: none;  /* IE and Edge */
-              scrollbar-width: none;  /* Firefox */
-            }
-          `}
-        </style>
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <AuthProvider>
-          <Toaster position="top-center" />
-          {children}
-          <Footer />
-        </AuthProvider>
+      <body>
+        {children}
+        <BottomNavigation />
+        <div className="pb-20" /> {/* Add padding at the bottom to prevent content from being hidden behind the navigation */}
       </body>
     </html>
   );

@@ -26,204 +26,7 @@ interface Property {
 }
 
 // Mock data
-const mockProperties: Property[] = [
-  {
-    id: 1,
-    title: 'Modern Villa with Garden',
-    type: 'Villa',
-    location: 'Whitefield, Bangalore',
-    price: '₹1.2 Cr',
-    priceNumeric: 12000000,
-    beds: 3,
-    baths: 2,
-    area: '2100 sq ft',
-    areaNumeric: 2100,
-    featured: true,
-    new: false,
-    description: 'Beautiful modern villa with spacious garden and premium amenities.',
-    amenities: ['Swimming Pool', 'Garden', 'Security', 'Parking', 'Gym'],
-    postedDate: '2 days ago'
-  },
-  {
-    id: 2,
-    title: 'Luxury Apartment',
-    type: 'Apartment',
-    location: 'Indiranagar, Bangalore',
-    price: '₹85 Lac',
-    priceNumeric: 8500000,
-    beds: 2,
-    baths: 2,
-    area: '1200 sq ft',
-    areaNumeric: 1200,
-    featured: true,
-    new: true,
-    description: 'Premium apartment with modern amenities in a prime location.',
-    amenities: ['24/7 Security', 'Parking', 'Gym', 'Club House'],
-    postedDate: '1 week ago'
-  },
-  {
-    id: 3,
-    title: 'Premium House',
-    type: 'House',
-    location: 'HSR Layout, Bangalore',
-    price: '₹1.5 Cr',
-    priceNumeric: 15000000,
-    beds: 4,
-    baths: 3,
-    area: '2800 sq ft',
-    areaNumeric: 2800,
-    featured: false,
-    new: false,
-    description: 'Spacious house with modern design and premium finishes.',
-    amenities: ['Garden', 'Parking', 'Security'],
-    postedDate: '3 days ago'
-  },
-  {
-    id: 4,
-    title: 'Commercial Space',
-    type: 'Commercial',
-    location: 'MG Road, Bangalore',
-    price: '₹2.5 Cr',
-    priceNumeric: 25000000,
-    area: '3500 sq ft',
-    areaNumeric: 3500,
-    featured: false,
-    new: true,
-    description: 'Prime commercial space suitable for office or retail.',
-    amenities: ['24/7 Access', 'Parking', 'Security', 'Power Backup'],
-    postedDate: '1 day ago'
-  },
-  {
-    id: 5,
-    title: 'Residential Plot',
-    type: 'Plot',
-    location: 'Electronic City, Bangalore',
-    price: '₹70 Lac',
-    priceNumeric: 7000000,
-    area: '1800 sq ft',
-    areaNumeric: 1800,
-    featured: false,
-    new: false,
-    description: 'BMRDA approved residential plot in a gated community.',
-    amenities: ['Gated Community', 'Park', 'Water Supply'],
-    postedDate: '2 weeks ago'
-  },
-  {
-    id: 6,
-    title: 'Penthouse Apartment',
-    type: 'Apartment',
-    location: 'Koramangala, Bangalore',
-    price: '₹2.8 Cr',
-    priceNumeric: 28000000,
-    beds: 4,
-    baths: 4,
-    area: '3200 sq ft',
-    areaNumeric: 3200,
-    featured: true,
-    new: false,
-    description: 'Luxurious penthouse with panoramic city views and premium amenities.',
-    amenities: ['Terrace Garden', 'Private Elevator', 'Swimming Pool', 'Gym', 'Spa'],
-    postedDate: '5 days ago'
-  },
-  {
-    id: 7,
-    title: 'Budget Apartment',
-    type: 'Apartment',
-    location: 'Marathahalli, Bangalore',
-    price: '₹45 Lac',
-    priceNumeric: 4500000,
-    beds: 1,
-    baths: 1,
-    area: '650 sq ft',
-    areaNumeric: 650,
-    featured: false,
-    new: true,
-    description: 'Affordable apartment perfect for first-time buyers or investors.',
-    amenities: ['Security', 'Parking', 'Park'],
-    postedDate: '1 week ago'
-  },
-  {
-    id: 8,
-    title: 'Luxury Villa',
-    type: 'Villa',
-    location: 'Sarjapur Road, Bangalore',
-    price: '₹3.5 Cr',
-    priceNumeric: 35000000,
-    beds: 5,
-    baths: 5,
-    area: '4500 sq ft',
-    areaNumeric: 4500,
-    featured: true,
-    new: false,
-    description: 'Exquisite villa with premium finishes and extensive landscaped garden.',
-    amenities: ['Private Pool', 'Garden', 'Home Theater', 'Smart Home', 'Security'],
-    postedDate: '3 days ago'
-  },
-  {
-    id: 9,
-    title: 'Office Space',
-    type: 'Commercial',
-    location: 'Whitefield, Bangalore',
-    price: '₹1.8 Cr',
-    priceNumeric: 18000000,
-    area: '2200 sq ft',
-    areaNumeric: 2200,
-    featured: false,
-    new: false,
-    description: 'Ready-to-move office space in a premium business park.',
-    amenities: ['24/7 Access', 'Conference Room', 'Cafeteria', 'Parking'],
-    postedDate: '1 month ago'
-  },
-  {
-    id: 10,
-    title: 'Farm House',
-    type: 'House',
-    location: 'Kanakapura Road, Bangalore',
-    price: '₹4.2 Cr',
-    priceNumeric: 42000000,
-    beds: 4,
-    baths: 4,
-    area: '10000 sq ft',
-    areaNumeric: 10000,
-    featured: true,
-    new: true,
-    description: 'Spacious farm house with organic garden and modern amenities.',
-    amenities: ['Swimming Pool', 'Organic Garden', 'Guest House', 'Parking'],
-    postedDate: '2 days ago'
-  },
-  {
-    id: 11,
-    title: 'Premium Apartment',
-    type: 'Apartment',
-    location: 'JP Nagar, Bangalore',
-    price: '₹95 Lac',
-    priceNumeric: 9500000,
-    beds: 3,
-    baths: 2,
-    area: '1500 sq ft',
-    areaNumeric: 1500,
-    featured: false,
-    new: false,
-    description: 'Well-designed apartment with modern amenities in a prime location.',
-    amenities: ['Swimming Pool', 'Gym', 'Club House', 'Children\'s Play Area'],
-    postedDate: '1 week ago'
-  },
-  {
-    id: 12,
-    title: 'Commercial Plot',
-    type: 'Plot',
-    location: 'Hebbal, Bangalore',
-    price: '₹3.2 Cr',
-    priceNumeric: 32000000,
-    area: '5000 sq ft',
-    areaNumeric: 5000,
-    featured: false,
-    new: false,
-    description: 'Prime commercial plot suitable for retail or office development.',
-    amenities: ['Main Road Access', 'Commercial Zone', 'All Utilities'],
-    postedDate: '2 weeks ago'
-  }
-];
+import { mockProperties } from './mockData';
 
 const searchSuggestions = [
   "2 BHK property near me",
@@ -238,6 +41,8 @@ const searchSuggestions = [
   "Ready to move property"
 ];
 
+import { PropertyCard } from './components/PropertyCard';
+
 const PropertiesPage = () => {
   // State for filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -248,6 +53,41 @@ const PropertiesPage = () => {
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>(mockProperties);
+
+  // New states
+  const [isSearchView, setIsSearchView] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Handle search button click
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log('Search clicked!');
+    
+    if (isMobile) {
+      // For mobile: redirect to search page
+      window.location.href = `/properties/search?q=${searchTerm}`;
+    } else {
+      // For desktop: show search results in current page
+      setIsSearchView(true);
+      const filtered = mockProperties.filter(property =>
+        property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        property.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        property.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredProperties(filtered);
+    }
+  };
 
   // Animation effect
   useEffect(() => {
@@ -265,9 +105,21 @@ const PropertiesPage = () => {
   }, [isFocused]);
 
   // State for filtered and paginated properties
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>(mockProperties);
   const [currentPage, setCurrentPage] = useState(1);
   const propertiesPerPage = 6;
+
+  // Add these state variables at the top of your component
+  const [visibleProperties, setVisibleProperties] = useState(6);
+  const [visibleLandProperties, setVisibleLandProperties] = useState(6);
+
+  // Add these handler functions
+  const handleLoadMore = () => {
+    setVisibleProperties(prev => prev + 6);
+  };
+
+  const handleLoadMoreLands = () => {
+    setVisibleLandProperties(prev => prev + 6);
+  };
 
   // Apply filters and sorting
   useEffect(() => {
@@ -446,7 +298,7 @@ const PropertiesPage = () => {
         </div>
 
         {/* Bottom Search Area */}
-        <div className="flex p-2 items-center gap-2">
+        <form onSubmit={handleSearch} className="flex p-2 items-center gap-2">
           {/* Dropdown */}
           <div className="relative">
             <select 
@@ -466,12 +318,9 @@ const PropertiesPage = () => {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             {!searchTerm && !isFocused && (
-              <div 
-                className={`absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm
-                  transition-all duration-1000 ease-in-out
-                  ${isAnimatingOut 
-                    ? 'translate-y-[200%] opacity-0' 
-                    : '-translate-y-1/2 opacity-100'}`}
+              <div className={`absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm
+                transition-all duration-1000 ease-in-out
+                ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
               >
                 {searchSuggestions[currentSuggestionIndex]}
               </div>
@@ -489,12 +338,12 @@ const PropertiesPage = () => {
 
           {/* Search Button */}
           <button 
-            className="px-6 py-2 bg-blue-400 text-white font-medium hover:bg-blue-500 transition-colors rounded-md"
-            onClick={() => {/* handle search */}}
+            type="submit"
+            className="px-6 py-2 bg-blue-400 text-white font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
           >
             Search
           </button>
-        </div>
+        </form>
       </div>
 
       {/* Featured Properties Section */}
@@ -517,68 +366,22 @@ const PropertiesPage = () => {
             Explore a curated selection of stunning homes tailored to your lifestyle. From cozy city apartments to spacious family houses, our featured listings offer something for everyone. Start your journey to the perfect home with the best properties on the market right now.
           </p>
 
-          {/* Properties Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { id: 1, image: "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?q=80&w=1470&auto=format&fit=crop", price: "$499", name: "Harmony House", location: "16558 Romaguera Inlet", bedrooms: 2, bathrooms: 2 },
-              { id: 2, image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=1470&auto=format&fit=crop", price: "$699", name: "Blissful Abode", location: "51066 Luettgen Mission", bedrooms: 4, bathrooms: 3 },
-              { id: 3, image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop", price: "$899", name: "Enchanted Villa", location: "33925 Trantow Creek", bedrooms: 6, bathrooms: 4 },
-              { id: 4, image: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?q=80&w=1470&auto=format&fit=crop", price: "$499", name: "Harmony House", location: "16558 Romaguera Inlet", bedrooms: 2, bathrooms: 2 },
-              { id: 5, image: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?q=80&w=1470&auto=format&fit=crop", price: "$699", name: "Blissful Abode", location: "51066 Luettgen Mission", bedrooms: 4, bathrooms: 3 },
-              { id: 6, image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1470&auto=format&fit=crop", price: "$899", name: "Enchanted Villa", location: "33925 Trantow Creek", bedrooms: 6, bathrooms: 4 },
-            ].map((property) => (
-              <div key={property.id} className="relative overflow-hidden">
-                {/* Property Image */}
-                <div className="relative rounded-lg overflow-hidden">
-                  <img
-                    src={property.image}
-                    alt="Property"
-                    className="w-full h-64 object-cover"
-                  />
-                  <button className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-
-                  {/* Plus Button */}
-                  <button className="absolute bottom-2 right-2 p-3 bg-blue-500 rounded-lg shadow-sm hover:bg-blue-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Price and Details - Left aligned */}
-                <div className="mt-4 text-left">
-                  <span className="text-gray-900 font-medium">{property.price}</span>
-                  <h3 className="text-xl font-medium text-green-500">{property.name}</h3>
-                  <div className="flex items-center text-gray-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    {property.location}
-                  </div>
-
-                  {/* Property Features Boxes - Centered */}
-                  <div className="flex justify-center gap-12 mt-4">
-                    <div className="flex items-center px-12 py-2 bg-[#E5E5E5] rounded-full">
-                      <Bed className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-black">{property.bedrooms} Bedrooms</span>
-                    </div>
-                    <div className="flex items-center px-12 py-2 bg-[#E5E5E5] rounded-full">
-                      <Bath className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-black">{property.bathrooms} Bathrooms</span>
-                    </div>
-                  </div>
-                </div>
+              {/* Properties Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {mockProperties
+                  .filter(property => property.type !== 'Plot') // Filter out plots for regular properties
+                  .slice(0, visibleProperties)
+                  .map((property) => (
+                    <PropertyCard key={property.id} property={property} />
+                  ))}
               </div>
-            ))}
-          </div>
 
           {/* Load More Button */}
           <div className="text-center mt-6">
-            <button className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm">
+            <button 
+              onClick={handleLoadMore}
+              className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm"
+            >
               Load More
             </button>
           </div>
@@ -606,62 +409,20 @@ const PropertiesPage = () => {
 
           {/* Properties Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { id: 1, image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1632&auto=format&fit=crop", price: "$299", name: "Sarjapur Land", location: "Sarjapur, Bangalore", area: "1200 sqft" },
-              { id: 2, image: "https://images.unsplash.com/photo-1628624747186-a941c476b7ef?q=80&w=1470&auto=format&fit=crop", price: "$399", name: "Whitefield Plot", location: "Whitefield, Bangalore", area: "1800 sqft" },
-              { id: 3, image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1632&auto=format&fit=crop", price: "$299", name: "Sarjapur Land", location: "Sarjapur, Bangalore", area: "1200 sqft" },
-              { id: 4, image: "https://images.unsplash.com/photo-1628624747186-a941c476b7ef?q=80&w=1470&auto=format&fit=crop", price: "$399", name: "Whitefield Plot", location: "Whitefield, Bangalore", area: "1800 sqft" },
-            ].map((property) => (
-              <div key={property.id} className="relative overflow-hidden">
-                {/* Property Image */}
-                <div className="relative rounded-lg overflow-hidden">
-                  <img
-                    src={property.image}
-                    alt="Land Property"
-                    className="w-full h-64 object-cover"
-                  />
-                  <button className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-
-                  {/* Plus Button */}
-                  <button className="absolute bottom-2 right-2 p-3 bg-blue-500 rounded-lg shadow-sm hover:bg-blue-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Price */}
-                <div className="mt-2">
-                  <span className="text-gray-900 font-medium">{property.price}</span>
-                </div>
-
-                {/* Property Details */}
-                <div>
-                  <h3 className="text-xl font-medium text-green-500">{property.name}</h3>
-                  <div className="flex items-center text-gray-500 mb-3">
-                    <MapPin className="h-4 w-4 text-amber-500 mr-1" />
-                    <span className="text-sm">{property.location}</span>
-                  </div>
-
-                  {/* Property Features */}
-                  <div className="grid grid-cols-1 gap-2">
-                    <div className="flex items-center justify-center bg-[#E5E5E5] rounded-full py-2 px-4">
-                      <MapPin className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-black">{property.area}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {mockProperties
+              .filter(property => property.type === 'Plot') // Only show plots
+              .slice(0, visibleLandProperties)
+              .map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
           </div>
 
-          {/* Load More Button */}
+          {/* Load More Button for Lands */}
           <div className="text-center mt-6">
-            <button className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm">
+            <button 
+              onClick={handleLoadMoreLands}
+              className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm"
+            >
               Load More
             </button>
           </div>
@@ -845,6 +606,24 @@ export default PropertiesPage;
     caret-width: 2px;
   }
 `}</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
