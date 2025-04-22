@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Navbar } from "@/modules";
+import { Navbar, Footer } from "@/modules";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
@@ -49,6 +49,7 @@ export default function RootLayout({
         <AuthProvider>
           <Toaster position="top-center" />
           {children}
+          <Footer />
         </AuthProvider>
       </body>
     </html>

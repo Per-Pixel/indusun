@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronDown, Search, Bed, Bath } from 'lucide-react';
+import { ChevronDown, Search, Bed, Bath, Square, MapPin, Phone, Mail, Sparkles } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 // Types
 interface Property {
@@ -246,19 +247,22 @@ const PropertiesPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Animation effect
   useEffect(() => {
+    if (isFocused) return; // Don't animate if input is focused
+    
     const interval = setInterval(() => {
       setIsAnimatingOut(true);
       setTimeout(() => {
         setCurrentSuggestionIndex((prev) => (prev + 1) % searchSuggestions.length);
         setIsAnimatingOut(false);
-      }, 800); // Increased duration for smoother transition
-    }, 4000); // Increased interval to give more time to read
+      }, 800);
+    }, 4000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isFocused]);
 
   // State for filtered and paginated properties
   const [filteredProperties, setFilteredProperties] = useState<Property[]>(mockProperties);
@@ -359,9 +363,12 @@ const PropertiesPage = () => {
 
           {/* Button positioned absolutely */}
           <div className="absolute bottom-8 left-0 container mx-auto px-4">
-            <button className="border-2 border-white text-white px-6 py-2 rounded-full hover:bg-white hover:text-blue-600 transition-colors">
+            <Link 
+              href="/contact" 
+              className="inline-block border-2 border-white text-white px-6 py-2 rounded-full hover:bg-white hover:text-blue-600 transition-colors"
+            >
               LET US GUIDE YOUR HOME
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -458,7 +465,7 @@ const PropertiesPage = () => {
           {/* Search Input */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            {!searchTerm && (
+            {!searchTerm && !isFocused && (
               <div 
                 className={`absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm
                   transition-all duration-1000 ease-in-out
@@ -473,8 +480,10 @@ const PropertiesPage = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 focus:outline-none focus:border-blue-500"
-              placeholder=""
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className={`w-full pl-10 pr-4 py-2 focus:outline-none bg-transparent text-black
+                ${isFocused ? 'caret-blue-500 animate-caret' : ''}`}
             />
           </div>
 
@@ -546,7 +555,7 @@ const PropertiesPage = () => {
                   <h3 className="text-xl font-medium text-green-500">{property.name}</h3>
                   <div className="flex items-center text-gray-500">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
                     {property.location}
                   </div>
@@ -579,8 +588,21 @@ const PropertiesPage = () => {
       {/* Featured Lands Properties Section */}
       <section className="py-8 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-1">Featured Lands Properties</h2>
-          <p className="text-gray-600 mb-6 text-sm">Discover Your Dreams Today</p>
+          <h2 className="text-5xl font-bold mb-4 text-black">
+            Featured Lands Properties<br />
+            <span className="relative inline-block">
+              <span className="text-blue-600 relative z-10">Discover Your Dreams Today</span>
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 100">
+                <circle className="animate-circle" cx="20" cy="50" r="3" fill="#3B82F6" />
+                <circle className="animate-circle" cx="40" cy="50" r="2" fill="#3B82F6" opacity="0.7" style={{ animationDelay: '0.2s' }} />
+                <circle className="animate-circle" cx="60" cy="50" r="2" fill="#3B82F6" opacity="0.5" style={{ animationDelay: '0.4s' }} />
+                <circle className="animate-circle" cx="80" cy="50" r="1" fill="#3B82F6" opacity="0.3" style={{ animationDelay: '0.6s' }} />
+              </svg>
+            </span>
+          </h2>
+          <p className="text-base text-gray-500 mb-8 max-w-3xl line-clamp-2">
+            Explore a curated selection of premium land properties tailored to your investment needs. From residential plots to commercial lands, our featured listings offer the best opportunities in the market right now.
+          </p>
 
           {/* Properties Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -621,19 +643,15 @@ const PropertiesPage = () => {
                 <div>
                   <h3 className="text-xl font-medium text-green-500">{property.name}</h3>
                   <div className="flex items-center text-gray-500 mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                    </svg>
+                    <MapPin className="h-4 w-4 text-amber-500 mr-1" />
                     <span className="text-sm">{property.location}</span>
                   </div>
 
                   {/* Property Features */}
                   <div className="grid grid-cols-1 gap-2">
-                    <div className="flex items-center justify-center bg-gray-200 rounded-full py-2 px-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
-                      <span>{property.area}</span>
+                    <div className="flex items-center justify-center bg-[#E5E5E5] rounded-full py-2 px-4">
+                      <MapPin className="h-4 w-4 text-gray-500 mr-2" />
+                      <span className="text-sm text-black">{property.area}</span>
                     </div>
                   </div>
                 </div>
@@ -651,110 +669,146 @@ const PropertiesPage = () => {
       </section>
 
       {/* Contact Form Section */}
-      <section className="py-8 bg-pink-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6 text-center">Let's make it happen!</h2>
-            <p className="text-gray-600 text-sm mb-6 text-center">Fill out the form below and our team will get back to you as soon as possible</p>
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="h-6 w-6 text-gray-800" />
+            <h2 className="text-4xl font-bold text-black">Let's make it happen!</h2>
+            <Sparkles className="h-6 w-6 text-gray-800" />
+          </div>
+          <p className="text-gray-600 mb-12">
+            Ready to take the first step toward your dream property? Fill out the form below, and our real estate wizards will work their magic to find your perfect match. Don't wait; let's embark on this exciting journey together.
+          </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left Column - Form */}
-              <div className="grid grid-cols-1 gap-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                    placeholder="First Name"
-                  />
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                    placeholder="Last Name"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="email"
-                    className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                    placeholder="Email Address"
-                  />
-                  <input
-                    type="tel"
-                    className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                    placeholder="Phone Number"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <select className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm">
-                    <option>Contact Method</option>
-                    <option>Email</option>
-                    <option>Phone</option>
-                  </select>
-                  <select className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm">
-                    <option>Property Type</option>
-                    <option>Residential</option>
-                    <option>Commercial</option>
-                    <option>Land</option>
-                  </select>
-                </div>
-
-                <textarea
-                  className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white h-24 text-sm"
-                  placeholder="Message"
-                ></textarea>
-
-                <button className="w-full bg-pink-600 text-white py-2 px-4 rounded-md hover:bg-pink-700 transition-colors text-sm">
-                  Send Message
-                </button>
-              </div>
-
-              {/* Right Column - Contact Info */}
-              <div className="grid grid-cols-1 gap-3">
+          <form className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm text-black mb-2">First Name</label>
                 <input
                   type="text"
-                  className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                  placeholder="Address"
+                  placeholder="Enter First Name"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
                 />
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                    placeholder="City"
-                  />
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                    placeholder="State"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                    placeholder="Zip Code"
-                  />
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                    placeholder="Country"
-                  />
-                </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    className="w-full p-2 pl-8 border border-pink-200 rounded-md focus:outline-none bg-white text-sm"
-                    placeholder="Search for location"
-                  />
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 absolute left-2 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <div className="h-32 bg-gray-200 rounded-md"></div>
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Last Name</label>
+                <input
+                  type="text"
+                  placeholder="Enter Last Name"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Email</label>
+                <input
+                  type="email"
+                  placeholder="Enter your Email"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Phone</label>
+                <input
+                  type="tel"
+                  placeholder="Enter Phone Number"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
               </div>
             </div>
-          </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm text-black mb-2">Preferred Location</label>
+                <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                  <option value="">Select Location</option>
+                  {/* Add location options */}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Property Type</label>
+                <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                  <option value="">Select Property Type</option>
+                  {/* Add property type options */}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">No. of Bathrooms</label>
+                <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                  <option value="">Select no. of Bathrooms</option>
+                  {/* Add bathroom options */}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">No. of Bedrooms</label>
+                <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                  <option value="">Select no. of Bedrooms</option>
+                  {/* Add bedroom options */}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-black mb-2">Budget</label>
+              <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                <option value="">Select Budget</option>
+                {/* Add budget options */}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm text-black mb-2">Preferred Contact Method</label>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black">
+                    <Phone className="h-5 w-5 text-gray-500 mr-2" />
+                    <input
+                      type="tel"
+                      placeholder="Enter Your Number"
+                      className="bg-transparent w-full focus:outline-none placeholder:text-gray-600/70 text-black"
+                    />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black">
+                    <Mail className="h-5 w-5 text-gray-500 mr-2" />
+                    <input
+                      type="email"
+                      placeholder="Enter Your Email"
+                      className="bg-transparent w-full focus:outline-none placeholder:text-gray-600/70 text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-black mb-2">Message</label>
+              <textarea
+                placeholder="Enter your Message here."
+                rows={6}
+                className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+              ></textarea>
+            </div>
+
+            {/* Terms and Send Message button container */}
+            <div className="flex items-center justify-between">
+              {/* Terms agreement */}
+              <div className="flex items-start gap-2">
+                <input type="checkbox" className="mt-1" />
+                <p className="text-sm text-black">
+                  I agree with <a href="#" className="underline">Terms of Use</a> and <a href="#" className="underline">Privacy Policy</a>
+                </p>
+              </div>
+
+              {/* Send Message button */}
+              <button
+                type="submit"
+                className="px-8 py-3 bg-[#7C3AED] text-white rounded-lg font-medium hover:bg-[#6D28D9] transition-colors"
+              >
+                Send Your Message
+              </button>
+            </div>
+          </form>
         </div>
       </section>
     </div>
@@ -781,25 +835,15 @@ export default PropertiesPage;
   .animate-circle {
     animation: moveCircle 3s infinite linear;
   }
+
+  @keyframes caret {
+    50% { opacity: 0; }
+  }
+  
+  .animate-caret {
+    caret-color: #3B82F6;
+    caret-width: 2px;
+  }
 `}</style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
