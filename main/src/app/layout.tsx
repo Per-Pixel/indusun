@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Navbar, Footer } from "@/modules";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import { BottomNavigation } from '@/components/shared/BottomNavigation';
@@ -29,9 +29,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
-        <BottomNavigation />
-        <div className="pb-20" /> {/* Add padding at the bottom to prevent content from being hidden behind the navigation */}
+        <AuthProvider>
+          {children}
+          <BottomNavigation />
+          <div className="pb-20" />
+        </AuthProvider>
       </body>
     </html>
   );
