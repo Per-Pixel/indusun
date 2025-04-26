@@ -1,35 +1,60 @@
 'use client';
 
 import Link from 'next/link';
-import { Bed, Bath } from 'lucide-react';
+import { Bed, Bath, Clock } from 'lucide-react';
 import { Property } from '@/types/property';
+import { formatTimeAgo } from '@/utils/dateUtils';
 
-export const PropertyCard = ({ property }: { property: Property }) => {
+interface PropertyCardProps {
+  property: Property & {
+    views?: number;
+    listedDate: string;
+    featured?: boolean;
+  };
+}
+
+export const PropertyCard = ({ property }: PropertyCardProps) => {
+  const isHighlyViewed = property.views && property.views > 1000;
+  // Only show featured tag if property is featured AND not highly viewed
+  const showFeatured = property.featured && !isHighlyViewed;
+  const hasTags = showFeatured || isHighlyViewed;
+
   return (
     <Link href={`/properties/${property.id}`}>
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden group">
         {/* Property Image */}
         <div className="relative rounded-lg overflow-hidden">
           <img
             src={property.image}
             alt={property.title}
-            className="w-full h-64 object-cover"
+            className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          <button className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white">
+          
+          {/* Tags Container - Only render if there are tags */}
+          {hasTags && (
+            <div className="absolute top-3 left-3 flex flex-col gap-2">
+              {showFeatured && (
+                <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full font-medium">
+                  Featured
+                </span>
+              )}
+              {isHighlyViewed && (
+                <span className="bg-[#00C951] text-white text-xs px-3 py-1 rounded-full font-medium">
+                  Most Viewed
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Heart Button */}
+          <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </button>
-
-          {/* Plus Button */}
-          <button className="absolute bottom-2 right-2 p-3 bg-blue-500 rounded-lg shadow-sm hover:bg-blue-600">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          </button>
         </div>
 
-        {/* Price and Details - Flex container for desktop alignment */}
+        {/* Price and Details */}
         <div className="mt-4">
           <div className="flex flex-col md:flex-row md:justify-between md:items-start">
             <div>
@@ -41,11 +66,19 @@ export const PropertyCard = ({ property }: { property: Property }) => {
                 {property.location}
               </div>
             </div>
-            <span className="text-blue-600 font-medium text-xl md:text-2xl md:text-right mt-2 md:mt-0">{property.price}</span>
+            <span className="text-blue-600 font-medium text-xl md:text-2xl md:text-right mt-2 md:mt-0">
+              {property.price}
+            </span>
           </div>
 
-          {/* Property Features Boxes - Centered */}
-          <div className="flex justify-center gap-12 mt-4">
+          {/* Listed Time */}
+          <div className="flex items-center justify-end mt-4 mb-3 text-sm text-gray-500">
+            <Clock className="h-4 w-4 mr-1" />
+            <span>Listed {formatTimeAgo(property.listedDate)}</span>
+          </div>
+
+          {/* Property Features Boxes */}
+          <div className="flex justify-center gap-12">
             {property.beds && (
               <div className="flex items-center px-12 py-2 bg-[#E5E5E5] rounded-full">
                 <Bed className="h-4 w-4 text-gray-500 mr-2" />
@@ -64,6 +97,10 @@ export const PropertyCard = ({ property }: { property: Property }) => {
     </Link>
   );
 };
+
+
+
+
 
 
 

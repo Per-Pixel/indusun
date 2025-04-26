@@ -15,6 +15,8 @@ export interface Property {
   new?: boolean;
   amenities: string[];
   postedDate: string;
+  views?: number;
+  listedDate?: string;
 }
 
 export const mockProperties: Property[] = [
@@ -31,10 +33,10 @@ export const mockProperties: Property[] = [
     areaNumeric: 2000,
     beds: 3,
     baths: 2,
-    featured: true,
-    new: true,
-    amenities: ['Swimming Pool', 'Garden', 'Security'],
-    postedDate: '2 days ago'
+    featured: true, // This one is featured
+    views: 1200, // This one is highly viewed
+    listedDate: '2024-01-15', // Recent date
+    amenities: ['Swimming Pool', 'Garden', 'Security']
   },
   {
     id: '2',
@@ -49,10 +51,10 @@ export const mockProperties: Property[] = [
     areaNumeric: 3500,
     beds: 4,
     baths: 3,
-    featured: true,
-    new: false,
-    amenities: ['Swimming Pool', 'Garden', 'Security'],
-    postedDate: '1 week ago'
+    featured: false, // This one is not featured
+    views: 800, // This one is not highly viewed
+    listedDate: '2024-01-01',
+    amenities: ['Swimming Pool', 'Garden', 'Security']
   },
   {
     id: '3',
@@ -531,9 +533,41 @@ export const mockProperties: Property[] = [
     new: true,
     amenities: ['Prime Location', 'Ready for Construction'],
     postedDate: '2 weeks ago'
+  },
+  {
+    id: 'land1',
+    type: 'Plot',
+    title: 'Premium Plot in Whitefield',
+    location: 'Whitefield, Bangalore',
+    price: '₹80 Lac',
+    priceNumeric: 8000000,
+    area: '1200 sq ft',
+    areaNumeric: 1200,
+    featured: true,
+    views: 800, // Will show Featured tag
+    listedDate: '2024-01-20',
+    description: 'Premium corner plot in gated community',
+    amenities: ['Corner Plot', 'Gated Community']
+  },
+  {
+    id: 'land2',
+    type: 'Plot',
+    title: 'Commercial Plot',
+    location: 'Electronic City, Bangalore',
+    price: '₹1.5 Cr',
+    priceNumeric: 15000000,
+    area: '2000 sq ft',
+    areaNumeric: 2000,
+    featured: true,
+    views: 1500, // Will show Most Viewed tag instead of Featured
+    listedDate: '2024-01-15',
+    description: 'Prime commercial plot',
+    amenities: ['Commercial Zone', 'Main Road']
   }
   // Add more properties as needed...
 ];
+
+
 
 
 
