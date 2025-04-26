@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { ChevronDown, Search, Bed, Bath, Square, MapPin, Phone, Mail, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FilterDropdown } from '@/components/properties/FilterDropdown';
 
 // Types
 interface Property {
@@ -42,6 +44,16 @@ const searchSuggestions = [
 ];
 
 import { PropertyCard } from './components/PropertyCard';
+
+const buttonVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  hover: { 
+    scale: 1.02,
+    transition: { duration: 0.2 }
+  },
+  tap: { scale: 0.98 }
+};
 
 const PropertiesPage = () => {
   // State for filters
@@ -188,6 +200,20 @@ const PropertiesPage = () => {
     }
   };
 
+  // Add these animation variants
+  const dropdownVariants = {
+    hidden: { 
+      opacity: 0,
+      y: -5,
+      transition: { duration: 0.2 }
+    },
+    visible: { 
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.2 }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Hero Section */}
@@ -269,32 +295,56 @@ const PropertiesPage = () => {
       <div className="bg-white shadow-md rounded-lg max-w-2xl mx-auto -mt-7 relative z-10 overflow-hidden">
         {/* Top Navigation Area */}
         <div className="flex justify-between bg-blue-600 text-white">
-          <button 
-            className={`flex-1 px-4 py-4 text-center text-base font-medium ${propertyType === 'buy' ? 'bg-blue-700' : ''} hover:bg-blue-700 transition-colors`}
+          <motion.button
+            key="buy"
+            whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+              ${propertyType === 'buy' ? 'bg-blue-700' : ''} 
+              transition-colors`}
             onClick={() => setPropertyType('buy')}
           >
             Buy
-          </button>
-          <button 
-            className={`flex-1 px-4 py-4 text-center text-base font-medium ${propertyType === 'new' ? 'bg-blue-700' : ''} hover:bg-blue-700 transition-colors flex items-center justify-center`}
+          </motion.button>
+          <motion.button
+            key="new"
+            whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+              ${propertyType === 'new' ? 'bg-blue-700' : ''} 
+              transition-colors`}
+            onClick={() => setPropertyType('new')}
           >
             New Launch<span className="text-red-500 text-xs ml-1">*</span>
-          </button>
-          <button 
-            className={`flex-1 px-4 py-4 text-center text-base font-medium ${propertyType === 'commercial' ? 'bg-blue-700' : ''} hover:bg-blue-700 transition-colors`}
+          </motion.button>
+          <motion.button
+            key="commercial"
+            whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+              ${propertyType === 'commercial' ? 'bg-blue-700' : ''} 
+              transition-colors`}
+            onClick={() => setPropertyType('commercial')}
           >
             Commercials
-          </button>
-          <button 
-            className={`flex-1 px-4 py-4 text-center text-base font-medium ${propertyType === 'plots' ? 'bg-blue-700' : ''} hover:bg-blue-700 transition-colors`}
+          </motion.button>
+          <motion.button
+            key="plots"
+            whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+              ${propertyType === 'plots' ? 'bg-blue-700' : ''} 
+              transition-colors`}
+            onClick={() => setPropertyType('plots')}
           >
             Plots/Land
-          </button>
-          <button 
-            className={`flex-1 px-4 py-4 text-center text-base font-medium ${propertyType === 'projects' ? 'bg-blue-700' : ''} hover:bg-blue-700 transition-colors`}
+          </motion.button>
+          <motion.button
+            key="projects"
+            whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+              ${propertyType === 'projects' ? 'bg-blue-700' : ''} 
+              transition-colors`}
+            onClick={() => setPropertyType('projects')}
           >
             Projects
-          </button>
+          </motion.button>
         </div>
 
         {/* Bottom Search Area */}
@@ -317,14 +367,21 @@ const PropertiesPage = () => {
           {/* Search Input */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            {!searchTerm && !isFocused && (
-              <div className={`absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm
-                transition-all duration-1000 ease-in-out
-                ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
-              >
-                {searchSuggestions[currentSuggestionIndex]}
-              </div>
-            )}
+            <AnimatePresence>
+              {!searchTerm && !isFocused && (
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  variants={dropdownVariants}
+                  className={`absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm
+                    transition-all duration-1000 ease-in-out
+                    ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
+                >
+                  {searchSuggestions[currentSuggestionIndex]}
+                </motion.div>
+              )}
+            </AnimatePresence>
             <input
               type="text"
               value={searchTerm}
@@ -345,6 +402,21 @@ const PropertiesPage = () => {
           </button>
         </form>
       </div>
+
+      {/* Filter Dropdowns - Add motion */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={dropdownVariants}
+            className="filter-dropdowns"
+          >
+            {/* Keep your existing filter content */}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Featured Properties Section */}
       <section className="py-8 bg-white">
@@ -377,14 +449,21 @@ const PropertiesPage = () => {
               </div>
 
           {/* Load More Button */}
-          <div className="text-center mt-6">
-            <button 
-              onClick={handleLoadMore}
-              className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm"
-            >
-              Load More
-            </button>
-          </div>
+          {mockProperties.filter(property => property.type !== 'Plot').length > visibleProperties && (
+            <div className="text-center mt-6">
+              <motion.button 
+                variants={buttonVariants}
+                initial="initial"
+                animate="animate"
+                whileHover="hover"
+                whileTap="tap"
+                onClick={handleLoadMore}
+                className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm"
+              >
+                Load More
+              </motion.button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -418,14 +497,21 @@ const PropertiesPage = () => {
           </div>
 
           {/* Load More Button for Lands */}
-          <div className="text-center mt-6">
-            <button 
-              onClick={handleLoadMoreLands}
-              className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm"
-            >
-              Load More
-            </button>
-          </div>
+          {mockProperties.filter(property => property.type === 'Plot').length > visibleLandProperties && (
+            <div className="text-center mt-6">
+              <motion.button 
+                variants={buttonVariants}
+                initial="initial"
+                animate="animate"
+                whileHover="hover"
+                whileTap="tap"
+                onClick={handleLoadMoreLands}
+                className="px-12 py-4 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm"
+              >
+                Load More
+              </motion.button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -606,6 +692,13 @@ export default PropertiesPage;
     caret-width: 2px;
   }
 `}</style>
+
+
+
+
+
+
+
 
 
 

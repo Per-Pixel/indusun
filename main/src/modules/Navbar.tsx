@@ -1,21 +1,74 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 // Custom Hamburger Menu Component
 const HamburgerMenu = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const menuVariants = {
+    closed: {
+      opacity: 0,
+      y: "-100%",
+      transition: {
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1]
+      }
+    },
+    open: {
+      opacity: 1,
+      y: "0%",
+      transition: {
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1]
+      }
+    }
+  };
+
   return (
-    <button className="text-white hover:text-gray-200 transition-colors p-2 relative w-6 h-6">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 flex flex-col gap-[6px]">
-        <span className="w-6.5 h-[4px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></span>
-        <span className="w-5 h-[3px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></span>
-        <span className="w-6.5 h-[4px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></span>
-      </div>
-    </button>
+    <>
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="text-white hover:text-gray-200 transition-colors p-2 relative w-6 h-6 z-50"
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 flex flex-col gap-[6px]">
+          <span className={`w-6.5 h-[4px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] transition-transform ${isOpen ? 'rotate-45 translate-y-[13px]' : ''}`}></span>
+          <span className={`w-5 h-[3px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] transition-opacity ${isOpen ? 'opacity-0' : ''}`}></span>
+          <span className={`w-6.5 h-[4px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] transition-transform ${isOpen ? '-rotate-45 -translate-y-[13px]' : ''}`}></span>
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={menuVariants}
+            className="fixed top-0 left-0 w-full h-screen bg-blue-600 z-40"
+          >
+            <div className="flex flex-col items-center justify-center h-full text-white text-2xl gap-8">
+              <Link href="/" className="hover:scale-110 transition-transform">
+                Home
+              </Link>
+              <Link href="/properties" className="hover:scale-110 transition-transform">
+                Properties
+              </Link>
+              <Link href="/about" className="hover:scale-110 transition-transform">
+                About
+              </Link>
+              <Link href="/contact" className="hover:scale-110 transition-transform">
+                Contact
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
