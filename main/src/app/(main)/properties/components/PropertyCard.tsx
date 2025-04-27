@@ -21,7 +21,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
 
   return (
     <Link href={`/properties/${property.id}`}>
-      <div className="relative overflow-hidden group">
+      <div className="relative overflow-hidden group cursor-pointer">
         {/* Property Image */}
         <div className="relative rounded-lg overflow-hidden">
           <img
@@ -97,6 +97,8 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
     </Link>
   );
 };
+
+
 
 
 

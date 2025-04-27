@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, Instagram, Twitter, Facebook, Linkedin } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 // Custom Hamburger Menu Component
@@ -33,7 +33,7 @@ const HamburgerMenu = () => {
     <>
       <button 
         onClick={() => setIsOpen(!isOpen)} 
-        className="text-white hover:text-gray-200 transition-colors p-2 relative w-6 h-6 z-50"
+        className="text-white hover:text-gray-200 transition-colors p-2 relative w-6 h-6 z-50 cursor-pointer"
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 flex flex-col gap-[6px]">
           <span className={`w-6.5 h-[4px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] transition-transform ${isOpen ? 'rotate-45 translate-y-[13px]' : ''}`}></span>
@@ -49,21 +49,48 @@ const HamburgerMenu = () => {
             animate="open"
             exit="closed"
             variants={menuVariants}
-            className="fixed top-0 left-0 w-full h-screen bg-blue-600 z-40"
+            className="fixed top-0 left-0 w-full h-screen bg-gradient-to-br from-blue-600 to-purple-700 z-40"
           >
-            <div className="flex flex-col items-center justify-center h-full text-white text-2xl gap-8">
-              <Link href="/" className="hover:scale-110 transition-transform">
-                Home
-              </Link>
-              <Link href="/properties" className="hover:scale-110 transition-transform">
-                Properties
-              </Link>
-              <Link href="/about" className="hover:scale-110 transition-transform">
-                About
-              </Link>
-              <Link href="/contact" className="hover:scale-110 transition-transform">
-                Contact
-              </Link>
+            <div className="container mx-auto px-8 py-16 h-full flex">
+              {/* Left side - Contact Info */}
+              <div className="w-1/3 text-white/80 flex flex-col justify-end">
+                <p className="mb-4">Reach out to us at:</p>
+                <a href="mailto:contact@indusun.com" className="underline">contact@indusun.com</a>
+                
+                <div className="mt-8">
+                  <p className="mb-4">We are available here</p>
+                  <div className="flex gap-4">
+                    <a href="#" className="text-white hover:text-white/80">
+                      <Instagram size={24} />
+                    </a>
+                    <a href="#" className="text-white hover:text-white/80">
+                      <Twitter size={24} />
+                    </a>
+                    <a href="#" className="text-white hover:text-white/80">
+                      <Facebook size={24} />
+                    </a>
+                    <a href="#" className="text-white hover:text-white/80">
+                      <Linkedin size={24} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right side - Navigation */}
+              <div className="w-2/3 flex flex-col justify-center items-start pl-20">
+                <Link href="/" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  Home
+                </Link>
+                <Link href="/about" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  About Us
+                </Link>
+                <Link href="/properties" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  Properties
+                </Link>
+                <Link href="/contact" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  Contact
+                </Link>
+              </div>
             </div>
           </motion.div>
         )}
