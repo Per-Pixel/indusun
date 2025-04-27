@@ -1,14 +1,30 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Menu, Instagram, Twitter, Facebook, Linkedin } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 // Custom Hamburger Menu Component
 const HamburgerMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleLinkClick = () => {
+    setIsOpen(false);
+  };
 
   const menuVariants = {
     closed: {
@@ -51,47 +67,86 @@ const HamburgerMenu = () => {
             variants={menuVariants}
             className="fixed top-0 left-0 w-full h-screen bg-gradient-to-br from-blue-600 to-purple-700 z-40"
           >
-            <div className="container mx-auto px-8 py-16 h-full flex">
-              {/* Left side - Contact Info */}
-              <div className="w-1/3 text-white/80 flex flex-col justify-end">
-                <p className="mb-4">Reach out to us at:</p>
-                <a href="mailto:contact@indusun.com" className="underline">contact@indusun.com</a>
-                
-                <div className="mt-8">
-                  <p className="mb-4">We are available here</p>
-                  <div className="flex gap-4">
+            {isMobile ? (
+              // Mobile Layout
+              <div className="container mx-auto px-6 py-16 h-full flex flex-col justify-between">
+                <div className="flex flex-col items-start gap-8 mt-16">
+                  <Link href="/" onClick={handleLinkClick} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                    Home
+                  </Link>
+                  <Link href="/about" onClick={handleLinkClick} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                    About Us
+                  </Link>
+                  <Link href="/properties" onClick={handleLinkClick} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                    Properties
+                  </Link>
+                  <Link href="/contact" onClick={handleLinkClick} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                    Contact
+                  </Link>
+                </div>
+
+                <div className="mt-auto">
+                  <p className="text-white/80 mb-4">We are available here</p>
+                  <div className="flex gap-6">
                     <a href="#" className="text-white hover:text-white/80">
-                      <Instagram size={24} />
+                      <Instagram size={28} />
                     </a>
                     <a href="#" className="text-white hover:text-white/80">
-                      <Twitter size={24} />
+                      <Twitter size={28} />
                     </a>
                     <a href="#" className="text-white hover:text-white/80">
-                      <Facebook size={24} />
+                      <Facebook size={28} />
                     </a>
                     <a href="#" className="text-white hover:text-white/80">
-                      <Linkedin size={24} />
+                      <Linkedin size={28} />
                     </a>
                   </div>
                 </div>
               </div>
+            ) : (
+              // Desktop Layout
+              <div className="container mx-auto h-full flex items-center">
+                {/* Left side - Contact Info */}
+                <div className="w-1/3 text-white/80 flex flex-col justify-end">
+                  <p className="mb-4">Reach out to us at:</p>
+                  <a href="mailto:contact@indusun.com" className="underline">contact@indusun.com</a>
+                  
+                  <div className="mt-8">
+                    <p className="mb-4">We are available here</p>
+                    <div className="flex gap-4">
+                      <a href="#" className="text-white hover:text-white/80">
+                        <Instagram size={24} />
+                      </a>
+                      <a href="#" className="text-white hover:text-white/80">
+                        <Twitter size={24} />
+                      </a>
+                      <a href="#" className="text-white hover:text-white/80">
+                        <Facebook size={24} />
+                      </a>
+                      <a href="#" className="text-white hover:text-white/80">
+                        <Linkedin size={24} />
+                      </a>
+                    </div>
+                  </div>
+                </div>
 
-              {/* Right side - Navigation */}
-              <div className="w-2/3 flex flex-col justify-center items-start pl-20">
-                <Link href="/" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
-                  Home
-                </Link>
-                <Link href="/about" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
-                  About Us
-                </Link>
-                <Link href="/properties" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
-                  Properties
-                </Link>
-                <Link href="/contact" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
-                  Contact
-                </Link>
+                {/* Right side - Navigation */}
+                <div className="w-2/3 flex flex-col justify-center items-start pl-20">
+                  <Link href="/" onClick={handleLinkClick} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                    Home
+                  </Link>
+                  <Link href="/about" onClick={handleLinkClick} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                    About Us
+                  </Link>
+                  <Link href="/properties" onClick={handleLinkClick} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                    Properties
+                  </Link>
+                  <Link href="/contact" onClick={handleLinkClick} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                    Contact
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -101,7 +156,19 @@ const HamburgerMenu = () => {
 
 const Navbar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
   const isPropertiesPage = pathname.includes('/properties');
+
+  const handlePayBillClick = () => {
+    if (user) {
+      // If user is logged in, redirect to dashboard payments section
+      router.push('/dashboard?tab=payments');
+    } else {
+      // If user is not logged in, redirect to login page with return URL
+      router.push(`/login?returnUrl=${encodeURIComponent('/dashboard?tab=payments')}`);
+    }
+  };
 
   return (
     <nav className="fixed w-full top-0 z-50">
@@ -146,13 +213,15 @@ const Navbar = () => {
 
               {/* Pay Bill Button */}
               <motion.button
+                onClick={handlePayBillClick}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                disabled={isLoading}
                 className="whitespace-nowrap px-8 py-2 rounded-lg text-white
                           bg-[#D9D9D9]/50 hover:bg-[#c4c4c4]/50
-                          transition-colors duration-300"
+                          transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Pay Bill
+                {isLoading ? 'Loading...' : 'Pay Bill'}
               </motion.button>
             </div>
 

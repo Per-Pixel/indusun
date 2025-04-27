@@ -31,8 +31,6 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           {children}
-          <BottomNavigation />
-          <div className="pb-20" />
         </AuthProvider>
       </body>
     </html>
