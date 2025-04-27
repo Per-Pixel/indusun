@@ -22,10 +22,6 @@ const HamburgerMenu = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const handleLinkClick = () => {
-    setIsOpen(false);
-  };
-
   const menuVariants = {
     closed: {
       opacity: 0,
@@ -71,16 +67,16 @@ const HamburgerMenu = () => {
               // Mobile Layout
               <div className="container mx-auto px-6 py-16 h-full flex flex-col justify-between">
                 <div className="flex flex-col items-start gap-8 mt-16">
-                  <Link href="/" onClick={handleLinkClick} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                  <Link href="/" className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
                     Home
                   </Link>
-                  <Link href="/about" onClick={handleLinkClick} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                  <Link href="/about" className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
                     About Us
                   </Link>
-                  <Link href="/properties" onClick={handleLinkClick} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                  <Link href="/properties" className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
                     Properties
                   </Link>
-                  <Link href="/contact" onClick={handleLinkClick} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                  <Link href="/contact" className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
                     Contact
                   </Link>
                 </div>
@@ -105,7 +101,7 @@ const HamburgerMenu = () => {
               </div>
             ) : (
               // Desktop Layout
-              <div className="container mx-auto h-full flex items-center">
+              <div className="container mx-auto px-8 py-16 h-full flex">
                 {/* Left side - Contact Info */}
                 <div className="w-1/3 text-white/80 flex flex-col justify-end">
                   <p className="mb-4">Reach out to us at:</p>
@@ -132,16 +128,16 @@ const HamburgerMenu = () => {
 
                 {/* Right side - Navigation */}
                 <div className="w-2/3 flex flex-col justify-center items-start pl-20">
-                  <Link href="/" onClick={handleLinkClick} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  <Link href="/" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
                     Home
                   </Link>
-                  <Link href="/about" onClick={handleLinkClick} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  <Link href="/about" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
                     About Us
                   </Link>
-                  <Link href="/properties" onClick={handleLinkClick} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  <Link href="/properties" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
                     Properties
                   </Link>
-                  <Link href="/contact" onClick={handleLinkClick} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  <Link href="/contact" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
                     Contact
                   </Link>
                 </div>
@@ -159,6 +155,10 @@ const Navbar = () => {
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const isPropertiesPage = pathname.includes('/properties');
+
+  const handleBrokerClick = () => {
+    router.push('/broker/login');
+  };
 
   const handlePayBillClick = () => {
     if (user) {
@@ -204,6 +204,7 @@ const Navbar = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={handleBrokerClick}
                 className="whitespace-nowrap px-6 py-2
                 border-2 border-white rounded-lg text-white
                           hover:bg-white hover:text-blue-600 transition-colors duration-300"
