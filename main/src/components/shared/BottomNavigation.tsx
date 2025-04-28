@@ -19,18 +19,22 @@ export const BottomNavigation = () => {
       setIsMobile(window.innerWidth < 768);
     };
     
-    // Initial check
     checkMobile();
-    
-    // Add event listener
     window.addEventListener('resize', checkMobile);
-    
-    // Cleanup
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Don't show navigation on non-mobile devices  
-  if (!isMobile) {
+  // Don't show navigation on non-mobile devices or excluded paths
+  const excludedPaths = [
+    '/broker',
+    '/broker/dashboard',
+    '/admin',
+    '/admin/dashboard',
+  ];
+
+  const isExcludedPath = excludedPaths.some(path => pathname.startsWith(path));
+
+  if (!isMobile || isExcludedPath) {
     return null;
   }
 
@@ -171,6 +175,8 @@ const style = `
     }
   </style>
 `;
+
+
 
 
 

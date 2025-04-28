@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 const HamburgerMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
 
   // Mobile detection
   useEffect(() => {
@@ -21,6 +22,12 @@ const HamburgerMenu = () => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Handle navigation and menu closing
+  const handleNavigation = (path: string) => {
+    setIsOpen(false);
+    router.push(path);
+  };
 
   const menuVariants = {
     closed: {
@@ -67,18 +74,18 @@ const HamburgerMenu = () => {
               // Mobile Layout
               <div className="container mx-auto px-6 py-16 h-full flex flex-col justify-between">
                 <div className="flex flex-col items-start gap-8 mt-16">
-                  <Link href="/" className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                  <button onClick={() => handleNavigation('/')} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
                     Home
-                  </Link>
-                  <Link href="/about" className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                  </button>
+                  <button onClick={() => handleNavigation('/about')} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
                     About Us
-                  </Link>
-                  <Link href="/properties" className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                  </button>
+                  <button onClick={() => handleNavigation('/properties')} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
                     Properties
-                  </Link>
-                  <Link href="/contact" className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                  </button>
+                  <button onClick={() => handleNavigation('/contact')} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
                     Contact
-                  </Link>
+                  </button>
                 </div>
 
                 <div className="mt-auto">
@@ -128,18 +135,18 @@ const HamburgerMenu = () => {
 
                 {/* Right side - Navigation */}
                 <div className="w-2/3 flex flex-col justify-center items-start pl-20">
-                  <Link href="/" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  <button onClick={() => handleNavigation('/')} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
                     Home
-                  </Link>
-                  <Link href="/about" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  </button>
+                  <button onClick={() => handleNavigation('/about')} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
                     About Us
-                  </Link>
-                  <Link href="/properties" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  </button>
+                  <button onClick={() => handleNavigation('/properties')} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
                     Properties
-                  </Link>
-                  <Link href="/contact" className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                  </button>
+                  <button onClick={() => handleNavigation('/contact')} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
                     Contact
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}

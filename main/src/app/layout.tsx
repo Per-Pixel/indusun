@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Navbar, Footer } from "@/modules";
-import { AuthProvider } from '@/context/AuthContext';
+import { Navbar } from "@/modules";
+import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import { BottomNavigation } from '@/components/shared/BottomNavigation';
@@ -23,14 +23,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
+          <Toaster position="top-center" />
           {children}
+          <BottomNavigation />
         </AuthProvider>
       </body>
     </html>
