@@ -180,33 +180,32 @@ const Navbar = () => {
   return (
     <nav className="fixed w-full top-0 z-50">
       <div 
-        className={`w-full h-[40px] md:h-[70px] px-6 sm:px-8 md:px-12 lg:px-16 rounded-b-2xl relative`}
+        className={`w-full h-[55px] md:h-[70px] px-6 sm:px-8 md:px-12 lg:px-16 rounded-b-xl md:rounded-b-2xl relative flex items-center justify-between`}
       >
         {/* Background with opacity */}
-        <div className={`absolute inset-0 bg-gradient-to-r from-white to-blue-600 rounded-b-2xl ${
+        <div className={`absolute inset-0 bg-gradient-to-r from-white to-blue-600 rounded-b-xl md:rounded-b-2xl ${
           isPropertiesPage ? 'opacity-10' : 'opacity-100'
         }`}></div>
 
         {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto h-full flex items-center">
-          <div className="flex items-center gap-4 sm:gap-6 md:gap-8">
+        <div className="relative z-10 max-w-7xl mx-auto h-full flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
             <HamburgerMenu />
-
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 relative z-10">
               <img
                 src="/navbar/logo.svg"
                 alt="Indusun Logo"
-                className="h-[2rem] sm:h-[2.5rem] md:h-[3rem] lg:h-[3.5rem] w-auto filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"
+                className="h-[2rem] sm:h-[2.5rem] md:h-[3rem] lg:h-[3.5rem] w-auto filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)] hidden sm:block"
               />
-              <span className="text-sm sm:text-base md:text-xl lg:text-2xl font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]">
+              <span className="text-sm sm:text-base md:text-xl lg:text-2xl font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)] ml-[5px] sm:ml-[-50px]">
                 Indusun
               </span>
             </Link>
           </div>
 
-          <div className="ml-auto flex items-center">
+          <div className="flex items-center">
             {/* Buttons container */}
-            <div className="flex items-center gap-4 sm:gap-6 md:gap-8 scale-[0.8] sm:scale-90 md:scale-95 lg:scale-100 origin-left">
+            <div className="flex items-center gap-4 sm:gap-4 md:gap-4 scale-[0.75] sm:scale-50 md:scale-50 lg:scale-100 origin-right ml-[-80]">
               {/* For Broker Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -234,7 +233,7 @@ const Navbar = () => {
             </div>
 
             {/* Right side navigation items */}
-            <div className="hidden md:flex items-center gap-4 ml-8">
+            <div className="hidden md:flex items-center gap-4 ml-4">
               <Link href="/sign-up" className="text-sm md:text-base lg:text-lg text-white hover:text-gray-200 transition-colors">
                 Sign up
               </Link>
