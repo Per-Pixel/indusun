@@ -4,7 +4,7 @@
 
 ### Layout & Navigation
 - [x] Fix responsive navbar
-- [ ] Create and style footer
+- [x] Create and style footer
 - [ ] Ensure bottom navigation works on all user pages
 - [ ] Add loading states/spinners
 
@@ -114,3 +114,4 @@
 - [ ] Browser compatibility check
 - [ ] Mobile responsiveness check
 - [ ] Load testing
+

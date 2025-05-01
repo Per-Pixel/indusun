@@ -7,10 +7,10 @@ const Footer = () => {
     <div className="w-full overflow-hidden">
       {/* Curved top border using SVG */}
       <div className="bg-white w-full">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none" className="w-full h-16">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none" className="w-full h-4 sm:h-6 md:h-16">
           <path 
             fill="#000000" 
-            d="M0,100 L0,70 Q30,30 60,30 L1380,30 Q1410,30 1440,70 L1440,100 Z"
+            d="M0,100 L0,85 Q30,60 60,60 L1380,60 Q1410,60 1440,85 L1440,100 Z"
             fillRule="evenodd"
           />
         </svg>
