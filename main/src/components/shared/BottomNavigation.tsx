@@ -77,7 +77,7 @@ export const BottomNavigation = () => {
     },
     {
       icon: <Heart size={20} strokeWidth={1.5} />,
-      label: 'Favorite',
+      label: 'Favorites',
       href: '/favorites',
       isActive: pathname === '/favorites',
       protected: true
@@ -175,6 +175,7 @@ const style = `
     }
   </style>
 `;
+
 
 
 
