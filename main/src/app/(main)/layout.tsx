@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navbar } from "@/modules";
+import { Navbar, Footer } from "@/modules";
 
 export default function MainLayout({
   children,
@@ -10,6 +10,7 @@ export default function MainLayout({
     <>
       <Navbar />
       {children}
+      <Footer />
     </>
   );
 }
