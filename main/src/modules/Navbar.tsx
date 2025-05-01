@@ -189,6 +189,7 @@ const Navbar = () => {
 
         {/* Content */}
         <div className="relative z-10 max-w-7xl mx-auto h-full flex items-center justify-between w-full">
+          {/* Logo and text section */}
           <div className="flex items-center gap-2">
             <HamburgerMenu />
             <Link href="/" className="flex items-center gap-2 relative z-10">
@@ -197,15 +198,15 @@ const Navbar = () => {
                 alt="Indusun Logo"
                 className="h-[2rem] sm:h-[2.5rem] md:h-[3rem] lg:h-[3.5rem] w-auto filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)] hidden sm:block"
               />
-              <span className="text-sm sm:text-base md:text-xl lg:text-2xl font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)] ml-[5px] sm:ml-[-50px]">
+              <span className="text-[14px] xs:text-sm sm:text-base md:text-xl lg:text-2xl font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)] ml-[10px] xs:ml-[12px] sm:ml-[-50px]">
                 Indusun
               </span>
             </Link>
           </div>
 
+          {/* Buttons container */}
           <div className="flex items-center">
-            {/* Buttons container */}
-            <div className="flex items-center gap-4 sm:gap-4 md:gap-4 scale-[0.75] sm:scale-50 md:scale-50 lg:scale-100 origin-right ml-[-80]">
+            <div className="flex items-center gap-2 xs:gap-4 sm:gap-4 md:gap-4 scale-[0.65] xs:scale-[0.95] sm:scale-50 md:scale-[0.90] lg:scale-100 origin-right ml-[-60px] xs:ml-[-80px]">
               {/* For Broker Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}

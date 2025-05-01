@@ -3,7 +3,7 @@
 ## Critical Priority (Must Complete)
 
 ### Layout & Navigation
-- [ ] Fix responsive navbar
+- [x] Fix responsive navbar
 - [ ] Create and style footer
 - [ ] Ensure bottom navigation works on all user pages
 - [ ] Add loading states/spinners
