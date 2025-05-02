@@ -2,35 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search as SearchIcon, X, MapPin, Building, Home, ArrowRight } from 'lucide-react';
+import { Search as SearchIcon, MapPin, Building, Home, ArrowRight, ChevronDown, Bed, Bath, Square, Mail, Sparkles, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Recent searches (would be stored in localStorage in a real app)
-const recentSearches = [
-  "2 BHK in Mumbai",
-  "Villa in Pune",
-  "Commercial space in Delhi",
-  "Apartment near metro"
-];
-
-// Popular searches
-const popularSearches = [
-  "Apartments in Mumbai",
-  "Villas in Bangalore",
-  "Plots in Hyderabad",
-  "Commercial in Delhi NCR",
-  "Flats in Pune",
-  "Houses in Chennai"
-];
-
-// Property types
+// Property types with icons and counts
 const propertyTypes = [
-  { name: "Apartment", icon: <Building size={20} /> },
-  { name: "House", icon: <Home size={20} /> },
-  { name: "Villa", icon: <Home size={20} /> },
-  { name: "Plot", icon: <MapPin size={20} /> },
-  { name: "Commercial", icon: <Building size={20} /> },
-  { name: "PG/Co-living", icon: <Building size={20} /> }
+  { name: "Residential", icon: <Home size={24} />, count: "245 Properties", bgColor: "bg-red-50" },
+  { name: "Vacation Home", icon: <Home size={24} />, count: "145 Properties", bgColor: "bg-blue-50" },
+  { name: "Apartment", icon: <Building size={24} />, count: "378 Properties", bgColor: "bg-pink-50" },
+  { name: "Warehouse", icon: <Building size={24} />, count: "52 Properties", bgColor: "bg-yellow-50" },
+  { name: "Land", icon: <MapPin size={24} />, count: "112 Properties", bgColor: "bg-green-50" },
+  { name: "Office", icon: <Building size={24} />, count: "89 Properties", bgColor: "bg-purple-50" }
 ];
 
 // Popular locations
@@ -40,152 +24,677 @@ const popularLocations = [
   "Bangalore",
   "Hyderabad",
   "Chennai",
-  "Pune",
-  "Kolkata",
-  "Ahmedabad"
+  "Pune"
 ];
+
+// Mock properties data
+const recentProperties = [
+  {
+    id: 1,
+    title: "Modern Apartment with Ocean View",
+    location: "Mumbai, Maharashtra",
+    price: "₹1.2 Cr",
+    beds: 3,
+    baths: 2,
+    area: "1,200 sq ft",
+    image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1973&auto=format&fit=crop"
+  },
+  {
+    id: 2,
+    title: "Luxury Villa in Gated Community",
+    location: "Bangalore, Karnataka",
+    price: "₹3.5 Cr",
+    beds: 4,
+    baths: 3,
+    area: "2,500 sq ft",
+    image: "https://images.unsplash.com/photo-1560518984-c3b3761e347d?q=80&w=1973&auto=format&fit=crop"
+  },
+  {
+    id: 3,
+    title: "Spacious Family Home with Garden",
+    location: "Delhi, NCR",
+    price: "₹2.8 Cr",
+    beds: 5,
+    baths: 4,
+    area: "3,200 sq ft",
+    image: "https://images.unsplash.com/photo-1560519084-9c73b45af9bb?q=80&w=1973&auto=format&fit=crop"
+  },
+  {
+    id: 4,
+    title: "Cozy Studio Apartment",
+    location: "Pune, Maharashtra",
+    price: "₹65 Lac",
+    beds: 1,
+    baths: 1,
+    area: "650 sq ft",
+    image: "https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?q=80&w=1973&auto=format&fit=crop"
+  },
+  {
+    id: 5,
+    title: "Penthouse with Rooftop Terrace",
+    location: "Hyderabad, Telangana",
+    price: "₹4.2 Cr",
+    beds: 4,
+    baths: 3,
+    area: "3,000 sq ft",
+    image: "https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?q=80&w=1973&auto=format&fit=crop"
+  },
+  {
+    id: 6,
+    title: "Commercial Space in Business District",
+    location: "Chennai, Tamil Nadu",
+    price: "₹1.8 Cr",
+    beds: null,
+    baths: 2,
+    area: "1,800 sq ft",
+    image: "https://images.unsplash.com/photo-1560520788-4aa5b9fcce50?q=80&w=1973&auto=format&fit=crop"
+  }
+];
+
+// Articles data
+const articles = [
+  {
+    id: 1,
+    title: "Top 10 Tips for First-Time Home Buyers",
+    excerpt: "Navigating the real estate market for the first time can be overwhelming...",
+    image: "https://images.unsplash.com/photo-1560520788-4aa5b9fcce50?q=80&w=1973&auto=format&fit=crop"
+  },
+  {
+    id: 2,
+    title: "Investment Properties: What to Look For",
+    excerpt: "Investing in real estate can be a lucrative opportunity if you know what to look for...",
+    image: "https://images.unsplash.com/photo-1560519084-9c73b45af9bb?q=80&w=1973&auto=format&fit=crop"
+  },
+  {
+    id: 3,
+    title: "How to Stage Your Home for a Quick Sale",
+    excerpt: "Properly staging your home can significantly increase its appeal to potential buyers...",
+    image: "https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?q=80&w=1973&auto=format&fit=crop"
+  }
+];
+
+// Search suggestions
+const searchSuggestions = [
+  "2 BHK property near me",
+  "Big bungalow in Mumbai",
+  "3 BHK apartment in Pune",
+  "Villa with swimming pool",
+  "Commercial space for rent",
+  "1 BHK flat under 50 lakhs",
+  "Luxury apartments in Delhi",
+  "Property near metro station",
+  "4 BHK penthouse",
+  "Ready to move property"
+];
+
+const buttonVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  hover: { 
+    scale: 1.02,
+    transition: { duration: 0.2 }
+  },
+  tap: { scale: 0.98 }
+};
+
+// Animation variants for dropdown
+const dropdownVariants = {
+  hidden: { 
+    opacity: 0,
+    y: -5,
+    transition: { duration: 0.2 }
+  },
+  visible: { 
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.2 }
+  }
+};
 
 export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
+  const [propertyType, setPropertyType] = useState('all');
+  const [location, setLocation] = useState('All India');
+  const [priceRange, setPriceRange] = useState('Budget - Maximum');
+  const [activeTab, setActiveTab] = useState('Buy');
   const router = useRouter();
+  const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [visibleProperties, setVisibleProperties] = useState(3);
+
+  // Animation effect for search suggestions
+  useEffect(() => {
+    if (isFocused) return; // Don't animate if input is focused
+    
+    const interval = setInterval(() => {
+      setIsAnimatingOut(true);
+      setTimeout(() => {
+        setCurrentSuggestionIndex((prev) => (prev + 1) % searchSuggestions.length);
+        setIsAnimatingOut(false);
+      }, 800);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isFocused]);
 
   // Handle search submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchTerm.trim()) {
-      router.push(`/properties/search?q=${encodeURIComponent(searchTerm.trim())}`);
-    }
+    const params = new URLSearchParams();
+    
+    if (searchTerm) params.append('q', searchTerm);
+    if (propertyType !== 'all') params.append('type', propertyType);
+    if (location !== 'All India') params.append('location', location);
+    if (priceRange !== 'Budget - Maximum') params.append('price', priceRange);
+    params.append('purpose', activeTab.toLowerCase());
+    
+    router.push(`/properties/search?${params.toString()}`);
   };
 
-  // Clear search input
-  const clearSearch = () => {
-    setSearchTerm('');
-  };
-
-  // Handle clicking on a suggestion
-  const handleSuggestionClick = (suggestion: string) => {
-    router.push(`/properties/search?q=${encodeURIComponent(suggestion)}`);
+  // Load more properties
+  const handleLoadMore = () => {
+    setVisibleProperties(prev => prev + 3);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Search Header */}
-      <div className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <form onSubmit={handleSearch} className="relative">
-            <div className="relative flex items-center">
-              <SearchIcon className="absolute left-3 text-gray-400" size={20} />
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <div className="relative h-[500px]">
+        <Image
+          src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1973&auto=format&fit=crop"
+          alt="Real Estate Hero"
+          fill
+          priority
+          className="object-cover"
+        />
+        
+        <div className="absolute inset-0 bg-blue-500/30"></div>
+        
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 max-w-3xl">
+            Find perfect home with real estate property
+          </h1>
+          <p className="text-white text-lg mb-8 max-w-2xl">
+            Welcome to our real estate website, where we aim to provide you with the best possible experience in buying or selling your property.
+          </p>
+        </div>
+      </div>
+      
+      {/* Search Form */}
+      <div className="relative z-10 max-w-3xl mx-auto -mt-16 px-4">
+        {/* Search Container */}
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          {/* Top Navigation Area - Mobile version */}
+          <div className="flex justify-between bg-blue-600 text-white md:hidden">
+            <motion.button
+              key="buy-mobile"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
+                ${activeTab === 'Buy' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('Buy')}
+            >
+              Buy
+            </motion.button>
+            <motion.button
+              key="rent-mobile"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
+                ${activeTab === 'Rent' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('Rent')}
+            >
+              Rent
+            </motion.button>
+            <motion.button
+              key="commercial-mobile"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
+                ${activeTab === 'Commercial' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('Commercial')}
+            >
+              Commercial
+            </motion.button>
+            <motion.button
+              key="plots-mobile"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
+                ${activeTab === 'Plots' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('Plots')}
+            >
+              Plots/Land
+            </motion.button>
+            <motion.button
+              key="projects-mobile"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
+                ${activeTab === 'Projects' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('Projects')}
+            >
+              Projects
+            </motion.button>
+          </div>
+
+          {/* Top Navigation Area - Desktop version */}
+          <div className="hidden md:flex justify-between bg-blue-600 text-white">
+            <motion.button
+              key="buy-desktop"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-4 py-4 text-center text-base font-medium 
+                ${activeTab === 'Buy' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('Buy')}
+            >
+              Buy
+            </motion.button>
+            <motion.button
+              key="new-desktop"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-4 py-4 text-center text-base font-medium 
+                ${activeTab === 'New' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('New')}
+            >
+              New
+            </motion.button>
+            <motion.button
+              key="rent-desktop"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-4 py-4 text-center text-base font-medium 
+                ${activeTab === 'Rent' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('Rent')}
+            >
+              Rent
+            </motion.button>
+            <motion.button
+              key="plots-desktop"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-4 py-4 text-center text-base font-medium 
+                ${activeTab === 'Plots' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('Plots')}
+            >
+              Plots
+            </motion.button>
+            <motion.button
+              key="commercial-desktop"
+              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
+              className={`flex-1 px-4 py-4 text-center text-base font-medium 
+                ${activeTab === 'Commercial' ? 'bg-blue-700' : ''} 
+                transition-colors`}
+              onClick={() => setActiveTab('Commercial')}
+            >
+              Commercial
+            </motion.button>
+          </div>
+
+          {/* Bottom Search Area - Mobile version */}
+          <form onSubmit={handleSearch} className="md:hidden flex p-2 items-center gap-1">
+            {/* Dropdown */}
+            <div className="relative">
+              <select 
+                className="px-2 py-1 bg-white appearance-none focus:outline-none pr-6 text-sm text-gray-700 border-r border-gray-200"
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value)}
+              >
+                <option value="all">All Residential</option>
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+                <option value="villa">Villa</option>
+              </select>
+              <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+              <AnimatePresence>
+                {!searchTerm && !isFocused && (
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    variants={dropdownVariants}
+                    className={`absolute left-6 top-1/2 pointer-events-none text-gray-400 text-xs
+                      transition-all duration-1000 ease-in-out
+                      ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
+                  >
+                    {searchSuggestions[currentSuggestionIndex]}
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => setIsFocused(true)}
-                placeholder="Search for properties, locations..."
-                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onBlur={() => setIsFocused(false)}
+                className={`w-full pl-6 pr-2 py-1 focus:outline-none bg-transparent text-xs text-black
+                  ${isFocused ? 'caret-blue-500 animate-caret' : ''}`}
+                placeholder=""
               />
-              {searchTerm && (
-                <button 
-                  type="button" 
-                  onClick={clearSearch}
-                  className="absolute right-3 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={20} />
-                </button>
-              )}
             </div>
+
+            {/* Search Button */}
             <button 
               type="submit"
-              className="mt-3 w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+              className="px-3 py-1 bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors rounded-md cursor-pointer"
             >
-              Search Properties
+              Search
+            </button>
+          </form>
+
+          {/* Bottom Search Area - Desktop version */}
+          <form onSubmit={handleSearch} className="hidden md:flex p-2 items-center gap-2">
+            {/* Dropdown */}
+            <div className="relative">
+              <select 
+                className="px-4 py-2 bg-white appearance-none focus:outline-none pr-8 text-base text-gray-700 border-r border-gray-200"
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value)}
+              >
+                <option value="all">All Residential</option>
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+                <option value="villa">Villa</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <AnimatePresence>
+                {!searchTerm && !isFocused && (
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    variants={dropdownVariants}
+                    className={`absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm
+                      transition-all duration-1000 ease-in-out
+                      ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
+                  >
+                    {searchSuggestions[currentSuggestionIndex]}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                className={`w-full pl-10 pr-4 py-2 focus:outline-none bg-transparent text-base text-black
+                  ${isFocused ? 'caret-blue-500 animate-caret' : ''}`}
+                placeholder=""
+              />
+            </div>
+
+            {/* Search Button */}
+            <button 
+              type="submit"
+              className="px-6 py-2 bg-blue-400 text-white text-base font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
+            >
+              Search
             </button>
           </form>
         </div>
       </div>
-
-      <div className="container mx-auto px-4 py-6">
-        {/* Recent Searches */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">Recent Searches</h2>
-            <button className="text-blue-500 text-sm">Clear All</button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {recentSearches.map((search, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestionClick(search)}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm flex items-center gap-2 hover:bg-gray-50"
-              >
-                <SearchIcon size={14} className="text-gray-400" />
-                {search}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Property Types */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-3">Property Types</h2>
-          <div className="grid grid-cols-3 gap-3">
+      
+      {/* Property Categories Section */}
+      <div className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold mb-2 text-center text-black">Take right home, anytime</h2>
+          <p className="text-gray-600 mb-10 text-center max-w-2xl mx-auto">
+            With this feature, you can easily filter your search by selecting a specific category that matches your interests.
+          </p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {propertyTypes.map((type, index) => (
-              <button
+              <div 
                 key={index}
-                onClick={() => handleSuggestionClick(type.name)}
-                className="p-4 bg-white border border-gray-200 rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+                className={`${type.bgColor} hover:bg-opacity-80 transition-colors p-6 rounded-lg flex flex-col items-center text-center cursor-pointer`}
+                onClick={() => router.push(`/properties/search?type=${type.name}`)}
               >
-                <div className="p-2 bg-blue-50 rounded-full text-blue-500">
+                <div className="p-3 bg-white rounded-full mb-3 text-black">
                   {type.icon}
                 </div>
-                <span className="text-sm font-medium">{type.name}</span>
-              </button>
+                <h3 className="font-medium mb-1 text-black">{type.name}</h3>
+                <p className="text-sm text-gray-500">{type.count}</p>
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-center mt-8">
+            <motion.button 
+              variants={buttonVariants}
+              initial="initial"
+              animate="animate"
+              whileHover="hover"
+              whileTap="tap"
+              className="px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-medium"
+            >
+              View More
+            </motion.button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Recent Listed Properties */}
+      <div className="py-12 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold mb-10 text-black">Recent listed properties</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recentProperties.slice(0, visibleProperties).map((property) => (
+              <div key={property.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <div className="relative h-48">
+                  <Image
+                    src={property.image}
+                    alt={property.title}
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute top-3 right-3 bg-black text-white text-xs px-2 py-1 rounded">
+                    {property.price}
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-1 text-black">{property.title}</h3>
+                  <p className="text-gray-500 text-sm mb-3">{property.location}</p>
+                  
+                  <div className="flex justify-between items-center">
+                    <div className="flex space-x-3 text-sm text-gray-600">
+                      {property.beds && (
+                        <div className="flex items-center">
+                          <Bed size={16} className="mr-1" />
+                          <span>{property.beds}</span>
+                        </div>
+                      )}
+                      {property.baths && (
+                        <div className="flex items-center">
+                          <Bath size={16} className="mr-1" />
+                          <span>{property.baths}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center">
+                        <Square size={16} className="mr-1" />
+                        <span>{property.area}</span>
+                      </div>
+                    </div>
+                    
+                    <button className="text-sm text-black font-medium">
+                      More Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {recentProperties.length > visibleProperties && (
+            <div className="text-center mt-8">
+              <motion.button 
+                variants={buttonVariants}
+                initial="initial"
+                animate="animate"
+                whileHover="hover"
+                whileTap="tap"
+                onClick={handleLoadMore}
+                className="px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-medium"
+              >
+                Load More
+              </motion.button>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Popular Regions Section */}
+      <div className="py-12 px-4 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold mb-2">Popular regions in India</h2>
+          <p className="text-gray-600 mb-10">
+            Explore the most sought-after regions in India, including the most vibrant cities and neighborhoods.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {popularLocations.slice(0, 3).map((location, index) => (
+              <div 
+                key={index}
+                className="relative h-64 rounded-lg overflow-hidden cursor-pointer group"
+                onClick={() => router.push(`/properties/search?location=${location}`)}
+              >
+                <Image
+                  src={`https://images.unsplash.com/photo-${1560518883 + index * 100}-ce09059eeffa?q=80&w=1973&auto=format&fit=crop`}
+                  alt={location}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 p-6">
+                  <h3 className="text-xl font-bold text-white mb-1">{location}</h3>
+                  <p className="text-white/80 text-sm">
+                    {Math.floor(Math.random() * 500) + 100} Properties
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
-
-        {/* Popular Locations */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-3">Popular Locations</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {popularLocations.map((location, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestionClick(location)}
-                className="p-3 bg-white border border-gray-200 rounded-lg flex justify-between items-center hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-2">
-                  <MapPin size={16} className="text-gray-400" />
-                  <span className="text-sm">{location}</span>
+      </div>
+      
+      {/* How it Works Section */}
+      <div className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold mb-10 text-center">How does it work</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <SearchIcon size={24} className="text-blue-500" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Search for properties</h3>
+              <p className="text-gray-600">
+                Browse through our extensive collection of properties across India.
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Building size={24} className="text-blue-500" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Find your perfect match</h3>
+              <p className="text-gray-600">
+                Use our advanced filters to narrow down properties that match your requirements.
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Home size={24} className="text-blue-500" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Make it your home</h3>
+              <p className="text-gray-600">
+                Contact the seller or agent directly and proceed with your purchase.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Articles Section */}
+      <div className="py-12 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Articles for property sharing</h2>
+            <Link href="/articles" className="text-blue-500 hover:text-blue-600 flex items-center">
+              View all <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {articles.map((article) => (
+              <div key={article.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <div className="relative h-48">
+                  <Image
+                    src={article.image}
+                    alt={article.title}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
-                <ArrowRight size={16} className="text-gray-400" />
-              </button>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2 text-black">{article.title}</h3>
+                  <p className="text-gray-500 text-sm">{article.excerpt}</p>
+                  <Link href={`/articles/${article.id}`} className="mt-4 inline-block text-blue-500 hover:text-blue-600">
+                    Read more
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
         </div>
-
-        {/* Popular Searches */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Popular Searches</h2>
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            {popularSearches.map((search, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestionClick(search)}
-                className={`w-full p-4 text-left flex items-center justify-between hover:bg-gray-50 ${
-                  index < popularSearches.length - 1 ? 'border-b border-gray-200' : ''
-                }`}
+      </div>
+      
+      {/* Subscription Section */}
+      <div className="py-12 px-4 bg-gradient-to-r from-blue-500 to-blue-600">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 flex flex-col md:flex-row items-center justify-between">
+            <div className="mb-6 md:mb-0 md:mr-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Subscribe for daily updates</h2>
+              <p className="text-white/80">
+                Get the latest properties and real estate news delivered to your inbox
+              </p>
+            </div>
+            
+            <form onSubmit={(e) => e.preventDefault()} className="w-full md:w-auto flex flex-col md:flex-row gap-3">
+              <input
+                type="email"
+                placeholder="Your email address"
+                className="px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 bg-white/20 text-white placeholder:text-white/60 w-full md:w-64"
+              />
+              <button 
+                type="submit"
+                className="px-6 py-3 bg-white text-blue-600 rounded-md hover:bg-gray-100 transition-colors font-medium"
               >
-                <div className="flex items-center gap-3">
-                  <SearchIcon size={16} className="text-gray-400" />
-                  <span>{search}</span>
-                </div>
-                <ArrowRight size={16} className="text-gray-400" />
+                Subscribe
               </button>
-            ))}
+            </form>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+
+
+
+
