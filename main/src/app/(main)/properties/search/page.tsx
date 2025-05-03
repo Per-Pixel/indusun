@@ -65,7 +65,7 @@ export default function SearchResultsPage() {
             </p>
           </div>
         ) : (
-          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-6`}>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {properties.map((property) => (
               <PropertyCard key={property.id} property={property} />
             ))}
@@ -75,6 +75,7 @@ export default function SearchResultsPage() {
     </div>
   );
 }
+
 
 
 

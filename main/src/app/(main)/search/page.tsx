@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search as SearchIcon, MapPin, Building, Home, ArrowRight, ChevronDown, Bed, Bath, Square, Mail, Sparkles, ChevronRight } from 'lucide-react';
+import { Search as SearchIcon, MapPin, Building, Home, ArrowRight, ChevronDown, Bed, Bath, Square, Mail, Sparkles, Phone } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,7 +37,7 @@ const recentProperties = [
     beds: 3,
     baths: 2,
     area: "1,200 sq ft",
-    image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1973&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1973&auto=format&fit=crop"
   },
   {
     id: 2,
@@ -47,7 +47,7 @@ const recentProperties = [
     beds: 4,
     baths: 3,
     area: "2,500 sq ft",
-    image: "https://images.unsplash.com/photo-1560518984-c3b3761e347d?q=80&w=1973&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1973&auto=format&fit=crop"
   },
   {
     id: 3,
@@ -57,7 +57,7 @@ const recentProperties = [
     beds: 5,
     baths: 4,
     area: "3,200 sq ft",
-    image: "https://images.unsplash.com/photo-1560519084-9c73b45af9bb?q=80&w=1973&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1973&auto=format&fit=crop"
   },
   {
     id: 4,
@@ -67,7 +67,7 @@ const recentProperties = [
     beds: 1,
     baths: 1,
     area: "650 sq ft",
-    image: "https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?q=80&w=1973&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1973&auto=format&fit=crop"
   },
   {
     id: 5,
@@ -77,7 +77,7 @@ const recentProperties = [
     beds: 4,
     baths: 3,
     area: "3,000 sq ft",
-    image: "https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?q=80&w=1973&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1973&auto=format&fit=crop"
   },
   {
     id: 6,
@@ -87,7 +87,7 @@ const recentProperties = [
     beds: null,
     baths: 2,
     area: "1,800 sq ft",
-    image: "https://images.unsplash.com/photo-1560520788-4aa5b9fcce50?q=80&w=1973&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=1973&auto=format&fit=crop"
   }
 ];
 
@@ -97,19 +97,19 @@ const articles = [
     id: 1,
     title: "Top 10 Tips for First-Time Home Buyers",
     excerpt: "Navigating the real estate market for the first time can be overwhelming...",
-    image: "https://images.unsplash.com/photo-1560520788-4aa5b9fcce50?q=80&w=1973&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=1973&auto=format&fit=crop"
   },
   {
     id: 2,
     title: "Investment Properties: What to Look For",
     excerpt: "Investing in real estate can be a lucrative opportunity if you know what to look for...",
-    image: "https://images.unsplash.com/photo-1560519084-9c73b45af9bb?q=80&w=1973&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1626178793926-22b28830aa30?q=80&w=1973&auto=format&fit=crop"
   },
   {
     id: 3,
     title: "How to Stage Your Home for a Quick Sale",
     excerpt: "Properly staging your home can significantly increase its appeal to potential buyers...",
-    image: "https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?q=80&w=1973&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1560440021-33f9b867899d?q=80&w=1973&auto=format&fit=crop"
   }
 ];
 
@@ -130,7 +130,7 @@ const searchSuggestions = [
 const buttonVariants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
-  hover: { 
+  hover: {
     scale: 1.02,
     transition: { duration: 0.2 }
   },
@@ -139,16 +139,33 @@ const buttonVariants = {
 
 // Animation variants for dropdown
 const dropdownVariants = {
-  hidden: { 
+  hidden: {
     opacity: 0,
     y: -5,
     transition: { duration: 0.2 }
   },
-  visible: { 
+  visible: {
     opacity: 1,
     y: 0,
     transition: { duration: 0.2 }
   }
+};
+
+// Function to get reliable location images
+const getLocationImage = (index: number): string => {
+  // Array of verified working Unsplash image IDs for locations
+  const locationImageIds = [
+    "1582407947304-fd86f028f716", // Mumbai
+    "1600585154340-be6161a56a0c", // Delhi
+    "1564013799919-ab600027ffc6", // Bangalore
+    "1600607687939-ce8a6c25118c", // Hyderabad
+    "1512917774080-9991f1c4c750", // Chennai
+    "1600047509807-ba8f99d2cdde"  // Pune
+  ];
+
+  // Use the index to get an image, or fallback to the first one if index is out of bounds
+  const imageId = locationImageIds[index] || locationImageIds[0];
+  return `https://images.unsplash.com/photo-${imageId}?q=80&w=1973&auto=format&fit=crop`;
 };
 
 export default function SearchPage() {
@@ -166,7 +183,7 @@ export default function SearchPage() {
   // Animation effect for search suggestions
   useEffect(() => {
     if (isFocused) return; // Don't animate if input is focused
-    
+
     const interval = setInterval(() => {
       setIsAnimatingOut(true);
       setTimeout(() => {
@@ -182,13 +199,13 @@ export default function SearchPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    
+
     if (searchTerm) params.append('q', searchTerm);
     if (propertyType !== 'all') params.append('type', propertyType);
     if (location !== 'All India') params.append('location', location);
     if (priceRange !== 'Budget - Maximum') params.append('price', priceRange);
     params.append('purpose', activeTab.toLowerCase());
-    
+
     router.push(`/properties/search?${params.toString()}`);
   };
 
@@ -202,15 +219,15 @@ export default function SearchPage() {
       {/* Hero Section */}
       <div className="relative h-[500px]">
         <Image
-          src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1973&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=1973&auto=format&fit=crop"
           alt="Real Estate Hero"
           fill
           priority
           className="object-cover"
         />
-        
+
         <div className="absolute inset-0 bg-blue-500/30"></div>
-        
+
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 max-w-3xl">
             Find perfect home with real estate property
@@ -220,7 +237,7 @@ export default function SearchPage() {
           </p>
         </div>
       </div>
-      
+
       {/* Search Form */}
       <div className="relative z-10 max-w-3xl mx-auto -mt-16 px-4">
         {/* Search Container */}
@@ -230,8 +247,8 @@ export default function SearchPage() {
             <motion.button
               key="buy-mobile"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
-                ${activeTab === 'Buy' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium
+                ${activeTab === 'Buy' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('Buy')}
             >
@@ -240,8 +257,8 @@ export default function SearchPage() {
             <motion.button
               key="rent-mobile"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
-                ${activeTab === 'Rent' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium
+                ${activeTab === 'Rent' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('Rent')}
             >
@@ -250,8 +267,8 @@ export default function SearchPage() {
             <motion.button
               key="commercial-mobile"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
-                ${activeTab === 'Commercial' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium
+                ${activeTab === 'Commercial' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('Commercial')}
             >
@@ -260,8 +277,8 @@ export default function SearchPage() {
             <motion.button
               key="plots-mobile"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
-                ${activeTab === 'Plots' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium
+                ${activeTab === 'Plots' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('Plots')}
             >
@@ -270,8 +287,8 @@ export default function SearchPage() {
             <motion.button
               key="projects-mobile"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium 
-                ${activeTab === 'Projects' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-3 py-2 text-center text-sm font-medium
+                ${activeTab === 'Projects' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('Projects')}
             >
@@ -284,8 +301,8 @@ export default function SearchPage() {
             <motion.button
               key="buy-desktop"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium 
-                ${activeTab === 'Buy' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-4 py-4 text-center text-base font-medium
+                ${activeTab === 'Buy' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('Buy')}
             >
@@ -294,8 +311,8 @@ export default function SearchPage() {
             <motion.button
               key="new-desktop"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium 
-                ${activeTab === 'New' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-4 py-4 text-center text-base font-medium
+                ${activeTab === 'New' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('New')}
             >
@@ -304,8 +321,8 @@ export default function SearchPage() {
             <motion.button
               key="rent-desktop"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium 
-                ${activeTab === 'Rent' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-4 py-4 text-center text-base font-medium
+                ${activeTab === 'Rent' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('Rent')}
             >
@@ -314,8 +331,8 @@ export default function SearchPage() {
             <motion.button
               key="plots-desktop"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium 
-                ${activeTab === 'Plots' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-4 py-4 text-center text-base font-medium
+                ${activeTab === 'Plots' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('Plots')}
             >
@@ -324,8 +341,8 @@ export default function SearchPage() {
             <motion.button
               key="commercial-desktop"
               whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium 
-                ${activeTab === 'Commercial' ? 'bg-blue-700' : ''} 
+              className={`flex-1 px-4 py-4 text-center text-base font-medium
+                ${activeTab === 'Commercial' ? 'bg-blue-700' : ''}
                 transition-colors`}
               onClick={() => setActiveTab('Commercial')}
             >
@@ -337,7 +354,7 @@ export default function SearchPage() {
           <form onSubmit={handleSearch} className="md:hidden flex p-2 items-center gap-1">
             {/* Dropdown */}
             <div className="relative">
-              <select 
+              <select
                 className="px-2 py-1 bg-white appearance-none focus:outline-none pr-6 text-sm text-gray-700 border-r border-gray-200"
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value)}
@@ -381,7 +398,7 @@ export default function SearchPage() {
             </div>
 
             {/* Search Button */}
-            <button 
+            <button
               type="submit"
               className="px-3 py-1 bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors rounded-md cursor-pointer"
             >
@@ -393,7 +410,7 @@ export default function SearchPage() {
           <form onSubmit={handleSearch} className="hidden md:flex p-2 items-center gap-2">
             {/* Dropdown */}
             <div className="relative">
-              <select 
+              <select
                 className="px-4 py-2 bg-white appearance-none focus:outline-none pr-8 text-base text-gray-700 border-r border-gray-200"
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value)}
@@ -437,7 +454,7 @@ export default function SearchPage() {
             </div>
 
             {/* Search Button */}
-            <button 
+            <button
               type="submit"
               className="px-6 py-2 bg-blue-400 text-white text-base font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
             >
@@ -446,7 +463,7 @@ export default function SearchPage() {
           </form>
         </div>
       </div>
-      
+
       {/* Property Categories Section */}
       <div className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
@@ -454,10 +471,10 @@ export default function SearchPage() {
           <p className="text-gray-600 mb-10 text-center max-w-2xl mx-auto">
             With this feature, you can easily filter your search by selecting a specific category that matches your interests.
           </p>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {propertyTypes.map((type, index) => (
-              <div 
+              <div
                 key={index}
                 className={`${type.bgColor} hover:bg-opacity-80 transition-colors p-6 rounded-lg flex flex-col items-center text-center cursor-pointer`}
                 onClick={() => router.push(`/properties/search?type=${type.name}`)}
@@ -470,9 +487,9 @@ export default function SearchPage() {
               </div>
             ))}
           </div>
-          
+
           <div className="text-center mt-8">
-            <motion.button 
+            <motion.button
               variants={buttonVariants}
               initial="initial"
               animate="animate"
@@ -485,12 +502,12 @@ export default function SearchPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Recent Listed Properties */}
       <div className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold mb-10 text-black">Recent listed properties</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {recentProperties.slice(0, visibleProperties).map((property) => (
               <div key={property.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -508,7 +525,7 @@ export default function SearchPage() {
                 <div className="p-4">
                   <h3 className="font-semibold text-lg mb-1 text-black">{property.title}</h3>
                   <p className="text-gray-500 text-sm mb-3">{property.location}</p>
-                  
+
                   <div className="flex justify-between items-center">
                     <div className="flex space-x-3 text-sm text-gray-600">
                       {property.beds && (
@@ -528,7 +545,7 @@ export default function SearchPage() {
                         <span>{property.area}</span>
                       </div>
                     </div>
-                    
+
                     <button className="text-sm text-black font-medium">
                       More Details
                     </button>
@@ -537,10 +554,10 @@ export default function SearchPage() {
               </div>
             ))}
           </div>
-          
+
           {recentProperties.length > visibleProperties && (
             <div className="text-center mt-8">
-              <motion.button 
+              <motion.button
                 variants={buttonVariants}
                 initial="initial"
                 animate="animate"
@@ -555,24 +572,24 @@ export default function SearchPage() {
           )}
         </div>
       </div>
-      
+
       {/* Popular Regions Section */}
       <div className="py-12 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold mb-2">Popular regions in India</h2>
+          <h2 className="text-3xl font-bold mb-2 text-black">Popular regions in India</h2>
           <p className="text-gray-600 mb-10">
             Explore the most sought-after regions in India, including the most vibrant cities and neighborhoods.
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {popularLocations.slice(0, 3).map((location, index) => (
-              <div 
+              <div
                 key={index}
                 className="relative h-64 rounded-lg overflow-hidden cursor-pointer group"
                 onClick={() => router.push(`/properties/search?location=${location}`)}
               >
                 <Image
-                  src={`https://images.unsplash.com/photo-${1560518883 + index * 100}-ce09059eeffa?q=80&w=1973&auto=format&fit=crop`}
+                  src={getLocationImage(index)}
                   alt={location}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -589,38 +606,38 @@ export default function SearchPage() {
           </div>
         </div>
       </div>
-      
+
       {/* How it Works Section */}
       <div className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold mb-10 text-center">How does it work</h2>
-          
+          <h2 className="text-3xl font-bold mb-10 text-center text-black">How does it work</h2>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <SearchIcon size={24} className="text-blue-500" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Search for properties</h3>
+              <h3 className="text-xl font-semibold mb-2 text-black">Search for properties</h3>
               <p className="text-gray-600">
                 Browse through our extensive collection of properties across India.
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Building size={24} className="text-blue-500" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Find your perfect match</h3>
+              <h3 className="text-xl font-semibold mb-2 text-black">Find your perfect match</h3>
               <p className="text-gray-600">
                 Use our advanced filters to narrow down properties that match your requirements.
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Home size={24} className="text-blue-500" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Make it your home</h3>
+              <h3 className="text-xl font-semibold mb-2 text-black">Make it your home</h3>
               <p className="text-gray-600">
                 Contact the seller or agent directly and proceed with your purchase.
               </p>
@@ -628,14 +645,14 @@ export default function SearchPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Articles Section */}
       <div className="py-12 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Articles for property sharing</h2>
+            <h2 className="text-3xl font-bold text-black">Articles for property sharing</h2>
             <Link href="/articles" className="text-blue-500 hover:text-blue-600 flex items-center">
-              View all <ChevronRight className="h-4 w-4 ml-1" />
+              View all <ArrowRight className="h-4 w-4 ml-1" />
             </Link>
           </div>
           
@@ -662,37 +679,150 @@ export default function SearchPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Subscription Section */}
-      <div className="py-12 px-4 bg-gradient-to-r from-blue-500 to-blue-600">
+      <div className="py-16 px-4 bg-gradient-to-r from-blue-500 to-blue-600">
         <div className="max-w-6xl mx-auto">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 flex flex-col md:flex-row items-center justify-between">
-            <div className="mb-6 md:mb-0 md:mr-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Subscribe for daily updates</h2>
-              <p className="text-white/80">
-                Get the latest properties and real estate news delivered to your inbox
-              </p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8">
+            <div className="flex flex-col md:flex-row items-center justify-between">
+              <div className="mb-6 md:mb-0 md:mr-8">
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Subscribe for daily updates</h2>
+                <p className="text-white/80">
+                  Get the latest properties and real estate news delivered to your inbox
+                </p>
+              </div>
+              
+              <form className="w-full md:w-auto">
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div>
+                    <input
+                      type="email"
+                      placeholder="Your email address"
+                      className="w-full px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 bg-white/20 text-white placeholder:text-white/60 md:w-64"
+                      required
+                    />
+                  </div>
+                  <button 
+                    type="submit"
+                    className="px-6 py-3 bg-white text-blue-600 rounded-md hover:bg-gray-100 transition-colors font-medium"
+                  >
+                    Subscribe
+                  </button>
+                </div>
+              </form>
             </div>
-            
-            <form onSubmit={(e) => e.preventDefault()} className="w-full md:w-auto flex flex-col md:flex-row gap-3">
-              <input
-                type="email"
-                placeholder="Your email address"
-                className="px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 bg-white/20 text-white placeholder:text-white/60 w-full md:w-64"
-              />
-              <button 
-                type="submit"
-                className="px-6 py-3 bg-white text-blue-600 rounded-md hover:bg-gray-100 transition-colors font-medium"
-              >
-                Subscribe
-              </button>
-            </form>
           </div>
         </div>
       </div>
+
+      {/* Contact Form Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="h-6 w-6 text-gray-800" />
+            <h2 className="text-4xl font-bold text-black">Let's make it happen!</h2>
+            <Sparkles className="h-6 w-6 text-gray-800" />
+          </div>
+          <p className="text-gray-600 mb-12">
+            Ready to take the first step toward your dream property? Fill out the form below, and our real estate wizards will work their magic to find your perfect match. Don't wait; let's embark on this exciting journey together.
+          </p>
+
+          <form className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm text-black mb-2">First Name</label>
+                <input
+                  type="text"
+                  placeholder="Enter First Name"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Last Name</label>
+                <input
+                  type="text"
+                  placeholder="Enter Last Name"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Email</label>
+                <input
+                  type="email"
+                  placeholder="Enter your Email"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Phone</label>
+                <input
+                  type="tel"
+                  placeholder="Enter Phone Number"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-black mb-2">Preferred Contact Method</label>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black">
+                    <Phone className="h-5 w-5 text-gray-500 mr-2" />
+                    <input
+                      type="tel"
+                      placeholder="Enter Your Number"
+                      className="bg-transparent w-full focus:outline-none placeholder:text-gray-600/70 text-black"
+                    />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black">
+                    <Mail className="h-5 w-5 text-gray-500 mr-2" />
+                    <input
+                      type="email"
+                      placeholder="Enter Your Email"
+                      className="bg-transparent w-full focus:outline-none placeholder:text-gray-600/70 text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-black mb-2">Message</label>
+              <textarea
+                placeholder="Enter your Message here."
+                rows={6}
+                className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+              ></textarea>
+            </div>
+
+            {/* Terms and Send Message button container */}
+            <div className="flex items-center justify-between">
+              {/* Terms agreement */}
+              <div className="flex items-start gap-2">
+                <input type="checkbox" className="mt-1" />
+                <p className="text-sm text-black">
+                  I agree with <a href="#" className="underline">Terms of Use</a> and <a href="#" className="underline">Privacy Policy</a>
+                </p>
+              </div>
+
+              {/* Send Message button */}
+              <button
+                type="submit"
+                className="px-8 py-3 bg-[#7C3AED] text-white rounded-lg font-medium hover:bg-[#6D28D9] transition-colors"
+              >
+                Send Your Message
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
     </div>
   );
 }
+
 
 
 
