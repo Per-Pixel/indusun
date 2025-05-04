@@ -5,7 +5,7 @@
 ### Layout & Navigation
 - [x] Fix responsive navbar
 - [x] Create and style footer
-- [ ] Ensure bottom navigation works on all user pages
+- [x] Ensure bottom navigation works on all user pages
 - [ ] Add loading states/spinners
 
 ### Homepage
@@ -17,11 +17,11 @@
 - [ ] Partners/Brands section
 
 ### Properties
-- [ ] Improve properties listing page
+- [x] Improve properties listing page
 - [ ] Enhance property detail page
-- [ ] Add filtering system
-- [ ] Implement search functionality
-- [ ] Add favorites system
+- [x] Add filtering system
+- [x] Implement search functionality
+- [x] Add favorites system
 - [ ] Image gallery/slider
 
 ### Authentication
