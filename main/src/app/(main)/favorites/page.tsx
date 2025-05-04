@@ -50,12 +50,12 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 pt-16">
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold">My Favorites</h1>
+            <h1 className="text-xl font-bold text-black">My Favorites</h1>
             {favorites.length > 0 && (
               <button 
                 onClick={clearAllFavorites}
@@ -71,6 +71,12 @@ export default function FavoritesPage() {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
+        {/* Shortlists heading */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-black">Shortlists</h2>
+          <p className="text-black mt-1">Find all your shortlists at one place...</p>
+        </div>
+
         {isLoading ? (
           // Loading skeleton
           <div className="space-y-4">
@@ -89,8 +95,8 @@ export default function FavoritesPage() {
             <div className="bg-gray-100 p-4 rounded-full mb-4">
               <Heart size={40} className="text-gray-400" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">No favorites yet</h2>
-            <p className="text-gray-500 mb-6 max-w-md">
+            <h2 className="text-xl font-semibold text-black mb-2">No favorites yet</h2>
+            <p className="text-black mb-6 max-w-md">
               Start adding properties to your favorites list by clicking the heart icon on properties you like.
             </p>
             <Link 
@@ -106,12 +112,12 @@ export default function FavoritesPage() {
             {/* Filters */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
-                <p className="text-gray-600">
+                <p className="text-black">
                   {filteredFavorites.length} {filteredFavorites.length === 1 ? 'property' : 'properties'}
                 </p>
                 <button 
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-1 text-gray-700 text-sm font-medium"
+                  className="flex items-center gap-1 text-black text-sm font-medium"
                 >
                   <Filter size={16} />
                   Filter & Sort
@@ -123,29 +129,29 @@ export default function FavoritesPage() {
               {showFilters && (
                 <div className="bg-white p-4 rounded-lg shadow-sm mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+                    <label className="block text-sm font-medium text-black mb-1">Property Type</label>
                     <select
                       value={propertyType}
                       onChange={(e) => setPropertyType(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     >
-                      <option value="all">All Types</option>
-                      <option value="apartment">Apartment</option>
-                      <option value="house">House</option>
-                      <option value="villa">Villa</option>
-                      <option value="Plot">Plot</option>
+                      <option value="all" className="text-black">All Types</option>
+                      <option value="apartment" className="text-black">Apartment</option>
+                      <option value="house" className="text-black">House</option>
+                      <option value="villa" className="text-black">Villa</option>
+                      <option value="Plot" className="text-black">Plot</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                    <label className="block text-sm font-medium text-black mb-1">Sort By</label>
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as any)}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     >
-                      <option value="newest">Newest</option>
-                      <option value="price-asc">Price: Low to High</option>
-                      <option value="price-desc">Price: High to Low</option>
+                      <option value="newest" className="text-black">Newest</option>
+                      <option value="price-asc" className="text-black">Price: Low to High</option>
+                      <option value="price-desc" className="text-black">Price: High to Low</option>
                     </select>
                   </div>
                 </div>
@@ -153,7 +159,7 @@ export default function FavoritesPage() {
             </div>
 
             {/* Properties grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {filteredFavorites.map((property) => (
                 <div key={property.id} className="relative">
                   <PropertyCard property={property} />
@@ -172,3 +178,6 @@ export default function FavoritesPage() {
     </div>
   );
 }
+
+
+

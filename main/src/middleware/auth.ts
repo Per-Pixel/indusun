@@ -1,3 +1,4 @@
+// src/middleware/auth.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt-utils';
 

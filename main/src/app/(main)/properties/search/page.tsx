@@ -142,31 +142,23 @@ export default function SearchResultsPage() {
         <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mt-2 relative z-10" />
         
         <div className="container mx-auto px-4 pt-6 pb-8 min-h-screen relative z-10">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div className="flex items-center">
-              <button 
-                onClick={handleGoBack}
-                className="mr-3 p-2 rounded-full bg-white shadow-sm"
-              >
-                <X className="h-5 w-5 text-gray-700" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Search Results</h1>
-                {!isLoading && (
-                  <p className="text-gray-600">
-                    {properties.length === 0 
-                      ? 'No properties found' 
-                      : `Found ${properties.length} ${properties.length === 1 ? 'property' : 'properties'} for "${searchQuery}"`}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Link 
-              href="/properties" 
-              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+          <div className="flex items-center mb-8">
+            <button 
+              onClick={handleGoBack}
+              className="mr-3 p-2 rounded-full bg-white shadow-sm"
             >
-              {isMobile ? 'View All Properties' : 'Back to Properties'}
-            </Link>
+              <X className="h-5 w-5 text-gray-700" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Search Results</h1>
+              {!isLoading && (
+                <p className="text-gray-600">
+                  {properties.length === 0 
+                    ? 'No properties found' 
+                    : `Found ${properties.length} ${properties.length === 1 ? 'property' : 'properties'} for "${searchQuery}"`}
+                </p>
+              )}
+            </div>
           </div>
 
           {isLoading ? (
@@ -192,11 +184,22 @@ export default function SearchResultsPage() {
               ))}
             </div>
           )}
+          
+          {/* View All Properties button moved to bottom */}
+          <div className="mt-8 text-center">
+            <Link 
+              href="/properties" 
+              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              {isMobile ? 'View All Properties' : 'Back to Properties'}
+            </Link>
+          </div>
         </div>
       </motion.div>
     </AnimatePresence>
   );
 }
+
 
 
 
