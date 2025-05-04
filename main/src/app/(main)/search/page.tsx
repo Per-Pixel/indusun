@@ -7,6 +7,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PropertyCard } from '../properties/components/PropertyCard';
+import { DesktopSearchForm } from '../components/DesktopSearchForm';
+import { MobileSearchForm } from '../components/MobileSearchForm';
 
 // Property types with icons and counts
 const propertyTypes = [
@@ -210,6 +212,21 @@ export default function SearchPage() {
     router.push(`/properties/search?${params.toString()}`);
   };
 
+  // Handle search from components
+  const handleComponentSearch = (query: string, type: string) => {
+    setSearchTerm(query);
+    setPropertyType(type);
+    
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (type !== 'all') params.append('type', type);
+    if (location !== 'All India') params.append('location', location);
+    if (priceRange !== 'Budget - Maximum') params.append('price', priceRange);
+    params.append('purpose', activeTab.toLowerCase());
+
+    router.push(`/properties/search?${params.toString()}`);
+  };
+
   // Load more properties
   const handleLoadMore = () => {
     setVisibleProperties(prev => prev + 3);
@@ -241,227 +258,25 @@ export default function SearchPage() {
 
       {/* Search Form */}
       <div className="relative z-10 max-w-3xl mx-auto -mt-16 px-4">
-        {/* Search Container */}
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          {/* Top Navigation Area - Mobile version */}
-          <div className="flex justify-between bg-blue-600 text-white md:hidden">
-            <motion.button
-              key="buy-mobile"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium
-                ${activeTab === 'Buy' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('Buy')}
-            >
-              Buy
-            </motion.button>
-            <motion.button
-              key="rent-mobile"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium
-                ${activeTab === 'Rent' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('Rent')}
-            >
-              Rent
-            </motion.button>
-            <motion.button
-              key="commercial-mobile"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium
-                ${activeTab === 'Commercial' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('Commercial')}
-            >
-              Commercial
-            </motion.button>
-            <motion.button
-              key="plots-mobile"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium
-                ${activeTab === 'Plots' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('Plots')}
-            >
-              Plots/Land
-            </motion.button>
-            <motion.button
-              key="projects-mobile"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-3 py-2 text-center text-sm font-medium
-                ${activeTab === 'Projects' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('Projects')}
-            >
-              Projects
-            </motion.button>
-          </div>
+        {/* Mobile Search Form */}
+        <div className="md:hidden">
+          <MobileSearchForm 
+            onSearch={(query, type, tab) => {
+              setSearchTerm(query);
+              setPropertyType(type);
+              setActiveTab(tab);
+              handleComponentSearch(query, type);
+            }}
+          />
+        </div>
 
-          {/* Top Navigation Area - Desktop version */}
-          <div className="hidden md:flex justify-between bg-blue-600 text-white">
-            <motion.button
-              key="buy-desktop"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium
-                ${activeTab === 'Buy' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('Buy')}
-            >
-              Buy
-            </motion.button>
-            <motion.button
-              key="new-desktop"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium
-                ${activeTab === 'New' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('New')}
-            >
-              New
-            </motion.button>
-            <motion.button
-              key="rent-desktop"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium
-                ${activeTab === 'Rent' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('Rent')}
-            >
-              Rent
-            </motion.button>
-            <motion.button
-              key="plots-desktop"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium
-                ${activeTab === 'Plots' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('Plots')}
-            >
-              Plots
-            </motion.button>
-            <motion.button
-              key="commercial-desktop"
-              whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-              className={`flex-1 px-4 py-4 text-center text-base font-medium
-                ${activeTab === 'Commercial' ? 'bg-blue-700' : ''}
-                transition-colors`}
-              onClick={() => setActiveTab('Commercial')}
-            >
-              Commercial
-            </motion.button>
-          </div>
-
-          {/* Bottom Search Area - Mobile version */}
-          <form onSubmit={handleSearch} className="md:hidden flex p-2 items-center gap-1">
-            {/* Dropdown */}
-            <div className="relative">
-              <select
-                className="px-2 py-1 bg-white appearance-none focus:outline-none pr-6 text-sm text-gray-700 border-r border-gray-200"
-                value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value)}
-              >
-                <option value="all">All Residential</option>
-                <option value="apartment">Apartment</option>
-                <option value="house">House</option>
-                <option value="villa">Villa</option>
-              </select>
-              <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
-            </div>
-
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
-              <AnimatePresence>
-                {!searchTerm && !isFocused && (
-                  <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    exit="hidden"
-                    variants={dropdownVariants}
-                    className={`absolute left-6 top-1/2 pointer-events-none text-gray-400 text-xs
-                      transition-all duration-1000 ease-in-out
-                      ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
-                  >
-                    {searchSuggestions[currentSuggestionIndex]}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                className={`w-full pl-6 pr-2 py-1 focus:outline-none bg-transparent text-xs text-black
-                  ${isFocused ? 'caret-blue-500 animate-caret' : ''}`}
-                placeholder=""
-              />
-            </div>
-
-            {/* Search Button */}
-            <button
-              type="submit"
-              className="px-3 py-1 bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors rounded-md cursor-pointer"
-            >
-              Search
-            </button>
-          </form>
-
-          {/* Bottom Search Area - Desktop version */}
-          <form onSubmit={handleSearch} className="hidden md:flex p-2 items-center gap-2">
-            {/* Dropdown */}
-            <div className="relative">
-              <select
-                className="px-4 py-2 bg-white appearance-none focus:outline-none pr-8 text-base text-gray-700 border-r border-gray-200"
-                value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value)}
-              >
-                <option value="all">All Residential</option>
-                <option value="apartment">Apartment</option>
-                <option value="house">House</option>
-                <option value="villa">Villa</option>
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-            </div>
-
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <AnimatePresence>
-                {!searchTerm && !isFocused && (
-                  <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    exit="hidden"
-                    variants={dropdownVariants}
-                    className={`absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm
-                      transition-all duration-1000 ease-in-out
-                      ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
-                  >
-                    {searchSuggestions[currentSuggestionIndex]}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                className={`w-full pl-10 pr-4 py-2 focus:outline-none bg-transparent text-base text-black
-                  ${isFocused ? 'caret-blue-500 animate-caret' : ''}`}
-                placeholder=""
-              />
-            </div>
-
-            {/* Search Button */}
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-400 text-white text-base font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
-            >
-              Search
-            </button>
-          </form>
+        {/* Desktop Search Form */}
+        <div className="hidden md:block">
+          <DesktopSearchForm 
+            onSearch={handleComponentSearch}
+            initialPropertyType={propertyType}
+            initialSearchTerm={searchTerm}
+          />
         </div>
       </div>
 
@@ -785,6 +600,7 @@ export default function SearchPage() {
     </div>
   );
 }
+
 
 
 

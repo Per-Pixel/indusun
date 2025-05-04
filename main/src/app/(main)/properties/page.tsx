@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FilterDropdown } from '@/components/properties/FilterDropdown';
 import { PropertyCard } from './components/PropertyCard';
 import { PropertyCardDesktop } from './components/PropertyCardDesktop';
+import { MobileSearchForm } from '@/app/(main)/components/MobileSearchForm';
 
 // Types
 interface Property {
@@ -229,41 +230,54 @@ const PropertiesPage = () => {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative h-[600px] overflow-hidden">
+      <section className="relative h-[400px] md:h-[600px] overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop"
           alt="Hero Image"
           fill
           priority
-          className="object-cover rounded-bl-[50px]"
+          className="object-cover rounded-bl-[30px] md:rounded-bl-[50px]"
         />
         
         {/* Gradient overlay positioned absolutely */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent rounded-bl-[50px]"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent rounded-bl-[30px] md:rounded-bl-[50px]"></div>
 
         <div className="absolute inset-0">
-          {/* Title positioned absolutely */}
-          <div className="absolute bottom-28 right-0 container mx-auto px-4">
+          {/* Title positioned absolutely - hidden on mobile */}
+          <div className="absolute bottom-28 right-0 container mx-auto px-4 hidden md:block">
             <div className="w-full md:w-1/2 ml-auto text-right">
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
+              <h1 className="text-3xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
                 Enjoy The Finest Homes
               </h1>
             </div>
           </div>
 
-          {/* Button positioned absolutely */}
-          <div className="absolute bottom-8 left-0 container mx-auto px-4">
+          {/* Button positioned absolutely - hidden on mobile */}
+          <div className="absolute bottom-8 left-0 container mx-auto px-4 hidden md:block">
             <Link 
               href="/contact" 
-              className="inline-block border-2 border-white text-white px-6 py-2 rounded-full hover:bg-white hover:text-blue-600 transition-colors"
+              className="inline-block border-2 border-white text-white px-4 py-1.5 md:px-6 md:py-2 rounded-full hover:bg-white hover:text-blue-600 transition-colors text-sm md:text-base"
+            >
+              LET US GUIDE YOUR HOME
+            </Link>
+          </div>
+          
+          {/* Mobile-only title and button - hidden on desktop */}
+          <div className="absolute inset-0 flex flex-col items-start justify-center px-6 md:hidden">
+            <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">
+              Enjoy The Finest Homes
+            </h1>
+            <Link 
+              href="/contact" 
+              className="inline-block border-2 border-white text-white px-4 py-1.5 rounded-full hover:bg-white hover:text-blue-600 transition-colors text-sm drop-shadow-md"
             >
               LET US GUIDE YOUR HOME
             </Link>
           </div>
         </div>
 
-        {/* Stats positioned absolutely */}
-        <div className="absolute bottom-0 right-0 w-1/2 pl-30">
+        {/* Stats background only - visible on all devices */}
+        <div className="absolute bottom-0 right-0 w-1/2 sm:w-3/5 md:w-1/2">
           <div className="relative">
             {/* Diagonal white background positioned absolutely */}
             <div 
@@ -274,26 +288,26 @@ const PropertiesPage = () => {
               }}
             ></div>
             
-            {/* Stats content positioned absolutely */}
-            <div className="container mx-auto relative py-12 pl-20"> {/* reduced py-4 to py-2 and added pr-8 */}
-              <div className="grid grid-cols-3 gap-12 text-center"> {/* reduced gap-2 to gap-1 */}
+            {/* Stats content - only visible on desktop */}
+            <div className="container mx-auto relative py-12 sm:pl-10 md:pl-20 hidden md:block"> 
+              <div className="grid grid-cols-3 gap-4 sm:gap-6 md:gap-12 text-center"> 
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">680</div> {/* changed to blue-600 */}
-                  <div className="text-black text-xs -mt-1"> {/* changed from text-gray-600 to text-black */}
+                  <div className="text-sm sm:text-lg md:text-2xl font-bold text-blue-600">680</div>
+                  <div className="text-black text-[10px] sm:text-xs -mt-1">
                     Awward Winning
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">8K+</div> {/* changed to blue-600 */}
-                  <div className="text-black text-xs -mt-1"> {/* changed from text-gray-600 to text-black */}
+                  <div className="text-sm sm:text-lg md:text-2xl font-bold text-blue-600">8K+</div>
+                  <div className="text-black text-[10px] sm:text-xs -mt-1">
                     Happy Customer
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">500+</div> {/* changed to blue-600 */}
-                  <div className="text-black text-xs -mt-1"> {/* changed from text-gray-600 to text-black */}
+                  <div className="text-sm sm:text-lg md:text-2xl font-bold text-blue-600">500+</div>
+                  <div className="text-black text-[10px] sm:text-xs -mt-1">
                     Property Ready
                   </div>
                 </div>
@@ -303,14 +317,28 @@ const PropertiesPage = () => {
         </div>
       </section>
 
-      {/* Search Container */}
-      <div className="bg-white shadow-md rounded-lg max-w-2xl mx-auto -mt-7 relative z-10 overflow-hidden">
+      {/* Mobile Search Form */}
+      <div className="md:hidden">
+        <MobileSearchForm 
+          onSearch={(query, type, tab) => {
+            setSearchTerm(query);
+            setPropertyType(type);
+            // Handle the search with the existing function
+            const e = { preventDefault: () => {} } as React.FormEvent;
+            handleSearch(e);
+          }}
+          className="-mt-7"
+        />
+      </div>
+
+      {/* Desktop Search Container - only visible on md and up */}
+      <div className="hidden md:block bg-white shadow-md rounded-lg max-w-2xl mx-auto -mt-7 relative z-10 overflow-hidden">
         {/* Top Navigation Area */}
-        <div className="flex justify-between bg-blue-600 text-white">
+        <div className="flex justify-between bg-blue-600 text-white overflow-x-auto">
           <motion.button
             key="buy"
             whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+            className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
               ${propertyType === 'buy' ? 'bg-blue-700' : ''} 
               transition-colors`}
             onClick={() => setPropertyType('buy')}
@@ -320,7 +348,7 @@ const PropertiesPage = () => {
           <motion.button
             key="new"
             whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+            className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
               ${propertyType === 'new' ? 'bg-blue-700' : ''} 
               transition-colors`}
             onClick={() => setPropertyType('new')}
@@ -330,7 +358,7 @@ const PropertiesPage = () => {
           <motion.button
             key="commercial"
             whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+            className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
               ${propertyType === 'commercial' ? 'bg-blue-700' : ''} 
               transition-colors`}
             onClick={() => setPropertyType('commercial')}
@@ -340,7 +368,7 @@ const PropertiesPage = () => {
           <motion.button
             key="plots"
             whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+            className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
               ${propertyType === 'plots' ? 'bg-blue-700' : ''} 
               transition-colors`}
             onClick={() => setPropertyType('plots')}
@@ -350,7 +378,7 @@ const PropertiesPage = () => {
           <motion.button
             key="projects"
             whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
-            className={`flex-1 px-4 py-4 text-center text-base font-medium 
+            className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
               ${propertyType === 'projects' ? 'bg-blue-700' : ''} 
               transition-colors`}
             onClick={() => setPropertyType('projects')}
@@ -364,7 +392,7 @@ const PropertiesPage = () => {
           {/* Dropdown */}
           <div className="relative">
             <select 
-              className="px-4 py-2 bg-white appearance-none focus:outline-none pr-8 text-gray-700 border-r border-gray-200"
+              className="px-2 md:px-4 py-1.5 md:py-2 bg-white appearance-none focus:outline-none pr-6 md:pr-8 text-xs md:text-base text-gray-700 border-r border-gray-200"
               value={propertyType}
               onChange={(e) => setPropertyType(e.target.value)}
             >
@@ -373,12 +401,12 @@ const PropertiesPage = () => {
               <option value="house">House</option>
               <option value="villa">Villa</option>
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 h-3 w-3 md:h-4 md:w-4 text-gray-400 pointer-events-none" />
           </div>
 
           {/* Search Input */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 h-3 w-3 md:h-5 md:w-5 text-gray-400" />
             <AnimatePresence>
               {!searchTerm && !isFocused && (
                 <motion.div
@@ -386,7 +414,7 @@ const PropertiesPage = () => {
                   animate="visible"
                   exit="hidden"
                   variants={dropdownVariants}
-                  className={`absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm
+                  className={`absolute left-6 md:left-10 top-1/2 pointer-events-none text-gray-400 text-xs md:text-sm
                     transition-all duration-1000 ease-in-out
                     ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
                 >
@@ -400,7 +428,7 @@ const PropertiesPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              className={`w-full pl-10 pr-4 py-2 focus:outline-none bg-transparent text-black
+              className={`w-full pl-6 md:pl-10 pr-2 md:pr-4 py-1.5 md:py-2 focus:outline-none bg-transparent text-xs md:text-base text-black
                 ${isFocused ? 'caret-blue-500 animate-caret' : ''}`}
             />
           </div>
@@ -408,7 +436,7 @@ const PropertiesPage = () => {
           {/* Search Button */}
           <button 
             type="submit"
-            className="px-6 py-2 bg-blue-400 text-white font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
+            className="px-3 md:px-6 py-1.5 md:py-2 bg-blue-400 text-white text-xs md:text-base font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
           >
             Search
           </button>
@@ -712,26 +740,6 @@ export default PropertiesPage;
     caret-width: 2px;
   }
 `}</style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

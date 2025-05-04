@@ -68,8 +68,8 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
               </div>
             </div>
             
-            {/* Price - Right aligned on desktop */}
-            <div className="text-blue-600 font-medium text-sm sm:text-base mb-1 sm:mb-2 md:text-right md:ml-4">
+            {/* Price - Right aligned on all screen sizes */}
+            <div className="text-blue-600 font-medium text-sm sm:text-base mb-1 sm:mb-2 text-right self-end">
               {property.price}
             </div>
           </div>
@@ -100,6 +100,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
     </Link>
   );
 };
+
 
 
 

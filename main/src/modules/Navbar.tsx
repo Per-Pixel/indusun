@@ -184,7 +184,7 @@ const Navbar = () => {
       >
         {/* Background with opacity */}
         <div className={`absolute inset-0 bg-gradient-to-r from-white to-blue-600 rounded-b-xl md:rounded-b-2xl ${
-          isPropertiesPage ? 'opacity-10' : 'opacity-100'
+          isPropertiesPage ? 'opacity-0' : 'opacity-100'
         }`}></div>
 
         {/* Content */}
