@@ -6,6 +6,7 @@ import { Search as SearchIcon, MapPin, Building, Home, ArrowRight, ChevronDown, 
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PropertyCard } from '../properties/components/PropertyCard';
 
 // Property types with icons and counts
 const propertyTypes = [
@@ -503,60 +504,22 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* Recent Listed Properties */}
-      <div className="py-12 px-4">
+      {/* Recent Properties Section */}
+      <section className="py-12 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold mb-10 text-black">Recent listed properties</h2>
+          <h2 className="text-3xl font-bold mb-2 text-black">Recent Properties</h2>
+          <p className="text-gray-600 mb-8">
+            Explore our latest properties added to our platform
+          </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
             {recentProperties.slice(0, visibleProperties).map((property) => (
-              <div key={property.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <div className="relative h-48">
-                  <Image
-                    src={property.image}
-                    alt={property.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute top-3 right-3 bg-black text-white text-xs px-2 py-1 rounded">
-                    {property.price}
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-1 text-black">{property.title}</h3>
-                  <p className="text-gray-500 text-sm mb-3">{property.location}</p>
-
-                  <div className="flex justify-between items-center">
-                    <div className="flex space-x-3 text-sm text-gray-600">
-                      {property.beds && (
-                        <div className="flex items-center">
-                          <Bed size={16} className="mr-1" />
-                          <span>{property.beds}</span>
-                        </div>
-                      )}
-                      {property.baths && (
-                        <div className="flex items-center">
-                          <Bath size={16} className="mr-1" />
-                          <span>{property.baths}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center">
-                        <Square size={16} className="mr-1" />
-                        <span>{property.area}</span>
-                      </div>
-                    </div>
-
-                    <button className="text-sm text-black font-medium">
-                      More Details
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <PropertyCard key={property.id} property={property} />
             ))}
           </div>
 
           {recentProperties.length > visibleProperties && (
-            <div className="text-center mt-8">
+            <div className="text-center mt-6">
               <motion.button
                 variants={buttonVariants}
                 initial="initial"
@@ -564,14 +527,14 @@ export default function SearchPage() {
                 whileHover="hover"
                 whileTap="tap"
                 onClick={handleLoadMore}
-                className="px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-medium"
+                className="px-8 py-3 bg-[#333333] text-white rounded-3xl hover:bg-transparent hover:border-[#333333] hover:border-2 hover:text-[#333333] transition-all text-sm"
               >
                 Load More
               </motion.button>
             </div>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Popular Regions Section */}
       <div className="py-12 px-4 bg-gray-50">
@@ -822,6 +785,8 @@ export default function SearchPage() {
     </div>
   );
 }
+
+
 
 
 

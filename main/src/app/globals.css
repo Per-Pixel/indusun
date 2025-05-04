@@ -113,3 +113,27 @@ select,
 .dropdown-content {
   transition: all 0.2s ease-out;
 }
+
+/* Hide footer and bottom navigation when search page is active */
+body[data-search-active="true"] footer,
+body[data-search-active="true"] nav.fixed.bottom-0 {
+  display: none !important;
+}
+
+/* Add a full-screen white background when search is active */
+body[data-search-active="true"]::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: white;
+  z-index: 9998;
+}
+
+/* Ensure the search results page is above everything */
+body[data-search-active="true"] [data-search-results="true"] {
+  z-index: 9999;
+  position: relative;
+}

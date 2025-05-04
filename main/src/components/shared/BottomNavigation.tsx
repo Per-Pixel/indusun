@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Home, Search, Building2, Heart, User } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -121,7 +120,7 @@ export const BottomNavigation = () => {
   `;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t h-16 z-[999]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t h-16 z-[998]">
       <div className="flex justify-around items-end h-full">
         {navItems.map((item, index) => (
           <div key={index} className="relative">
@@ -175,6 +174,7 @@ const style = `
     }
   </style>
 `;
+
 
 
 

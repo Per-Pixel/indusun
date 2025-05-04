@@ -439,7 +439,7 @@ const PropertiesPage = () => {
           </p>
 
               {/* Properties Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
                 {mockProperties
                   .filter(property => property.type !== 'Plot') // Filter out plots for regular properties
                   .slice(0, visibleProperties)
@@ -487,7 +487,7 @@ const PropertiesPage = () => {
           </p>
 
           {/* Properties Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
             {mockProperties
               .filter(property => property.type === 'Plot') // Only show plots
               .slice(0, visibleLandProperties)
@@ -692,6 +692,8 @@ export default PropertiesPage;
     caret-width: 2px;
   }
 `}</style>
+
+
 
 
 
