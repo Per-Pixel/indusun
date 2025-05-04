@@ -241,10 +241,10 @@ export default function SearchPage() {
           alt="Real Estate Hero"
           fill
           priority
-          className="object-cover"
+          className="object-cover rounded-bl-[30px] rounded-br-[30px]"
         />
 
-        <div className="absolute inset-0 bg-blue-500/30"></div>
+        <div className="absolute inset-0 bg-blue-500/30 rounded-bl-[30px] rounded-br-[30px]"></div>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 max-w-3xl">
@@ -257,7 +257,7 @@ export default function SearchPage() {
       </div>
 
       {/* Search Form */}
-      <div className="relative z-10 max-w-3xl mx-auto -mt-16 px-4">
+      <div className="relative z-10 max-w-3xl mx-auto -mt-[-8px] px-4">
         {/* Mobile Search Form */}
         <div className="md:hidden">
           <MobileSearchForm 
@@ -600,6 +600,8 @@ export default function SearchPage() {
     </div>
   );
 }
+
+
 
 
 
