@@ -161,7 +161,20 @@ const Navbar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const isPropertiesPage = pathname.includes('/properties');
+  const [scrollY, setScrollY] = useState(0);
+
+  // Track scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Calculate opacity based on scroll position for all pages
+  const navbarOpacity = Math.min(scrollY / 150, 1); // Gradually increase from 0 to 1 over 150px scroll
 
   const handleBrokerClick = () => {
     router.push('/broker/login');
@@ -183,9 +196,10 @@ const Navbar = () => {
         className={`w-full h-[55px] md:h-[70px] px-6 sm:px-8 md:px-12 lg:px-16 rounded-b-xl md:rounded-b-2xl relative flex items-center justify-between`}
       >
         {/* Background with opacity */}
-        <div className={`absolute inset-0 bg-gradient-to-r from-white to-blue-600 rounded-b-xl md:rounded-b-2xl ${
-          isPropertiesPage ? 'opacity-0' : 'opacity-100'
-        }`}></div>
+        <div 
+          className="absolute inset-0 bg-gradient-to-r from-white to-blue-600 rounded-b-xl md:rounded-b-2xl transition-opacity duration-200"
+          style={{ opacity: navbarOpacity }}
+        ></div>
 
         {/* Content */}
         <div className="relative z-10 max-w-7xl mx-auto h-full flex items-center justify-between w-full">
