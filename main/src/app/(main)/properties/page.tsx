@@ -6,6 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FilterDropdown } from '@/components/properties/FilterDropdown';
+import { PropertyCard } from './components/PropertyCard';
+import { PropertyCardDesktop } from './components/PropertyCardDesktop';
 
 // Types
 interface Property {
@@ -43,8 +45,6 @@ const searchSuggestions = [
   "Ready to move property"
 ];
 
-import { PropertyCard } from './components/PropertyCard';
-
 const buttonVariants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -70,6 +70,7 @@ const PropertiesPage = () => {
   // New states
   const [isSearchView, setIsSearchView] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   // Mobile detection
   useEffect(() => {
@@ -79,6 +80,17 @@ const PropertiesPage = () => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Check if device is desktop
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024); // lg breakpoint
+    };
+    
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
   // Handle search button click
@@ -444,7 +456,11 @@ const PropertiesPage = () => {
                   .filter(property => property.type !== 'Plot') // Filter out plots for regular properties
                   .slice(0, visibleProperties)
                   .map((property) => (
-                    <PropertyCard key={property.id} property={property} />
+                    isDesktop ? (
+                      <PropertyCardDesktop key={property.id} property={property} />
+                    ) : (
+                      <PropertyCard key={property.id} property={property} />
+                    )
                   ))}
               </div>
 
@@ -492,7 +508,11 @@ const PropertiesPage = () => {
               .filter(property => property.type === 'Plot') // Only show plots
               .slice(0, visibleLandProperties)
               .map((property) => (
-                <PropertyCard key={property.id} property={property} />
+                isDesktop ? (
+                  <PropertyCardDesktop key={property.id} property={property} />
+                ) : (
+                  <PropertyCard key={property.id} property={property} />
+                )
               ))}
           </div>
 
@@ -692,6 +712,7 @@ export default PropertiesPage;
     caret-width: 2px;
   }
 `}</style>
+
 
 
 

@@ -21,13 +21,13 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
 
   return (
     <Link href={`/properties/${property.id}`}>
-      <div className="relative overflow-hidden group cursor-pointer bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+      <div className="relative overflow-hidden group cursor-pointer bg-white rounded-lg hover:shadow-sm transition-shadow">
         {/* Property Image */}
         <div className="relative overflow-hidden">
           <img
             src={property.image}
             alt={property.title}
-            className="w-full h-40 sm:h-48 md:h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-40 sm:h-48 md:h-64 object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"
           />
           
           {/* Tags Container - Only render if there are tags */}
@@ -54,34 +54,43 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
           </button>
         </div>
 
-        {/* Property Details - More compact for mobile */}
+        {/* Property Details - More compact for mobile, different for desktop */}
         <div className="p-2 sm:p-3">
-          <h3 className="text-sm sm:text-base font-medium text-green-500 truncate">{property.title}</h3>
-          <div className="flex items-center text-xs sm:text-sm text-gray-500 mb-0.5 sm:mb-1">
-            <MapPin className="h-3 w-3 text-amber-500 mr-1 flex-shrink-0" />
-            <span className="truncate">{property.location}</span>
-          </div>
-          
-          {/* Price */}
-          <div className="text-blue-600 font-medium text-sm sm:text-base mb-1 sm:mb-2">
-            {property.price}
+          {/* Title and Price Row - Flex container for desktop */}
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start">
+            <div className="flex-1">
+              <h3 className="text-sm sm:text-base font-medium text-green-500 truncate text-left">
+                {property.title}
+              </h3>
+              <div className="flex items-center text-xs sm:text-sm text-gray-500 mb-0.5 sm:mb-1 text-left">
+                <MapPin className="h-3 w-3 text-amber-500 mr-1 flex-shrink-0" />
+                <span className="truncate">{property.location}</span>
+              </div>
+            </div>
+            
+            {/* Price - Right aligned on desktop */}
+            <div className="text-blue-600 font-medium text-sm sm:text-base mb-1 sm:mb-2 md:text-right md:ml-4">
+              {property.price}
+            </div>
           </div>
 
-          {/* Property Features - Compact Row */}
-          <div className="flex items-center justify-between text-xs">
+          {/* Property Features - Centered on desktop with labels */}
+          <div className="flex items-center justify-between text-xs md:justify-center md:gap-8 md:mt-2">
             {property.beds && (
-              <div className="flex items-center">
-                <Bed className="h-3 w-3 text-gray-500 mr-0.5" />
-                <span className="text-gray-700">{property.beds}</span>
+              <div className="flex items-center md:flex-col md:items-center md:border md:border-gray-200 md:rounded-md md:px-3 md:py-1.5">
+                <Bed className="h-3 w-3 text-gray-500 mr-0.5 md:h-4 md:w-4 md:mb-1" />
+                <span className="text-gray-700 md:font-medium">{property.beds}</span>
+                <span className="hidden md:block text-[10px] text-gray-500">Bedroom</span>
               </div>
             )}
             {property.baths && (
-              <div className="flex items-center">
-                <Bath className="h-3 w-3 text-gray-500 mr-0.5" />
-                <span className="text-gray-700">{property.baths}</span>
+              <div className="flex items-center md:flex-col md:items-center md:border md:border-gray-200 md:rounded-md md:px-3 md:py-1.5">
+                <Bath className="h-3 w-3 text-gray-500 mr-0.5 md:h-4 md:w-4 md:mb-1" />
+                <span className="text-gray-700 md:font-medium">{property.baths}</span>
+                <span className="hidden md:block text-[10px] text-gray-500">Bathroom</span>
               </div>
             )}
-            <div className="flex items-center">
+            <div className="flex items-center md:hidden">
               <Clock className="h-3 w-3 text-gray-500 mr-0.5" />
               <span className="text-gray-700 text-[10px] sm:text-xs">{formatTimeAgo(property.listedDate)}</span>
             </div>
@@ -91,6 +100,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
     </Link>
   );
 };
+
 
 
 
