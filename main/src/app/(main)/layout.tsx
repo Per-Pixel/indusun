@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import { Navbar, Footer } from "@/modules";
+import { SearchTransition } from './properties/components/SearchTransition';
 
 export default function MainLayout({
   children,
@@ -8,6 +11,7 @@ export default function MainLayout({
 }>) {
   return (
     <>
+      <SearchTransition />
       <Navbar />
       {children}
       <Footer />

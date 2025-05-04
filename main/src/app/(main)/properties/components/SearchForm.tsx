@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { SearchLoadingOverlay } from './SearchLoadingOverlay';
@@ -10,9 +10,22 @@ export function SearchForm() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Clean up when component unmounts
+  useEffect(() => {
+    return () => {
+      // Reset data attribute if component unmounts during loading
+      if (document.body.getAttribute('data-search-active') === 'true') {
+        document.body.setAttribute('data-search-active', 'false');
+      }
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
+    
+    // Set data attribute on body to trigger CSS rules
+    document.body.setAttribute('data-search-active', 'true');
     
     // Show loading overlay
     setIsLoading(true);
@@ -46,5 +59,6 @@ export function SearchForm() {
     </>
   );
 }
+
 
 
