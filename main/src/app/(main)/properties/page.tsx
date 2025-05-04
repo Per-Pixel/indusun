@@ -136,6 +136,22 @@ const PropertiesPage = () => {
   // Add these state variables at the top of your component
   const [visibleProperties, setVisibleProperties] = useState(6);
   const [visibleLandProperties, setVisibleLandProperties] = useState(6);
+  const [favorites, setFavorites] = useState<number[]>([]);
+
+  // Add this function to handle favorite toggling
+  const handleFavoriteToggle = (propertyId: number) => {
+    setFavorites(prev => {
+      if (prev.includes(propertyId)) {
+        return prev.filter(id => id !== propertyId);
+      } else {
+        return [...prev, propertyId];
+      }
+    });
+    
+    // In a real app, you would save this to localStorage or a database
+    // For example:
+    // localStorage.setItem('favorites', JSON.stringify([...favorites, propertyId]));
+  };
 
   // Add these handler functions
   const handleLoadMore = () => {
@@ -485,9 +501,9 @@ const PropertiesPage = () => {
                   .slice(0, visibleProperties)
                   .map((property) => (
                     isDesktop ? (
-                      <PropertyCardDesktop key={property.id} property={property} />
+                      <PropertyCardDesktop key={property.id} property={property} onFavoriteToggle={handleFavoriteToggle} />
                     ) : (
-                      <PropertyCard key={property.id} property={property} />
+                      <PropertyCard key={property.id} property={property} onFavoriteToggle={handleFavoriteToggle} />
                     )
                   ))}
               </div>
@@ -537,9 +553,9 @@ const PropertiesPage = () => {
               .slice(0, visibleLandProperties)
               .map((property) => (
                 isDesktop ? (
-                  <PropertyCardDesktop key={property.id} property={property} />
+                  <PropertyCardDesktop key={property.id} property={property} onFavoriteToggle={handleFavoriteToggle} />
                 ) : (
-                  <PropertyCard key={property.id} property={property} />
+                  <PropertyCard key={property.id} property={property} onFavoriteToggle={handleFavoriteToggle} />
                 )
               ))}
           </div>
@@ -740,6 +756,7 @@ export default PropertiesPage;
     caret-width: 2px;
   }
 `}</style>
+
 
 
 

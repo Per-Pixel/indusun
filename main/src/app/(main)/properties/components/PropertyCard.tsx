@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Bed, Bath, Clock, MapPin } from 'lucide-react';
+import { Bed, Bath, Clock, MapPin, Heart } from 'lucide-react';
 import { Property } from '@/types/property';
 import { formatTimeAgo } from '@/utils/dateUtils';
+import { useState } from 'react';
 
 interface PropertyCardProps {
   property: Property & {
@@ -11,13 +12,37 @@ interface PropertyCardProps {
     listedDate: string;
     featured?: boolean;
   };
+  onFavoriteToggle?: (propertyId: number) => void;
+  initialFavorite?: boolean;
+  hideHeart?: boolean;
 }
 
-export const PropertyCard = ({ property }: PropertyCardProps) => {
+export const PropertyCard = ({ 
+  property, 
+  onFavoriteToggle, 
+  initialFavorite = false,
+  hideHeart = false 
+}: PropertyCardProps) => {
   const isHighlyViewed = property.views && property.views > 1000;
   // Only show featured tag if property is featured AND not highly viewed
   const showFeatured = property.featured && !isHighlyViewed;
   const hasTags = showFeatured || isHighlyViewed;
+  
+  // Local state for favorite status
+  const [isFavorite, setIsFavorite] = useState(initialFavorite);
+  
+  // Handle favorite button click
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation to property detail
+    e.stopPropagation(); // Stop event propagation
+    
+    setIsFavorite(!isFavorite);
+    
+    // Call the parent component's handler if provided
+    if (onFavoriteToggle) {
+      onFavoriteToggle(property.id);
+    }
+  };
 
   return (
     <Link href={`/properties/${property.id}`}>
@@ -46,12 +71,18 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
             </div>
           )}
 
-          {/* Heart Button */}
-          <button className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          </button>
+          {/* Heart Button - Only show if not hidden */}
+          {!hideHeart && (
+            <button 
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white"
+              onClick={handleFavoriteClick}
+            >
+              <Heart 
+                className={`h-4 w-4 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} 
+                strokeWidth={1.5}
+              />
+            </button>
+          )}
         </div>
 
         {/* Property Details - More compact for mobile, different for desktop */}
@@ -100,6 +131,8 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
     </Link>
   );
 };
+
+
 
 
 

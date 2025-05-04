@@ -162,7 +162,7 @@ export default function FavoritesPage() {
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {filteredFavorites.map((property) => (
                 <div key={property.id} className="relative">
-                  <PropertyCard property={property} />
+                  <PropertyCard property={property} hideHeart={true} />
                   <button
                     onClick={() => removeFromFavorites(property.id)}
                     className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors"
@@ -178,6 +178,10 @@ export default function FavoritesPage() {
     </div>
   );
 }
+
+
+
+
 
 
 
