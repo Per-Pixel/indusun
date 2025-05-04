@@ -120,7 +120,7 @@ export const BottomNavigation = () => {
   `;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t h-16 z-[998] rounded-tl-xl rounded-tr-xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t h-16 z-[998] rounded-tl-xl rounded-tr-xl shadow-[0_-7px_10px_-1px_rgba(0,0,0,0.2)]">
       <div className="flex justify-around items-end h-full">
         {navItems.map((item, index) => (
           <div key={index} className="relative">
@@ -174,6 +174,7 @@ const style = `
     }
   </style>
 `;
+
 
 
 
