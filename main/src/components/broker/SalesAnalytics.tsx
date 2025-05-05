@@ -58,7 +58,7 @@ const SalesAnalytics = ({ data, selectedYear, onYearChange }: SalesAnalyticsProp
         <div className="w-1/2">
           <div className="text-center mb-4">
             <p className="text-sm text-gray-500">Total</p>
-            <p className="text-2xl font-bold">${totalSalesAmount}</p>
+            <p className="text-2xl font-bold text-gray-900">${totalSalesAmount}</p>
           </div>
           
           <div className="space-y-2">
@@ -66,9 +66,9 @@ const SalesAnalytics = ({ data, selectedYear, onYearChange }: SalesAnalyticsProp
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
-                  <span className="text-sm">{item.name}</span>
+                  <span className="text-sm text-gray-900">{item.name}</span>
                 </div>
-                <span className="text-sm font-medium">${item.value}</span>
+                <span className="text-sm font-medium text-gray-900">${item.value}</span>
               </div>
             ))}
           </div>
@@ -79,3 +79,4 @@ const SalesAnalytics = ({ data, selectedYear, onYearChange }: SalesAnalyticsProp
 };
 
 export default SalesAnalytics;
+

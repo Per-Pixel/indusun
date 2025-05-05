@@ -90,7 +90,7 @@ export default function BrokerDashboard() {
                 height={40}
                 className="rounded-full mr-3"
               />
-              <h1 className="text-lg font-medium">Good Morning Masum <span className="text-yellow-400">👋</span></h1>
+              <h1 className="text-lg font-medium text-black">Good Morning Masum <span className="text-yellow-400">👋</span></h1>
             </div>
           </div>
           <div className="relative">
@@ -125,27 +125,39 @@ export default function BrokerDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-purple-600 text-white rounded-lg p-4">
-            <h3 className="text-sm font-medium mb-1">Total Income</h3>
-            <div className="flex items-center justify-between">
-              <p className="text-xl font-bold">$150k</p>
-              <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">+2.5%</span>
+          <div className="bg-purple-600 text-white rounded-lg p-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-purple-500 opacity-50 transform translate-x-1/4 -translate-y-1/4"></div>
+            <div className="absolute top-1/2 right-0 w-12 h-12 rounded-full bg-purple-500 opacity-30 transform translate-x-1/3"></div>
+            <div className="relative z-10">
+              <h3 className="text-sm font-medium mb-1">Total Income</h3>
+              <div className="flex items-center justify-between">
+                <p className="text-xl font-bold">$150k</p>
+                <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full text-black">+2.5%</span>
+              </div>
             </div>
           </div>
 
-          <div className="bg-cyan-500 text-white rounded-lg p-4">
-            <h3 className="text-sm font-medium mb-1">Total Expense</h3>
-            <div className="flex items-center justify-between">
-              <p className="text-xl font-bold">$100k</p>
-              <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">-4.5%</span>
+          <div className="bg-cyan-500 text-white rounded-lg p-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-cyan-400 opacity-50 transform translate-x-1/4 -translate-y-1/4"></div>
+            <div className="absolute top-1/2 right-0 w-12 h-12 rounded-full bg-cyan-400 opacity-30 transform translate-x-1/3"></div>
+            <div className="relative z-10">
+              <h3 className="text-sm font-medium mb-1">Total Expense</h3>
+              <div className="flex items-center justify-between">
+                <p className="text-xl font-bold">$100k</p>
+                <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full text-black">-4.5%</span>
+              </div>
             </div>
           </div>
 
-          <div className="bg-orange-500 text-white rounded-lg p-4">
-            <h3 className="text-sm font-medium mb-1">Total Profit</h3>
-            <div className="flex items-center justify-between">
-              <p className="text-xl font-bold">$50k</p>
-              <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">+5.5%</span>
+          <div className="bg-orange-500 text-white rounded-lg p-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-orange-400 opacity-50 transform translate-x-1/4 -translate-y-1/4"></div>
+            <div className="absolute top-1/2 right-0 w-12 h-12 rounded-full bg-orange-400 opacity-30 transform translate-x-1/3"></div>
+            <div className="relative z-10">
+              <h3 className="text-sm font-medium mb-1">Total Profit</h3>
+              <div className="flex items-center justify-between">
+                <p className="text-xl font-bold">$50k</p>
+                <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full text-black">+5.5%</span>
+              </div>
             </div>
           </div>
         </div>
@@ -155,11 +167,11 @@ export default function BrokerDashboard() {
           {/* Sales Analytics */}
           <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium">Sales Analytics</h2>
+              <h2 className="text-lg font-medium text-black">Sales Analytics</h2>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                className="border border-gray-300 rounded-md px-2 py-1 text-sm text-black"
               >
                 <option>December 2021</option>
                 <option>January 2022</option>
@@ -191,8 +203,8 @@ export default function BrokerDashboard() {
 
               <div className="w-1/2">
                 <div className="text-center mb-4">
-                  <p className="text-sm text-gray-500">Total</p>
-                  <p className="text-2xl font-bold">${totalSalesAmount}</p>
+                  <p className="text-sm text-black">Total</p>
+                  <p className="text-2xl font-bold text-black">${totalSalesAmount}</p>
                 </div>
 
                 <div className="space-y-2">
@@ -200,9 +212,9 @@ export default function BrokerDashboard() {
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex items-center">
                         <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
-                        <span className="text-sm">{item.name}</span>
+                        <span className="text-sm text-black">{item.name}</span>
                       </div>
-                      <span className="text-sm font-medium">${item.value}</span>
+                      <span className="text-sm font-medium text-black">${item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -213,11 +225,11 @@ export default function BrokerDashboard() {
           {/* Income Statistics */}
           <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium">Income Statistics</h2>
+              <h2 className="text-lg font-medium text-black">Income Statistics</h2>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                className="border border-gray-300 rounded-md px-2 py-1 text-sm text-black"
               >
                 <option>Monthly</option>
                 <option>Weekly</option>
@@ -242,7 +254,7 @@ export default function BrokerDashboard() {
           {/* Sales Report */}
           <div className="col-span-2 bg-white rounded-lg shadow p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium">Sales Report</h2>
+              <h2 className="text-lg font-medium text-black">Sales Report</h2>
               <div className="flex items-center">
                 <button className="text-gray-500 hover:text-gray-700">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -255,7 +267,7 @@ export default function BrokerDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="text-left text-sm text-gray-500">
+                  <tr className="text-left text-sm text-black">
                     <th className="pb-3 font-medium">Sales by</th>
                     <th className="pb-3 font-medium">Property name</th>
                     <th className="pb-3 font-medium">Sales Type</th>
@@ -265,7 +277,7 @@ export default function BrokerDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {salesReportData.map((sale) => (
-                    <tr key={sale.id} className="text-sm">
+                    <tr key={sale.id} className="text-sm text-black">
                       <td className="py-3">
                         <div className="flex items-center">
                           <div className="h-8 w-8 rounded-full overflow-hidden mr-2">
@@ -277,12 +289,12 @@ export default function BrokerDashboard() {
                               className="object-cover"
                             />
                           </div>
-                          <span>{sale.agent.name}</span>
+                          <span className="text-black">{sale.agent.name}</span>
                         </div>
                       </td>
-                      <td className="py-3">{sale.location}</td>
-                      <td className="py-3">{sale.type}</td>
-                      <td className="py-3">{sale.price}</td>
+                      <td className="py-3 text-black">{sale.location}</td>
+                      <td className="py-3 text-black">{sale.type}</td>
+                      <td className="py-3 text-black">{sale.price}</td>
                       <td className="py-3">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           sale.status === 'Paid'
@@ -302,8 +314,8 @@ export default function BrokerDashboard() {
           {/* Property List */}
           <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium">Property List</h2>
-              <button className="text-xs text-gray-500">See All Listing</button>
+              <h2 className="text-lg font-medium text-black">Property List</h2>
+              <button className="text-xs text-black">See All Listing</button>
             </div>
 
             <div className="space-y-4">
@@ -320,24 +332,11 @@ export default function BrokerDashboard() {
                     {property.days} Days ago
                   </div>
                   <div className="p-3 bg-white">
-                    <h3 className="font-medium">{property.title}</h3>
-                    <p className="text-lg font-bold mt-1">{property.price}</p>
+                    <h3 className="font-medium text-black">{property.title}</h3>
+                    <p className="text-lg font-bold mt-1 text-black">{property.price}</p>
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Sales By Region */}
-          <div className="col-span-3 bg-white rounded-lg shadow p-4">
-            <h2 className="text-lg font-medium mb-4">Sales By Region</h2>
-            <div className="h-64 relative">
-              <Image
-                src="/auth/map.png"
-                alt="Sales Map"
-                fill
-                className="object-contain"
-              />
             </div>
           </div>
         </div>
@@ -345,3 +344,10 @@ export default function BrokerDashboard() {
     </BrokerDashboardLayout>
   );
 }
+
+
+
+
+
+
+
