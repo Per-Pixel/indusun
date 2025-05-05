@@ -10,6 +10,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts';
 import BrokerDashboardLayout from '@/components/broker/BrokerDashboardLayout';
+import { mockProperties } from '@/app/(main)/properties/mockData';
 
 // Sample data for charts
 const salesData = [
@@ -44,17 +45,17 @@ const salesReportData = [
 // Sample data for property list
 const propertyListData = [
   {
-    id: 1,
-    image: '/auth/properties/property-1.jpg',
-    title: 'Ridgewood Street - 15090Q',
-    price: '$456,000',
+    id: mockProperties[0].id,
+    image: mockProperties[0].image,
+    title: mockProperties[0].title,
+    price: mockProperties[0].price,
     days: 3,
   },
   {
-    id: 2,
-    image: '/auth/properties/property-2.jpg',
-    title: 'Main Street - 15090Q',
-    price: '$243,000',
+    id: mockProperties[1].id,
+    image: mockProperties[1].image,
+    title: mockProperties[1].title,
+    price: mockProperties[1].price,
     days: 4,
   },
 ];
@@ -79,7 +80,7 @@ export default function BrokerDashboard() {
 
   return (
     <BrokerDashboardLayout>
-      <div className="mb-6">
+      <div className="mb-6 relative">
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="flex items-center">
@@ -103,240 +104,245 @@ export default function BrokerDashboard() {
           </div>
         </div>
 
-        {/* Banner */}
-        <div className="bg-indigo-700 text-white rounded-lg p-4 mb-6 flex items-center justify-between">
-          <div className="flex-1">
-            <h2 className="text-xl font-medium mb-2">Splash yourself in</h2>
-            <p className="mb-4">Big Discount on This sale.</p>
-            <button className="bg-white text-indigo-700 px-4 py-2 rounded-md text-sm font-medium">
-              Explore Now
-            </button>
-          </div>
-          <div className="w-1/3">
-            <Image
-              src="/auth/house.png"
-              alt="House"
-              width={200}
-              height={120}
-              className="object-contain"
-            />
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-purple-600 text-white rounded-lg p-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-purple-500 opacity-50 transform translate-x-1/4 -translate-y-1/4"></div>
-            <div className="absolute top-1/2 right-0 w-12 h-12 rounded-full bg-purple-500 opacity-30 transform translate-x-1/3"></div>
-            <div className="relative z-10">
-              <h3 className="text-sm font-medium mb-1">Total Income</h3>
-              <div className="flex items-center justify-between">
-                <p className="text-xl font-bold">$150k</p>
-                <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full text-black">+2.5%</span>
+        {/* Content container with increased top margin */}
+        <div className="mt-8">
+          {/* Banner */}
+          <div className="bg-gradient-to-r from-indigo-700 to-indigo-600 text-white rounded-lg p-4 mb-6 flex items-center justify-between relative overflow-hidden">
+            <div className="flex-1 relative z-10">
+              <h2 className="text-xl font-medium mb-2">Splash yourself in</h2>
+              <p className="mb-4">Big Discount on This sale.</p>
+              <button className="bg-white text-indigo-700 px-4 py-2 rounded-md text-sm font-medium">
+                Explore Now
+              </button>
+            </div>
+            <div className="absolute right-0 top-0 bottom-0 w-1/2">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-transparent z-10"></div>
+              <div className="relative h-full w-full">
+                <Image
+                  src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1973&auto=format&fit=crop"
+                  alt="Modern House"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </div>
           </div>
 
-          <div className="bg-cyan-500 text-white rounded-lg p-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-cyan-400 opacity-50 transform translate-x-1/4 -translate-y-1/4"></div>
-            <div className="absolute top-1/2 right-0 w-12 h-12 rounded-full bg-cyan-400 opacity-30 transform translate-x-1/3"></div>
-            <div className="relative z-10">
-              <h3 className="text-sm font-medium mb-1">Total Expense</h3>
-              <div className="flex items-center justify-between">
-                <p className="text-xl font-bold">$100k</p>
-                <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full text-black">-4.5%</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-orange-500 text-white rounded-lg p-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-orange-400 opacity-50 transform translate-x-1/4 -translate-y-1/4"></div>
-            <div className="absolute top-1/2 right-0 w-12 h-12 rounded-full bg-orange-400 opacity-30 transform translate-x-1/3"></div>
-            <div className="relative z-10">
-              <h3 className="text-sm font-medium mb-1">Total Profit</h3>
-              <div className="flex items-center justify-between">
-                <p className="text-xl font-bold">$50k</p>
-                <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full text-black">+5.5%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          {/* Sales Analytics */}
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-black">Sales Analytics</h2>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm text-black"
-              >
-                <option>December 2021</option>
-                <option>January 2022</option>
-                <option>February 2022</option>
-              </select>
-            </div>
-
-            <div className="flex">
-              <div className="w-1/2">
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={salesData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {salesData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `$${value}`} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="w-1/2">
-                <div className="text-center mb-4">
-                  <p className="text-sm text-black">Total</p>
-                  <p className="text-2xl font-bold text-black">${totalSalesAmount}</p>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-purple-600 text-white rounded-lg p-4 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-purple-500 opacity-50 transform translate-x-1/4 -translate-y-1/4"></div>
+              <div className="absolute top-1/2 right-0 w-12 h-12 rounded-full bg-purple-500 opacity-30 transform translate-x-1/3"></div>
+              <div className="relative z-10">
+                <h3 className="text-sm font-medium mb-1">Total Income</h3>
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-bold">$150k</p>
+                  <span className="text-xs bg-white bg-opacity-20 px-4 py-2 rounded-full text-black">+2.5%</span>
                 </div>
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  {salesData.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
-                        <span className="text-sm text-black">{item.name}</span>
-                      </div>
-                      <span className="text-sm font-medium text-black">${item.value}</span>
-                    </div>
-                  ))}
+            <div className="bg-cyan-500 text-white rounded-lg p-4 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-cyan-400 opacity-50 transform translate-x-1/4 -translate-y-1/4"></div>
+              <div className="absolute top-1/2 right-0 w-12 h-12 rounded-full bg-cyan-400 opacity-30 transform translate-x-1/3"></div>
+              <div className="relative z-10">
+                <h3 className="text-sm font-medium mb-1">Total Expense</h3>
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-bold">$100k</p>
+                  <span className="text-xs bg-white bg-opacity-20 px-4 py-2 rounded-full text-black">-4.5%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-orange-500 text-white rounded-lg p-4 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-orange-400 opacity-50 transform translate-x-1/4 -translate-y-1/4"></div>
+              <div className="absolute top-1/2 right-0 w-12 h-12 rounded-full bg-orange-400 opacity-30 transform translate-x-1/3"></div>
+              <div className="relative z-10">
+                <h3 className="text-sm font-medium mb-1">Total Profit</h3>
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-bold">$50k</p>
+                  <span className="text-xs bg-white bg-opacity-20 px-4 py-2 rounded-full text-black">+5.5%</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Income Statistics */}
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-black">Income Statistics</h2>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm text-black"
-              >
-                <option>Monthly</option>
-                <option>Weekly</option>
-                <option>Daily</option>
-              </select>
-            </div>
-
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={incomeData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Bottom Section */}
-        <div className="grid grid-cols-3 gap-6">
-          {/* Sales Report */}
-          <div className="col-span-2 bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-black">Sales Report</h2>
-              <div className="flex items-center">
-                <button className="text-gray-500 hover:text-gray-700">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                  </svg>
-                </button>
+          {/* Charts Section */}
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            {/* Sales Analytics */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-black">Sales Analytics</h2>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="border border-gray-300 rounded-md px-2 py-1 text-sm text-black"
+                >
+                  <option>December 2021</option>
+                  <option>January 2022</option>
+                  <option>February 2022</option>
+                </select>
               </div>
-            </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-sm text-black">
-                    <th className="pb-3 font-medium">Sales by</th>
-                    <th className="pb-3 font-medium">Property name</th>
-                    <th className="pb-3 font-medium">Sales Type</th>
-                    <th className="pb-3 font-medium">Price</th>
-                    <th className="pb-3 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {salesReportData.map((sale) => (
-                    <tr key={sale.id} className="text-sm text-black">
-                      <td className="py-3">
+              <div className="flex">
+                <div className="w-1/2">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={salesData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {salesData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `$${value}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="w-1/2">
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-black">Total</p>
+                    <p className="text-2xl font-bold text-black">${totalSalesAmount}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    {salesData.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full overflow-hidden mr-2">
-                            <Image
-                              src={sale.agent.avatar}
-                              alt={sale.agent.name}
-                              width={32}
-                              height={32}
-                              className="object-cover"
-                            />
-                          </div>
-                          <span className="text-black">{sale.agent.name}</span>
+                          <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
+                          <span className="text-sm text-black">{item.name}</span>
                         </div>
-                      </td>
-                      <td className="py-3 text-black">{sale.location}</td>
-                      <td className="py-3 text-black">{sale.type}</td>
-                      <td className="py-3 text-black">{sale.price}</td>
-                      <td className="py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          sale.status === 'Paid'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {sale.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <span className="text-sm font-medium text-black">${item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Income Statistics */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-black">Income Statistics</h2>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="border border-gray-300 rounded-md px-2 py-1 text-sm text-black"
+                >
+                  <option>Monthly</option>
+                  <option>Weekly</option>
+                  <option>Daily</option>
+                </select>
+              </div>
+
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={incomeData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                  <YAxis axisLine={false} tickLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Property List */}
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-black">Property List</h2>
-              <button className="text-xs text-black">See All Listing</button>
+          {/* Bottom Section */}
+          <div className="grid grid-cols-3 gap-6">
+            {/* Sales Report */}
+            <div className="col-span-2 bg-white rounded-lg shadow p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-black">Sales Report</h2>
+                <div className="flex items-center">
+                  <button className="text-gray-500 hover:text-gray-700">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left text-sm text-black">
+                      <th className="pb-3 font-medium">Sales by</th>
+                      <th className="pb-3 font-medium">Property name</th>
+                      <th className="pb-3 font-medium">Sales Type</th>
+                      <th className="pb-3 font-medium">Price</th>
+                      <th className="pb-3 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {salesReportData.map((sale) => (
+                      <tr key={sale.id} className="text-sm text-black">
+                        <td className="py-3">
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 rounded-full overflow-hidden mr-2">
+                              <Image
+                                src={sale.agent.avatar}
+                                alt={sale.agent.name}
+                                width={32}
+                                height={32}
+                                className="object-cover"
+                              />
+                            </div>
+                            <span className="text-black">{sale.agent.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 text-black">{sale.location}</td>
+                        <td className="py-3 text-black">{sale.type}</td>
+                        <td className="py-3 text-black">{sale.price}</td>
+                        <td className="py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            sale.status === 'Paid'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {sale.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              {propertyListData.map((property) => (
-                <div key={property.id} className="relative rounded-lg overflow-hidden">
-                  <Image
-                    src={property.image}
-                    alt={property.title}
-                    width={400}
-                    height={200}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute top-2 left-2 bg-white text-xs px-2 py-1 rounded-md">
-                    {property.days} Days ago
+            {/* Property List */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-black">Property List</h2>
+                <button className="text-xs text-black">See All Listing</button>
+              </div>
+
+              <div className="space-y-4">
+                {propertyListData.map((property) => (
+                  <div key={property.id} className="relative rounded-lg overflow-hidden">
+                    <Image
+                      src={property.image}
+                      alt={property.title}
+                      width={400}
+                      height={200}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-2 left-2 bg-white text-xs px-2 py-1 rounded-md text-black">
+                      {property.days} Days ago
+                    </div>
+                    <div className="p-3 bg-white">
+                      <h3 className="font-medium text-black">{property.title}</h3>
+                      <p className="text-lg font-bold mt-1 text-black">{property.price}</p>
+                    </div>
                   </div>
-                  <div className="p-3 bg-white">
-                    <h3 className="font-medium text-black">{property.title}</h3>
-                    <p className="text-lg font-bold mt-1 text-black">{property.price}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -344,6 +350,14 @@ export default function BrokerDashboard() {
     </BrokerDashboardLayout>
   );
 }
+
+
+
+
+
+
+
+
 
 
 
