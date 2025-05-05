@@ -7,6 +7,24 @@ export async function withAuth(
   req: NextRequest,
   handler: (req: NextRequest, user: any) => Promise<NextResponse>
 ) {
+  // TEMPORARY: Development bypass for authentication
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  if (isDevelopment) {
+    // Create a mock user for development
+    const mockUser = {
+      id: '1',
+      name: 'Development User',
+      email: 'dev@example.com',
+      role: 'broker', // Give highest non-admin role for testing
+      // Add any other user properties your app expects
+    };
+    
+    console.log('🔧 Development mode: Authentication bypassed');
+    return handler(req, mockUser);
+  }
+  
+  // Normal production behavior
   // Get token from cookies or Authorization header
   const token = req.cookies.get('access_token')?.value 
     || req.headers.get('Authorization')?.replace('Bearer ', '');
@@ -28,9 +46,27 @@ export async function withAuth(
 // Role-based access control middleware
 export async function withRole(
   req: NextRequest,
-  allowedRoles: ('customer' | 'broker' | 'admin')[],
+  allowedRoles: ('customer' | 'broker')[],
   handler: (req: NextRequest, user: any) => Promise<NextResponse>
 ) {
+  // TEMPORARY: Development bypass for role checks
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  if (isDevelopment) {
+    // Create a mock user with all permissions for development
+    const mockUser = {
+      id: '1',
+      name: 'Development User',
+      email: 'dev@example.com',
+      role: 'broker', // Give highest non-admin role for testing
+      // Add any other user properties your app expects
+    };
+    
+    console.log('🔧 Development mode: Role check bypassed');
+    return handler(req, mockUser);
+  }
+  
+  // Normal production behavior
   return withAuth(req, async (req, user) => {
     // Check if user has an allowed role
     if (!allowedRoles.includes(user.role)) {
