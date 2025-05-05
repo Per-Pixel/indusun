@@ -48,6 +48,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="mr-4 px-5 py-2 border border-white rounded-lg text-white text-base bg-transparent hover:bg-white hover:text-gray-800 transition-colors"
+              onClick={() => router.push('/broker/dashboard')}
             >
               For Brokers
             </motion.button>

@@ -29,9 +29,11 @@ indusun/main/
 ├── public/               # Static assets
 ├── src/                  # Source code
 │   ├── app/              # Next.js App Router pages
-│   │   ├── (auth)/       # Authentication-related pages
-│   │   ├── (main)/       # Main public-facing pages
-│   │   ├── (user)/       # User dashboard pages
+│   │   ├── (auth)/            # Authentication-related pages
+│   │   ├── (main)/            # Main public-facing pages
+│   │   ├── (user)/            # User dashboard pages
+│   │   ├── broker/            # Broker dashboard and pages
+│   │   ├── user/              # User dashboard and pages
 │   │   ├── api/          # API routes
 │   │   ├── globals.css   # Global styles
 │   │   └── layout.tsx    # Root layout
@@ -64,14 +66,26 @@ The project uses Next.js App Router route groups to organize pages by their purp
 - `/favorites` - User favorites (requires authentication)
 - `/real-estate` - Real estate information
 
-#### (user) - User Dashboard Pages
-- `/dashboard` - User dashboard overview
-- `/profile` - User profile management
-- `/invoices` - User invoices
-- `/payments` - Payment management
-- `/receipts` - Receipt history
-- `/chat` - User messaging
-- `/orders` - Order history
+#### (user) - User Dashboard Pages (Legacy Route Group)
+Contains the original user dashboard pages that are being migrated to the new structure.
+
+#### user/ - User Dashboard Pages
+- `/user/dashboard` - User dashboard overview
+- `/user/profile` - User profile management
+- `/user/invoices` - User invoices
+- `/user/payments` - Payment management
+- `/user/receipts` - Receipt history
+- `/user/chat` - User messaging
+- `/user/orders` - Order history
+
+#### broker/ - Broker Dashboard Pages
+- `/broker/dashboard` - Broker dashboard overview
+- `/broker/properties` - Property management
+- `/broker/contacts` - Contact management
+- `/broker/clients` - Client management
+- `/broker/reports` - Reports and analytics
+- `/broker/settings` - Broker settings
+- `/broker/apply` - Broker application
 
 #### API Routes
 - `/api/auth/*` - Authentication endpoints
@@ -88,12 +102,24 @@ Authentication-related components like social login buttons.
 
 #### components/dashboard/
 Components used in the user dashboard:
-- `DashboardLayout.tsx` - Layout wrapper for dashboard pages
+- `DashboardLayout.tsx` - Layout wrapper for user dashboard pages
 - `PaymentHistory.tsx` - Payment history display
 - `RemainingAmount.tsx` - Remaining balance display
-- `Sidebar.tsx` - Dashboard navigation sidebar
+- `Sidebar.tsx` - User dashboard navigation sidebar
 - `SummaryCard.tsx` - Summary information cards
 - `TransactionList.tsx` - List of transactions
+
+#### components/broker/
+Components used in the broker dashboard:
+- `BrokerDashboardLayout.tsx` - Layout wrapper for broker dashboard pages
+- `BrokerSidebar.tsx` - Broker dashboard navigation sidebar
+- `IncomeStatistics.tsx` - Income statistics display
+- `PropertyList.tsx` - Property list component
+- `SalesAnalytics.tsx` - Sales analytics charts
+- `SalesReport.tsx` - Sales report table
+- `StatsCard.tsx` - Statistics card component
+- `PromotionalBanner.tsx` - Promotional banner component
+- `SalesMap.tsx` - Sales map visualization
 
 #### components/properties/
 Property-related components:
@@ -282,9 +308,28 @@ const ComponentName: React.FC<ComponentNameProps> = ({ prop1, prop2 }) => {
 export default ComponentName;
 ```
 
+## Routing Structure
+
+The project uses a combination of route groups and standard routes:
+
+### Route Groups (in parentheses)
+Route groups (folders with names in parentheses) are used for organizational purposes and don't affect the URL path:
+- `(auth)` - Groups authentication-related pages
+- `(main)` - Groups main public-facing pages
+- `(user)` - Legacy group for user dashboard pages (being migrated)
+
+### Standard Routes
+Standard routes (folders without parentheses) directly affect the URL path:
+- `broker/` - Creates routes starting with `/broker/`
+- `user/` - Creates routes starting with `/user/`
+
+### Navigation Between Dashboards
+- From the user dashboard, users can click the "For Brokers" button to navigate to the broker dashboard
+- From the broker dashboard, brokers can navigate back to the main site using the logo link
+
 ## Conclusion
 
-This organization structure provides a clear separation of concerns and makes it easy to locate files based on their function. While there may be some inconsistencies in naming conventions, the overall structure is functional and supports the development of the application.
+This organization structure provides a clear separation of concerns and makes it easy to locate files based on their function. The separation between user and broker dashboards allows for independent development and maintenance of each section. While there may be some inconsistencies in naming conventions, the overall structure is functional and supports the development of the application.
 
 ## Learn More
 
