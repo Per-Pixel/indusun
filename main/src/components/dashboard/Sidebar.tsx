@@ -42,27 +42,27 @@ const Sidebar = () => {
 
   const navItems = [
     {
-      href: '/dashboard',
+      href: '/user/dashboard',
       icon: <LayoutDashboard size={20} />,
       label: 'Dashboard',
     },
     {
-      href: '/invoices',
+      href: '/user/invoices',
       icon: <FileText size={20} />,
       label: 'Invoices',
     },
     {
-      href: '/receipts',
+      href: '/user/receipts',
       icon: <Receipt size={20} />,
       label: 'Receipts',
     },
     {
-      href: '/chat',
+      href: '/user/chat',
       icon: <MessageSquare size={20} />,
       label: 'Chat',
     },
     {
-      href: '/payments',
+      href: '/user/payments',
       icon: <CreditCard size={20} />,
       label: 'Payments',
     },
@@ -70,12 +70,12 @@ const Sidebar = () => {
 
   const bottomNavItems = [
     {
-      href: '/profile',
+      href: '/user/profile',
       icon: <User size={20} />,
       label: 'Profile',
     },
     {
-      href: '/settings',
+      href: '/user/settings',
       icon: <Settings size={20} />,
       label: 'Settings',
     },
