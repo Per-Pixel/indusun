@@ -18,6 +18,25 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Project Status
+
+The Indusun project is nearing completion with most core features implemented:
+
+### Completed Features
+- Responsive navigation and layout
+- Property listing and filtering system
+- Property search functionality
+- Favorites system
+- Broker dashboard with property management
+- Broker client management
+- User authentication flow
+
+### In Progress
+- User dashboard enhancements
+- Property detail page improvements
+- Loading states and spinners
+- Homepage sections (hero, featured properties, etc.)
+
 ## Project Organization
 
 This section outlines the current organization of the Indusun project, including directory structure, file naming conventions, and component organization.
@@ -136,113 +155,6 @@ Basic UI elements:
 - `GlobalLoading.tsx` - Loading indicator
 - `PlaceholderImage.tsx` - Image placeholder with fallback icons
 
-#### modules/
-Larger, more complex components that are used across the application:
-- `Navbar.tsx` - Main navigation bar
-- `Footer.tsx` - Site footer
-- `index.ts` - Export file for modules
-
-### Asset Organization
-
-Assets are organized in the public directory by their purpose:
-
-#### public/auth/
-Authentication-related images:
-- Login and signup background images
-- User profile images
-
-#### public/navbar/
-Navigation-related assets:
-- `logo.svg` - Company logo
-- `logo.png` - Company logo (PNG format)
-
-#### public/bottom-nav/
-Bottom navigation assets:
-- `Icons-BG.svg` - Background for navigation icons
-
-#### public/broker/
-Broker-related assets
-
-#### public/transaction-icons/
-Icons used for transactions
-
-### Context Providers
-
-React context providers are used for state management:
-- `AuthProvider` - Authentication state management
-- Other context providers as needed
-
-### Middleware
-
-Custom middleware functions are stored in the `src/middleware` directory:
-- Authentication middleware
-- Role-based access control
-
-## Naming Conventions
-
-The project uses a mix of naming conventions:
-
-### File and Directory Naming
-
-#### React Components
-**Convention**: PascalCase
-**Examples**: `Button.tsx`, `PropertyCard.tsx`, `DashboardLayout.tsx`
-
-#### Directories
-**Convention**: camelCase or kebab-case (depending on context)
-**Examples**: `components/ui`, `components/dashboard`, `public/bottom-nav`
-
-#### Utility Files
-**Convention**: camelCase
-**Examples**: `dateUtils.ts`, `formatters.ts`, `apiHelpers.ts`
-
-#### Asset Files
-**Convention**: Descriptive names with spaces for readability
-**Examples**: `Login Art.png`, `Transaction icon.png`
-
-### Code Naming
-
-#### React Components
-**Convention**: PascalCase
-```tsx
-const PropertyCard = () => {
-  // Component implementation
-};
-```
-
-#### Component Props
-**Convention**: PascalCase for interface names, camelCase for props
-```tsx
-interface ButtonProps {
-  variant: 'primary' | 'secondary';
-  onClick: () => void;
-}
-```
-
-#### Functions
-**Convention**: camelCase
-```tsx
-const formatDate = (date: Date): string => {
-  // Function implementation
-};
-```
-
-#### Variables
-**Convention**: camelCase
-```tsx
-const userName = 'John Doe';
-const isLoading = true;
-```
-
-#### TypeScript Types and Interfaces
-**Convention**: PascalCase
-```tsx
-interface User {
-  id: string;
-  name: string;
-}
-```
-
 ## Development Guidelines
 
 When adding new files or components to the project:
@@ -261,75 +173,16 @@ When adding new files or components to the project:
    - Place new assets in the appropriate subdirectory of `public` based on their purpose
    - Use descriptive filenames for assets
 
-## Page Structure
+## Deployment
 
-Each page typically follows this structure:
+The project is configured for deployment on Vercel, with separate environments for:
+- Development: Feature branches
+- Staging: Main branch
+- Production: Production branch
 
-```tsx
-'use client';  // If using client-side features
+## Admin Dashboard
 
-import React from 'react';
-import { ComponentName } from '@/components/path';
-
-const PageName = () => {
-  return (
-    <div>
-      {/* Page content */}
-    </div>
-  );
-};
-
-export default PageName;
-```
-
-## Component Structure
-
-Components typically follow this structure:
-
-```tsx
-'use client';  // If using client-side features
-
-import React from 'react';
-import { OtherComponent } from '@/components/path';
-
-interface ComponentNameProps {
-  prop1: string;
-  prop2?: number;
-}
-
-const ComponentName: React.FC<ComponentNameProps> = ({ prop1, prop2 }) => {
-  return (
-    <div>
-      {/* Component content */}
-    </div>
-  );
-};
-
-export default ComponentName;
-```
-
-## Routing Structure
-
-The project uses a combination of route groups and standard routes:
-
-### Route Groups (in parentheses)
-Route groups (folders with names in parentheses) are used for organizational purposes and don't affect the URL path:
-- `(auth)` - Groups authentication-related pages
-- `(main)` - Groups main public-facing pages
-- `(user)` - Legacy group for user dashboard pages (being migrated)
-
-### Standard Routes
-Standard routes (folders without parentheses) directly affect the URL path:
-- `broker/` - Creates routes starting with `/broker/`
-- `user/` - Creates routes starting with `/user/`
-
-### Navigation Between Dashboards
-- From the user dashboard, users can click the "For Brokers" button to navigate to the broker dashboard
-- From the broker dashboard, brokers can navigate back to the main site using the logo link
-
-## Conclusion
-
-This organization structure provides a clear separation of concerns and makes it easy to locate files based on their function. The separation between user and broker dashboards allows for independent development and maintenance of each section. While there may be some inconsistencies in naming conventions, the overall structure is functional and supports the development of the application.
+A separate admin dashboard is available in the `/admin` directory, which is a standalone Next.js application. This separation allows for independent development and deployment of the admin interface.
 
 ## Learn More
 
