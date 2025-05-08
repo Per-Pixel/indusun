@@ -12,15 +12,18 @@ import {
   FileCode, 
   Layers, 
   HelpCircle,
-  ChevronDown
+  ChevronDown,
+  DollarSign
 } from 'lucide-react';
 
 const Sidebar = () => {
   const pathname = usePathname();
   const [pagesOpen, setPagesOpen] = useState(true);
+  const [salesOpen, setSalesOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   
   const togglePages = () => setPagesOpen(!pagesOpen);
+  const toggleSales = () => setSalesOpen(!salesOpen);
   const toggleAuth = () => setAuthOpen(!authOpen);
 
   return (
@@ -43,10 +46,10 @@ const Sidebar = () => {
         <div className="mb-4">
           <Link 
             href="/dashboard" 
-            className={`flex items-center p-3 rounded-md font-bold ${
+            className={`flex items-center p-3 rounded-md font-bold transition-colors ${
               pathname === '/dashboard' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-black hover:bg-blue-200'
+                ? 'bg-white text-black' 
+                : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
             <LayoutDashboard className="w-5 h-5 mr-3 stroke-[2.5px]" />
@@ -57,7 +60,7 @@ const Sidebar = () => {
         {/* Pages Section with Dropdown */}
         <div className="mb-2">
           <div 
-            className="flex items-center justify-between p-3 text-black hover:bg-blue-200 rounded-md cursor-pointer font-bold"
+            className="flex items-center justify-between p-3 text-black hover:bg-gray-600 hover:text-white rounded-md cursor-pointer font-bold transition-colors"
             onClick={togglePages}
           >
             <div className="flex items-center">
@@ -71,41 +74,91 @@ const Sidebar = () => {
           {pagesOpen && (
             <div className="ml-4 mt-1 space-y-1">
               <Link 
-                href="/sales" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold ${
-                  pathname === '/sales' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-black hover:bg-blue-200'
+                href="/homepage" 
+                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+                  pathname === '/homepage' 
+                    ? 'bg-white text-black' 
+                    : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
-                <span>Sales</span>
+                <span>Homepage</span>
               </Link>
               <Link 
+                href="/property-page" 
+                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+                  pathname === '/property-page' 
+                    ? 'bg-white text-black' 
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <span>Property Page</span>
+              </Link>
+              <Link 
+                href="/about-us" 
+                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+                  pathname === '/about-us' 
+                    ? 'bg-white text-black' 
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <span>About Us</span>
+              </Link>
+              <Link 
+                href="/contact-us" 
+                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+                  pathname === '/contact-us' 
+                    ? 'bg-white text-black' 
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <span>Contact Us</span>
+              </Link>
+            </div>
+          )}
+        </div>
+        
+        {/* Sales Section with Dropdown */}
+        <div className="mb-2">
+          <div 
+            className="flex items-center justify-between p-3 text-black hover:bg-gray-600 hover:text-white rounded-md cursor-pointer font-bold transition-colors"
+            onClick={toggleSales}
+          >
+            <div className="flex items-center">
+              <DollarSign className="w-5 h-5 mr-3 stroke-[2.5px]" />
+              <span>Sales</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${salesOpen ? 'transform rotate-180' : ''}`} />
+          </div>
+          
+          {/* Submenu */}
+          {salesOpen && (
+            <div className="ml-4 mt-1 space-y-1">
+              <Link 
                 href="/properties" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold ${
+                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
                   pathname === '/properties' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-black hover:bg-blue-200'
+                    ? 'bg-white text-black' 
+                    : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Properties</span>
               </Link>
               <Link 
                 href="/billing" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold ${
+                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
                   pathname === '/billing' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-black hover:bg-blue-200'
+                    ? 'bg-white text-black' 
+                    : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Billing</span>
               </Link>
               <Link 
                 href="/invoice" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold ${
+                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
                   pathname === '/invoice' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-black hover:bg-blue-200'
+                    ? 'bg-white text-black' 
+                    : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Invoice</span>
@@ -117,10 +170,10 @@ const Sidebar = () => {
         <div className="mb-2">
           <Link 
             href="/messages" 
-            className={`flex items-center justify-between p-3 rounded-md font-bold ${
+            className={`flex items-center justify-between p-3 rounded-md font-bold transition-colors ${
               pathname === '/messages' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-black hover:bg-blue-200'
+                ? 'bg-white text-black' 
+                : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
             <div className="flex items-center">
@@ -133,7 +186,7 @@ const Sidebar = () => {
         
         <div className="mb-2">
           <div 
-            className="flex items-center justify-between p-3 text-black hover:bg-blue-200 rounded-md cursor-pointer font-bold"
+            className="flex items-center justify-between p-3 text-black hover:bg-gray-600 hover:text-white rounded-md cursor-pointer font-bold transition-colors"
             onClick={toggleAuth}
           >
             <div className="flex items-center">
@@ -147,20 +200,20 @@ const Sidebar = () => {
             <div className="ml-4 mt-1 space-y-1">
               <Link 
                 href="/login" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold ${
+                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
                   pathname === '/login' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-black hover:bg-blue-200'
+                    ? 'bg-white text-black' 
+                    : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Login</span>
               </Link>
               <Link 
                 href="/register" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold ${
+                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
                   pathname === '/register' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-black hover:bg-blue-200'
+                    ? 'bg-white text-black' 
+                    : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Register</span>
@@ -172,10 +225,10 @@ const Sidebar = () => {
         <div className="mb-2">
           <Link 
             href="/docs" 
-            className={`flex items-center p-3 rounded-md font-bold ${
+            className={`flex items-center p-3 rounded-md font-bold transition-colors ${
               pathname === '/docs' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-black hover:bg-blue-200'
+                ? 'bg-white text-black' 
+                : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
             <FileCode className="w-5 h-5 mr-3 stroke-[2.5px]" />
@@ -186,10 +239,10 @@ const Sidebar = () => {
         <div className="mb-2">
           <Link 
             href="/components" 
-            className={`flex items-center p-3 rounded-md font-bold ${
+            className={`flex items-center p-3 rounded-md font-bold transition-colors ${
               pathname === '/components' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-black hover:bg-blue-200'
+                ? 'bg-white text-black' 
+                : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
             <Layers className="w-5 h-5 mr-3 stroke-[2.5px]" />
@@ -200,10 +253,10 @@ const Sidebar = () => {
         <div className="mb-2">
           <Link 
             href="/help" 
-            className={`flex items-center p-3 rounded-md font-bold ${
+            className={`flex items-center p-3 rounded-md font-bold transition-colors ${
               pathname === '/help' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-black hover:bg-blue-200'
+                ? 'bg-white text-black' 
+                : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
             <HelpCircle className="w-5 h-5 mr-3 stroke-[2.5px]" />
@@ -216,6 +269,10 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
+
+
+
 
 
 
