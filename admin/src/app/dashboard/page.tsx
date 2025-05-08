@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -10,6 +11,17 @@ import {
   ArrowUp, ArrowDown, User, Calendar, MessageSquare, Settings, Info, AlertCircle, CheckCircle
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
+
+// Add this CSS at the top of your file
+const rotateAnimation = `
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .rotate-animation {
+    animation: rotate 1s linear;
+  }
+`;
 
 // Mock data
 const userChartData = [
@@ -95,53 +107,196 @@ const StatsCard = ({ title, value, change, isPositive }) => {
   );
 };
 
+// Top Navigation Component
+const TopNavigation = ({ toggleSidebar, refreshData, sidebarOpen }) => {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const notificationRef = useRef(null);
+  const router = useRouter();
+  
+  // Sample notification data
+  const notificationItems = [
+    { title: 'Your task is placed', subtitle: 'waiting for processing', time: '25 minutes ago', icon: 'info' },
+    { title: 'You have new message', subtitle: '3 unread', time: '1 hour ago', icon: 'message' },
+    { title: 'New item created', subtitle: '#XF-2356', time: '2 hours ago', icon: 'item' }
+  ];
+  
+  // Handle refresh with animation
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    refreshData();
+    
+    // Reset animation after it completes
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
+  };
+  
+  // Close notifications when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div className="flex justify-between items-center p-4 border-b border-gray-200" style={{ backgroundColor: "#ffffff" }}>
+      {/* Add the CSS for animation */}
+      <style>{rotateAnimation}</style>
+      
+      <div className="flex items-center space-x-4">
+        <button onClick={toggleSidebar} className="p-1.5 rounded-md hover:bg-gray-100">
+          <Menu className="h-5 w-5 text-gray-500" />
+        </button>
+        <Star className="h-5 w-5 text-gray-500" />
+        <span className="text-gray-500">Dashboards</span>
+        <span className="text-gray-400">/</span>
+        <span className="font-medium text-black">Default</span>
+      </div>
+      
+      <div className="flex items-center space-x-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="Search" 
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            style={{ backgroundColor: "#ffffff", color: "#000000" }}
+          />
+        </div>
+        <button className="p-1.5 rounded-md hover:bg-gray-100">
+          <Sun className="h-5 w-5 text-gray-500" />
+        </button>
+        <button 
+          className="p-1.5 rounded-md hover:bg-gray-100"
+          onClick={handleRefresh}
+        >
+          <RotateCcw className={`h-5 w-5 text-gray-500 ${isRefreshing ? 'rotate-animation' : ''}`} />
+        </button>
+        <div className="relative" ref={notificationRef}>
+          <button 
+            className="p-1.5 rounded-md hover:bg-gray-100 relative"
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            <Bell className="h-5 w-5 text-gray-500" />
+            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+          </button>
+          
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="font-medium text-black">Notification</h3>
+                <p className="text-xs text-gray-500">You have 3 unread messages</p>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                {notificationItems.map((item, index) => (
+                  <div key={index} className="p-4 border-b border-gray-100 hover:bg-gray-50">
+                    <div className="flex items-start">
+                      <div className="mr-3 bg-blue-100 rounded-full p-2">
+                        {item.icon === 'info' && <Info size={16} className="text-blue-600" />}
+                        {item.icon === 'message' && <MessageSquare size={16} className="text-blue-600" />}
+                        {item.icon === 'item' && <AlertCircle size={16} className="text-blue-600" />}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-black">{item.title}</h4>
+                        <p className="text-xs text-gray-500">{item.subtitle}</p>
+                        <p className="text-xs text-gray-400 mt-1">{item.time}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="p-3 text-center border-t border-gray-100">
+                <button className="text-sm text-blue-600 font-medium">View All Notifications</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('Total Users');
   const [activeRightTab, setActiveRightTab] = useState('notifications');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState({
+    userChartData,
+    deviceTrafficData,
+    locationData,
+    websiteTrafficData,
+    marketingData
+  });
   
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+  
+  // Function to refresh only the data
+  const refreshData = () => {
+    console.log("Refreshing dashboard data...");
+    // Set loading state to true
+    setIsLoading(true);
+    
+    // Simulate API call with a timeout
+    setTimeout(() => {
+      // In a real app, you would fetch fresh data here
+      // For demo purposes, we'll just simulate a refresh with slightly modified data
+      
+      // Create modified data to show visible changes
+      const updatedData = {
+        userChartData: userChartData.map(item => ({
+          ...item,
+          thisYear: item.thisYear * (0.9 + Math.random() * 0.2), // Random fluctuation
+          lastYear: item.lastYear * (0.9 + Math.random() * 0.2)
+        })),
+        deviceTrafficData: deviceTrafficData.map(item => ({
+          ...item,
+          value: item.value * (0.9 + Math.random() * 0.2) // Random fluctuation
+        })),
+        locationData,
+        websiteTrafficData,
+        marketingData
+      };
+      
+      // Update the state with new data
+      setDashboardData(updatedData);
+      
+      // Turn off loading state
+      setIsLoading(false);
+    }, 1000); // Simulate network delay
   };
   
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: "#ffffff" }}>
       {sidebarOpen && <Sidebar />}
       
-      <div className={`flex-1 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'}`} style={{ backgroundColor: "#ffffff" }}>
+      <div className={`flex-1 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'} relative`} style={{ backgroundColor: "#ffffff" }}>
         {/* Top Navigation */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200" style={{ backgroundColor: "#ffffff" }}>
-          <div className="flex items-center space-x-4">
-            <button onClick={toggleSidebar} className="p-1.5 rounded-md hover:bg-gray-100">
-              <Menu className="h-5 w-5 text-gray-500" />
-            </button>
-            <Star className="h-5 w-5 text-gray-500" />
-            <span className="text-gray-500">Dashboards</span>
-            <span className="text-gray-400">/</span>
-            <span className="font-medium text-black">Default</span>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search" 
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                style={{ backgroundColor: "#ffffff", color: "#000000" }}
-              />
+        <TopNavigation 
+          toggleSidebar={toggleSidebar} 
+          refreshData={refreshData}
+          sidebarOpen={sidebarOpen}
+        />
+        
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50">
+            <div className="flex flex-col items-center">
+              <RotateCcw className="h-10 w-10 text-blue-500 animate-spin mb-2" />
+              <p className="text-blue-500 font-medium">Refreshing dashboard data...</p>
             </div>
-            <button className="p-1.5 rounded-md hover:bg-gray-100">
-              <Sun className="h-5 w-5 text-gray-500" />
-            </button>
-            <button className="p-1.5 rounded-md hover:bg-gray-100">
-              <RotateCcw className="h-5 w-5 text-gray-500" />
-            </button>
-            <button className="p-1.5 rounded-md hover:bg-gray-100">
-              <Bell className="h-5 w-5 text-gray-500" />
-            </button>
           </div>
-        </div>
+        )}
         
         {/* Main Content with Right Sidebar */}
         <div className="flex" style={{ backgroundColor: "#ffffff" }}>
@@ -330,64 +485,65 @@ export default function DashboardPage() {
           
           {/* Right Sidebar for Notifications and Activity */}
           <div className="w-80 border-l border-gray-200" style={{ backgroundColor: "#ffffff" }}>
-            {/* Tabs */}
-            <div className="flex border-b border-gray-200">
-              <button 
-                className={`flex-1 py-4 text-center font-medium ${activeRightTab === 'notifications' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
-                onClick={() => setActiveRightTab('notifications')}
-              >
-                Notifications
-              </button>
-              <button 
-                className={`flex-1 py-4 text-center font-medium ${activeRightTab === 'activity' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
-                onClick={() => setActiveRightTab('activity')}
-              >
-                Activity
-              </button>
-            </div>
-            
-            {/* Tab Content */}
-            <div className="p-4">
-              {activeRightTab === 'notifications' && (
-                <div className="space-y-4">
-                  {notifications.map((notification, index) => (
-                    <div key={index} className="p-3 border-b border-gray-100 last:border-b-0">
-                      <div className="flex items-start">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${
-                          notification.type === 'info' ? 'bg-blue-100 text-blue-600' : 
-                          notification.type === 'error' ? 'bg-red-100 text-red-600' : 
-                          'bg-green-100 text-green-600'
-                        }`}>
-                          {notification.type === 'info' ? <Info size={16} /> : 
-                           notification.type === 'error' ? <AlertCircle size={16} /> : 
-                           <CheckCircle size={16} />}
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium">{notification.title}</h4>
-                          <p className="text-xs text-gray-500 mt-1">{notification.message}</p>
-                          <p className="text-xs text-gray-500">{notification.time}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {activeRightTab === 'activity' && (
-                <div className="space-y-4">
-                  {activities.map((activity, index) => (
-                    <div key={index} className="flex items-start space-x-4">
-                      <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden">
-                        <img src={activity.user.avatar} alt={activity.user.name} className="object-cover h-full w-full" />
+            {/* Notifications Section */}
+            <div className="border-b border-gray-200">
+              <h3 className="p-4 font-medium text-black">Notifications</h3>
+              <div className="p-4 pt-0 space-y-4">
+                {notifications.map((notification, index) => (
+                  <div key={index} className="p-3 border-b border-gray-100 last:border-b-0 shadow-sm">
+                    <div className="flex items-start">
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${
+                        notification.type === 'info' ? 'bg-blue-100 text-blue-600' : 
+                        notification.type === 'error' ? 'bg-red-100 text-red-600' : 
+                        'bg-green-100 text-green-600'
+                      }`}>
+                        {notification.type === 'info' ? <Info size={16} /> : 
+                         notification.type === 'error' ? <AlertCircle size={16} /> : 
+                         <CheckCircle size={16} />}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{activity.user.name}</p>
-                        <p className="text-xs text-gray-500">{activity.action}</p>
-                        <p className="text-xs text-gray-500">{activity.time}</p>
+                        <h4 className="text-sm font-medium text-black">{notification.title}</h4>
+                        <p className="text-xs text-black mt-1">{notification.message}</p>
+                        <p className="text-xs text-black">{notification.time}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Activities Section */}
+            <div>
+              <h3 className="p-4 font-medium text-black">Activities</h3>
+              <div className="p-4 pt-0 space-y-4">
+                {activities.map((activity, index) => (
+                  <div key={index} className="flex items-start space-x-4 p-3 border-b border-gray-100 last:border-b-0 shadow-sm">
+                    <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden">
+                      <img src={activity.user.avatar} alt={activity.user.name} className="object-cover h-full w-full" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-black">{activity.user.name}</p>
+                      <p className="text-xs text-black">{activity.action}</p>
+                      <p className="text-xs text-black">{activity.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Contacts Section */}
+            <div className="border-t border-gray-200">
+              <h3 className="p-4 font-medium text-black">Contacts</h3>
+              <div className="p-4 pt-0 space-y-4">
+                {contacts.map((contact, index) => (
+                  <div key={index} className="flex items-center space-x-3 p-2">
+                    <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
+                      <img src={contact.avatar} alt={contact.name} className="object-cover h-full w-full" />
+                    </div>
+                    <p className="text-sm font-medium text-black">{contact.name}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -395,6 +551,14 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 
