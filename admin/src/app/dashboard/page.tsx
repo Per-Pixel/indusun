@@ -12,17 +12,6 @@ import {
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 
-// Add this CSS at the top of your file
-const rotateAnimation = `
-  @keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .rotate-animation {
-    animation: rotate 1s linear;
-  }
-`;
-
 // Mock data
 const userChartData = [
   { name: 'Jan', thisYear: 20, lastYear: 10 },
@@ -65,6 +54,44 @@ const marketingData = Array(12).fill(0).map((_, i) => ({
   value: Math.floor(Math.random() * 30) + 10
 }));
 
+// Add these mock datasets for different tabs
+const mockChartData = {
+  'Total Users': [
+    { name: 'Jan', thisYear: 20, lastYear: 10 },
+    { name: 'Feb', thisYear: 15, lastYear: 12 },
+    { name: 'Mar', thisYear: 25, lastYear: 18 },
+    { name: 'Apr', thisYear: 18, lastYear: 20 },
+    { name: 'May', thisYear: 30, lastYear: 15 },
+    { name: 'Jun', thisYear: 25, lastYear: 10 },
+    { name: 'Jul', thisYear: 28, lastYear: 20 }
+  ],
+  'Total Projects': [
+    { name: 'Jan', thisYear: 35, lastYear: 22 },
+    { name: 'Feb', thisYear: 28, lastYear: 25 },
+    { name: 'Mar', thisYear: 42, lastYear: 30 },
+    { name: 'Apr', thisYear: 37, lastYear: 35 },
+    { name: 'May', thisYear: 50, lastYear: 40 },
+    { name: 'Jun', thisYear: 45, lastYear: 38 },
+    { name: 'Jul', thisYear: 55, lastYear: 45 }
+  ],
+  'Operation Status': [
+    { name: 'Jan', thisYear: 90, lastYear: 85 },
+    { name: 'Feb', thisYear: 88, lastYear: 80 },
+    { name: 'Mar', thisYear: 95, lastYear: 90 },
+    { name: 'Apr', thisYear: 92, lastYear: 88 },
+    { name: 'May', thisYear: 97, lastYear: 92 },
+    { name: 'Jun', thisYear: 94, lastYear: 90 },
+    { name: 'Jul', thisYear: 98, lastYear: 95 }
+  ]
+};
+
+// Add these axis labels for different tabs
+const axisLabels = {
+  'Total Users': { yAxis: 'Users (thousands)', tooltip: 'K users' },
+  'Total Projects': { yAxis: 'Projects', tooltip: 'projects' },
+  'Operation Status': { yAxis: 'Uptime (%)', tooltip: '%' }
+};
+
 // Activity and contacts data
 const activities = [
   { user: { name: 'User 1', avatar: '/avatars/1.png' }, action: 'Changed the style.', time: 'Just now' },
@@ -90,6 +117,46 @@ const contacts = [
   { name: 'Kate Morrison', avatar: '/avatars/5.png' },
   { name: 'Melody Macy', avatar: '/avatars/6.png' }
 ];
+
+// Add CSS animations
+const cssAnimations = `
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .rotate-animation {
+    animation: rotate 1s linear;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.5s ease-out forwards;
+  }
+  
+  .stagger-animation > * {
+    opacity: 0;
+  }
+  
+  .stagger-animation.animate > *:nth-child(1) { animation: fadeIn 0.4s ease-out 0.1s forwards; }
+  .stagger-animation.animate > *:nth-child(2) { animation: fadeIn 0.4s ease-out 0.2s forwards; }
+  .stagger-animation.animate > *:nth-child(3) { animation: fadeIn 0.4s ease-out 0.3s forwards; }
+  .stagger-animation.animate > *:nth-child(4) { animation: fadeIn 0.4s ease-out 0.4s forwards; }
+  .stagger-animation.animate > *:nth-child(5) { animation: fadeIn 0.4s ease-out 0.5s forwards; }
+  .stagger-animation.animate > *:nth-child(6) { animation: fadeIn 0.4s ease-out 0.6s forwards; }
+`;
 
 // Stats Card Component
 const StatsCard = ({ title, value, change, isPositive }) => {
@@ -148,9 +215,6 @@ const TopNavigation = ({ toggleSidebar, refreshData, sidebarOpen }) => {
 
   return (
     <div className="flex justify-between items-center p-4 border-b border-gray-200" style={{ backgroundColor: "#ffffff" }}>
-      {/* Add the CSS for animation */}
-      <style>{rotateAnimation}</style>
-      
       <div className="flex items-center space-x-4">
         <button onClick={toggleSidebar} className="p-1.5 rounded-md hover:bg-gray-100">
           <Menu className="h-5 w-5 text-gray-500" />
@@ -229,16 +293,71 @@ export default function DashboardPage() {
   const [activeRightTab, setActiveRightTab] = useState('notifications');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [animateContent, setAnimateContent] = useState(false);
   const [dashboardData, setDashboardData] = useState({
-    userChartData,
+    userChartData: mockChartData['Total Users'],
     deviceTrafficData,
     locationData,
     websiteTrafficData,
     marketingData
   });
+  const [selectedDateRange, setSelectedDateRange] = useState('Today');
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const dateDropdownRef = useRef(null);
+  
+  const dateRangeOptions = [
+    'Today',
+    'Yesterday',
+    'Last 7 Days',
+    'Last Month',
+    'Last 3 Months',
+    'Last 365 Days',
+    'Last Year'
+  ];
+  
+  // Handle tab change
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    
+    // Update chart data based on selected tab
+    setDashboardData(prevData => ({
+      ...prevData,
+      userChartData: mockChartData[tab].map(item => ({
+        ...item,
+        thisYear: item.thisYear * (0.9 + Math.random() * 0.2), // Add slight randomness
+        lastYear: item.lastYear * (0.9 + Math.random() * 0.2)
+      }))
+    }));
+  };
+  
+  // Close date dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dateDropdownRef.current && !dateDropdownRef.current.contains(event.target)) {
+        setShowDateDropdown(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+  
+  // Function to handle date range selection
+  const handleDateRangeChange = (range) => {
+    setSelectedDateRange(range);
+    setShowDateDropdown(false);
+    
+    // In a real app, you would fetch data for the selected date range here
+    console.log(`Date range changed to: ${range}`);
+    
+    // For demo purposes, let's refresh the data
+    refreshData();
   };
   
   // Function to refresh only the data
@@ -246,6 +365,7 @@ export default function DashboardPage() {
     console.log("Refreshing dashboard data...");
     // Set loading state to true
     setIsLoading(true);
+    setAnimateContent(false);
     
     // Simulate API call with a timeout
     setTimeout(() => {
@@ -254,7 +374,7 @@ export default function DashboardPage() {
       
       // Create modified data to show visible changes
       const updatedData = {
-        userChartData: userChartData.map(item => ({
+        userChartData: mockChartData[activeTab].map(item => ({
           ...item,
           thisYear: item.thisYear * (0.9 + Math.random() * 0.2), // Random fluctuation
           lastYear: item.lastYear * (0.9 + Math.random() * 0.2)
@@ -273,11 +393,25 @@ export default function DashboardPage() {
       
       // Turn off loading state
       setIsLoading(false);
+      
+      // Trigger animations after a short delay
+      setTimeout(() => {
+        setAnimateContent(true);
+      }, 100);
     }, 1000); // Simulate network delay
+  };
+  
+  // Format tooltip value based on active tab
+  const formatTooltipValue = (value) => {
+    const label = axisLabels[activeTab].tooltip;
+    return `${Math.round(value)} ${label}`;
   };
   
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: "#ffffff" }}>
+      {/* Add the CSS for animations */}
+      <style>{cssAnimations}</style>
+      
       {sidebarOpen && <Sidebar />}
       
       <div className={`flex-1 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'} relative`} style={{ backgroundColor: "#ffffff" }}>
@@ -288,9 +422,9 @@ export default function DashboardPage() {
           sidebarOpen={sidebarOpen}
         />
         
-        {/* Loading Overlay */}
+        {/* Full-screen Loading Overlay */}
         {isLoading && (
-          <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
             <div className="flex flex-col items-center">
               <RotateCcw className="h-10 w-10 text-blue-500 animate-spin mb-2" />
               <p className="text-blue-500 font-medium">Refreshing dashboard data...</p>
@@ -304,11 +438,35 @@ export default function DashboardPage() {
           <div className="flex-1 p-6" style={{ backgroundColor: "#ffffff" }}>
             {/* Date Filter */}
             <div className="flex justify-between items-center mb-6">
-              <div className="relative">
-                <button className="px-4 py-2 border border-gray-300 rounded-md flex items-center space-x-2" style={{ backgroundColor: "#ffffff", color: "#000000" }}>
-                  <span>Today</span>
-                  <ChevronDown className="h-4 w-4" />
+              <div className="relative" ref={dateDropdownRef}>
+                <button 
+                  className="px-4 py-2 border border-gray-300 rounded-md flex items-center space-x-2 hover:bg-gray-50"
+                  style={{ backgroundColor: "#ffffff", color: "#000000" }}
+                  onClick={() => setShowDateDropdown(!showDateDropdown)}
+                >
+                  <Calendar size={16} className="text-gray-500 mr-2" />
+                  <span>{selectedDateRange}</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showDateDropdown ? 'rotate-180' : ''}`} />
                 </button>
+                
+                {/* Date Range Dropdown */}
+                {showDateDropdown && (
+                  <div className="absolute left-0 mt-1 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200 py-1">
+                    {dateRangeOptions.map((range) => (
+                      <button
+                        key={range}
+                        className={`block w-full text-left px-4 py-2 text-sm ${
+                          selectedDateRange === range 
+                            ? 'bg-blue-50 text-blue-600' 
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                        onClick={() => handleDateRangeChange(range)}
+                      >
+                        {range}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             
@@ -328,58 +486,78 @@ export default function DashboardPage() {
                   <div className="flex space-x-4">
                     <button 
                       className={`px-3 py-1 rounded-md ${activeTab === 'Total Users' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
-                      onClick={() => setActiveTab('Total Users')}
+                      onClick={() => handleTabChange('Total Users')}
                     >
                       Total Users
                     </button>
                     <button 
                       className={`px-3 py-1 rounded-md ${activeTab === 'Total Projects' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
-                      onClick={() => setActiveTab('Total Projects')}
+                      onClick={() => handleTabChange('Total Projects')}
                     >
                       Total Projects
                     </button>
                     <button 
-                      className={`px-3 py-1 rounded-md ${activeTab === 'Operating Status' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
-                      onClick={() => setActiveTab('Operating Status')}
+                      className={`px-3 py-1 rounded-md ${activeTab === 'Operation Status' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
+                      onClick={() => handleTabChange('Operation Status')}
                     >
-                      Operating Status
+                      Operation Status
                     </button>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <div className="h-3 w-3 rounded-full bg-blue-500 mr-1"></div>
-                      <span className="text-xs text-gray-500">This year</span>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <div className="flex items-center mr-4">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div>
+                      <span>This Year</span>
                     </div>
                     <div className="flex items-center">
-                      <div className="h-3 w-3 rounded-full bg-gray-400 mr-1"></div>
-                      <span className="text-xs text-gray-500">Last year</span>
+                      <div className="w-3 h-3 bg-gray-300 rounded-full mr-1"></div>
+                      <span>Last Year</span>
                     </div>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={userChartData} style={{ backgroundColor: "#ffffff" }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#000000" }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#000000" }} />
-                    <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: '1px solid #e5e7eb', color: "#000000" }} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="thisYear" 
-                      stroke="#3b82f6" 
-                      strokeWidth={3} 
-                      dot={false} 
-                      activeDot={{ r: 6 }} 
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="lastYear" 
-                      stroke="#9ca3af" 
-                      strokeWidth={3} 
-                      dot={false} 
-                      activeDot={{ r: 6 }} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={dashboardData.userChartData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="name" />
+                      <YAxis 
+                        label={{ 
+                          value: axisLabels[activeTab].yAxis, 
+                          angle: -90, 
+                          position: 'insideLeft',
+                          style: { textAnchor: 'middle' }
+                        }} 
+                      />
+                      <Tooltip 
+                        formatter={(value) => formatTooltipValue(value)}
+                        labelFormatter={(label) => `Month: ${label}`}
+                        cursor={{ stroke: '#ddd', strokeWidth: 1, strokeDasharray: '5 5' }}
+                        isAnimationActive={true}
+                        animationDuration={300}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="thisYear"
+                        stroke="#3b82f6"
+                        strokeWidth={3}
+                        dot={false}
+                        activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
+                        animationDuration={1000}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="lastYear"
+                        stroke="#d1d5db"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 5, fill: '#d1d5db', stroke: '#fff', strokeWidth: 2 }}
+                        animationDuration={1000}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
               
               {/* Traffic by Website */}
@@ -551,6 +729,10 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+
+
 
 
 
