@@ -12,6 +12,26 @@ import {
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 
+// Add proper types for the StatsCard component
+interface StatsCardProps {
+  title: string;
+  value: string | number;
+  change: string;
+  isPositive: boolean;
+}
+
+// Add proper types for the TopNavigation component
+interface TopNavigationProps {
+  toggleSidebar: () => void;
+  refreshData: () => void;
+  sidebarOpen: boolean;
+}
+
+// Add proper types for the Sidebar component
+interface SidebarProps {
+  isOpen: boolean;
+}
+
 // Mock data
 const userChartData = [
   { name: 'Jan', thisYear: 20, lastYear: 10 },
@@ -94,11 +114,11 @@ const axisLabels = {
 
 // Activity and contacts data
 const activities = [
-  { user: { name: 'User 1', avatar: '/avatars/1.png' }, action: 'Changed the style.', time: 'Just now' },
-  { user: { name: 'User 2', avatar: '/avatars/2.png' }, action: 'Released a new version.', time: '37 minutes ago' },
-  { user: { name: 'User 3', avatar: '/avatars/3.png' }, action: 'Submitted a bug.', time: '12 hours ago' },
-  { user: { name: 'User 4', avatar: '/avatars/4.png' }, action: 'Modified A data in Page X.', time: 'Today, 11:59 AM' },
-  { user: { name: 'User 5', avatar: '/avatars/5.png' }, action: 'Deleted a page in Project X.', time: 'Feb 2, 2024' }
+  { user: { name: 'User 1', avatar: 'https://source.unsplash.com/random/100x100?face=1' }, action: 'Changed the style.', time: 'Just now' },
+  { user: { name: 'User 2', avatar: 'https://source.unsplash.com/random/100x100?face=2' }, action: 'Released a new version.', time: '37 minutes ago' },
+  { user: { name: 'User 3', avatar: 'https://source.unsplash.com/random/100x100?face=3' }, action: 'Submitted a bug.', time: '12 hours ago' },
+  { user: { name: 'User 4', avatar: 'https://source.unsplash.com/random/100x100?face=4' }, action: 'Modified A data in Page X.', time: 'Today, 11:59 AM' },
+  { user: { name: 'User 5', avatar: 'https://source.unsplash.com/random/100x100?face=5' }, action: 'Deleted a page in Project X.', time: 'Feb 2, 2024' }
 ];
 
 const notifications = [
@@ -110,12 +130,12 @@ const notifications = [
 ];
 
 const contacts = [
-  { name: 'Natali Craig', avatar: '/avatars/1.png' },
-  { name: 'Drew Cono', avatar: '/avatars/2.png' },
-  { name: 'Andi Lane', avatar: '/avatars/3.png' },
-  { name: 'Koray Okumus', avatar: '/avatars/4.png' },
-  { name: 'Kate Morrison', avatar: '/avatars/5.png' },
-  { name: 'Melody Macy', avatar: '/avatars/6.png' }
+  { name: 'Natali Craig', avatar: 'https://source.unsplash.com/random/100x100?face=6' },
+  { name: 'Drew Cono', avatar: 'https://source.unsplash.com/random/100x100?face=7' },
+  { name: 'Andi Lane', avatar: 'https://source.unsplash.com/random/100x100?face=8' },
+  { name: 'Koray Okumus', avatar: 'https://source.unsplash.com/random/100x100?face=9' },
+  { name: 'Kate Morrison', avatar: 'https://source.unsplash.com/random/100x100?face=10' },
+  { name: 'Melody Macy', avatar: 'https://source.unsplash.com/random/100x100?face=11' }
 ];
 
 // Add CSS animations
@@ -133,33 +153,13 @@ const cssAnimations = `
     to { opacity: 1; transform: translateY(0); }
   }
   
-  @keyframes scaleIn {
-    from { transform: scale(0.95); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-  
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
-  
-  .animate-scale-in {
-    animation: scaleIn 0.5s ease-out forwards;
-  }
-  
-  .stagger-animation > * {
-    opacity: 0;
-  }
-  
-  .stagger-animation.animate > *:nth-child(1) { animation: fadeIn 0.4s ease-out 0.1s forwards; }
-  .stagger-animation.animate > *:nth-child(2) { animation: fadeIn 0.4s ease-out 0.2s forwards; }
-  .stagger-animation.animate > *:nth-child(3) { animation: fadeIn 0.4s ease-out 0.3s forwards; }
-  .stagger-animation.animate > *:nth-child(4) { animation: fadeIn 0.4s ease-out 0.4s forwards; }
-  .stagger-animation.animate > *:nth-child(5) { animation: fadeIn 0.4s ease-out 0.5s forwards; }
-  .stagger-animation.animate > *:nth-child(6) { animation: fadeIn 0.4s ease-out 0.6s forwards; }
 `;
 
 // Stats Card Component
-const StatsCard = ({ title, value, change, isPositive }) => {
+const StatsCard = ({ title, value, change, isPositive }: StatsCardProps) => {
   return (
     <div className="dashboard-card p-6" style={{ backgroundColor: "#e3f5ff" }}>
       <h3 className="text-sm text-gray-500 mb-2">{title}</h3>
@@ -175,10 +175,10 @@ const StatsCard = ({ title, value, change, isPositive }) => {
 };
 
 // Top Navigation Component
-const TopNavigation = ({ toggleSidebar, refreshData, sidebarOpen }) => {
+const TopNavigation = ({ toggleSidebar, refreshData, sidebarOpen }: TopNavigationProps) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const notificationRef = useRef(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   
   // Sample notification data
@@ -201,8 +201,8 @@ const TopNavigation = ({ toggleSidebar, refreshData, sidebarOpen }) => {
   
   // Close notifications when clicking outside
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
       }
     }
@@ -289,7 +289,7 @@ const TopNavigation = ({ toggleSidebar, refreshData, sidebarOpen }) => {
 };
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState('Total Users');
+  const [activeTab, setActiveTab] = useState<'Total Users' | 'Total Projects' | 'Operation Status'>('Total Users');
   const [activeRightTab, setActiveRightTab] = useState('notifications');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -303,7 +303,7 @@ export default function DashboardPage() {
   });
   const [selectedDateRange, setSelectedDateRange] = useState('Today');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
-  const dateDropdownRef = useRef(null);
+  const dateDropdownRef = useRef<HTMLDivElement>(null);
   
   const dateRangeOptions = [
     'Today',
@@ -315,8 +315,8 @@ export default function DashboardPage() {
     'Last Year'
   ];
   
-  // Handle tab change
-  const handleTabChange = (tab) => {
+  // Handle tab change with proper typing
+  const handleTabChange = (tab: 'Total Users' | 'Total Projects' | 'Operation Status') => {
     setActiveTab(tab);
     
     // Update chart data based on selected tab
@@ -332,8 +332,8 @@ export default function DashboardPage() {
   
   // Close date dropdown when clicking outside
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dateDropdownRef.current && !dateDropdownRef.current.contains(event.target)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (dateDropdownRef.current && !dateDropdownRef.current.contains(event.target as Node)) {
         setShowDateDropdown(false);
       }
     }
@@ -349,7 +349,7 @@ export default function DashboardPage() {
   };
   
   // Function to handle date range selection
-  const handleDateRangeChange = (range) => {
+  const handleDateRangeChange = (range: string) => {
     setSelectedDateRange(range);
     setShowDateDropdown(false);
     
@@ -360,28 +360,24 @@ export default function DashboardPage() {
     refreshData();
   };
   
-  // Function to refresh only the data
+  // Function to refresh data
   const refreshData = () => {
-    console.log("Refreshing dashboard data...");
-    // Set loading state to true
+    // Set loading state
     setIsLoading(true);
     setAnimateContent(false);
     
-    // Simulate API call with a timeout
+    // Simulate API call
     setTimeout(() => {
-      // In a real app, you would fetch fresh data here
-      // For demo purposes, we'll just simulate a refresh with slightly modified data
-      
-      // Create modified data to show visible changes
+      // Create updated data with random variations
       const updatedData = {
-        userChartData: mockChartData[activeTab].map(item => ({
+        userChartData: mockChartData[activeTab as keyof typeof mockChartData].map(item => ({
           ...item,
-          thisYear: item.thisYear * (0.9 + Math.random() * 0.2), // Random fluctuation
+          thisYear: item.thisYear * (0.9 + Math.random() * 0.2),
           lastYear: item.lastYear * (0.9 + Math.random() * 0.2)
         })),
         deviceTrafficData: deviceTrafficData.map(item => ({
           ...item,
-          value: item.value * (0.9 + Math.random() * 0.2) // Random fluctuation
+          value: item.value * (0.9 + Math.random() * 0.2)
         })),
         locationData,
         websiteTrafficData,
@@ -402,27 +398,24 @@ export default function DashboardPage() {
   };
   
   // Format tooltip value based on active tab
-  const formatTooltipValue = (value) => {
-    const label = axisLabels[activeTab].tooltip;
+  const formatTooltipValue = (value: number) => {
+    const label = axisLabels[activeTab as keyof typeof axisLabels].tooltip;
     return `${Math.round(value)} ${label}`;
   };
   
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "#ffffff" }}>
-      {/* Add the CSS for animations */}
+    <div className="flex min-h-screen bg-gray-50">
       <style>{cssAnimations}</style>
       
-      {sidebarOpen && <Sidebar />}
+      <Sidebar isOpen={sidebarOpen} />
       
-      <div className={`flex-1 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'} relative`} style={{ backgroundColor: "#ffffff" }}>
-        {/* Top Navigation */}
+      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
         <TopNavigation 
           toggleSidebar={toggleSidebar} 
           refreshData={refreshData}
           sidebarOpen={sidebarOpen}
         />
         
-        {/* Full-screen Loading Overlay */}
         {isLoading && (
           <div className="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
             <div className="flex flex-col items-center">
@@ -432,10 +425,8 @@ export default function DashboardPage() {
           </div>
         )}
         
-        {/* Main Content with Right Sidebar */}
-        <div className="flex" style={{ backgroundColor: "#ffffff" }}>
-          {/* Main Dashboard Content */}
-          <div className="flex-1 p-6" style={{ backgroundColor: "#ffffff" }}>
+        <div className="flex flex-col lg:flex-row">
+          <div className="flex-1 p-4 lg:p-6">
             {/* Date Filter */}
             <div className="flex justify-between items-center mb-6">
               <div className="relative" ref={dateDropdownRef}>
@@ -471,7 +462,7 @@ export default function DashboardPage() {
             </div>
             
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <StatsCard title="Views" value="721K" change="+11.02%" isPositive={true} />
               <StatsCard title="Visits" value="367K" change="-0.03%" isPositive={false} />
               <StatsCard title="New Users" value="1,156" change="+15.03%" isPositive={true} />
@@ -662,7 +653,7 @@ export default function DashboardPage() {
           </div>
           
           {/* Right Sidebar for Notifications and Activity */}
-          <div className="w-80 border-l border-gray-200" style={{ backgroundColor: "#ffffff" }}>
+          <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-gray-200">
             {/* Notifications Section */}
             <div className="border-b border-gray-200">
               <h3 className="p-4 font-medium text-black">Notifications</h3>
@@ -729,25 +720,6 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
