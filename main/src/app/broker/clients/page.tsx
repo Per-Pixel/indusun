@@ -171,10 +171,7 @@ export default function BrokerClients() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             </div>
             
-            <button className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
-              <Plus size={18} />
-              <span>Add Client</span>
-            </button>
+            {/* Add Client button removed */}
           </div>
         </div>
 

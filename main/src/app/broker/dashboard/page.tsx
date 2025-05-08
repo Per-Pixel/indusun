@@ -111,7 +111,10 @@ export default function BrokerDashboard() {
             <div className="flex-1 relative z-10">
               <h2 className="text-xl font-medium mb-2">Splash yourself in</h2>
               <p className="mb-4">Big Discount on This sale.</p>
-              <button className="bg-white text-indigo-700 px-4 py-2 rounded-md text-sm font-medium">
+              <button 
+                onClick={() => router.push('/broker/properties')}
+                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
                 Explore Now
               </button>
             </div>
@@ -350,6 +353,7 @@ export default function BrokerDashboard() {
     </BrokerDashboardLayout>
   );
 }
+
 
 
 
