@@ -11,7 +11,8 @@ import {
   MessageSquare,
   CreditCard,
   User,
-  Settings
+  Settings,
+  Package
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -42,40 +43,45 @@ const Sidebar = () => {
 
   const navItems = [
     {
-      href: '/user/dashboard',
+      href: '/dashboard',
       icon: <LayoutDashboard size={20} />,
       label: 'Dashboard',
     },
     {
-      href: '/user/invoices',
+      href: '/invoices',
       icon: <FileText size={20} />,
       label: 'Invoices',
     },
     {
-      href: '/user/receipts',
+      href: '/receipts',
       icon: <Receipt size={20} />,
       label: 'Receipts',
     },
     {
-      href: '/user/chat',
+      href: '/chat',
       icon: <MessageSquare size={20} />,
       label: 'Chat',
     },
     {
-      href: '/user/payments',
+      href: '/payments',
       icon: <CreditCard size={20} />,
       label: 'Payments',
+    },
+    {
+      href: '/orders',
+      icon: <Package size={20} />,
+      label: 'Orders',
     },
   ];
 
   const bottomNavItems = [
     {
-      href: '/user/profile',
+      href: '/profile',
       icon: <User size={20} />,
       label: 'Profile',
     },
     {
-      href: '/user/settings',
+      href: '/settings',
       icon: <Settings size={20} />,
       label: 'Settings',
     },

@@ -4,18 +4,21 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import { Bell } from 'lucide-react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // Custom Hamburger Menu Component
-const HamburgerMenu = () => {
+const HamburgerMenu = ({ onClick }) => {
   return (
-    <button className="text-white hover:text-gray-200 transition-colors p-2 relative w-6 h-6">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 flex flex-col gap-[6px]">
-        <span className="w-6.5 h-[4px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></span>
+    <button 
+      onClick={onClick}
+      className="text-white hover:text-gray-200 transition-colors p-2 relative w-6 h-6 flex items-center justify-center"
+    >
+      <div className="w-6 flex flex-col gap-[6px]">
+        <span className="w-6 h-[3px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></span>
         <span className="w-5 h-[3px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></span>
-        <span className="w-6.5 h-[4px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></span>
+        <span className="w-6 h-[3px] bg-current filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></span>
       </div>
     </button>
   );
@@ -28,16 +31,49 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const router = useRouter();
   const [showNotification, setShowNotification] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleProfileClick = () => {
     router.push('/user/profile');
   };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-x-hidden">
       {/* Sidebar - Desktop only */}
       <div className="hidden md:block">
         <Sidebar />
       </div>
+
+      {/* Mobile Sidebar - Slide from left */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              className="md:hidden fixed inset-0 bg-black z-20"
+              onClick={toggleSidebar}
+            />
+            
+            {/* Sidebar */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="md:hidden fixed top-0 left-0 h-full z-30 w-64"
+            >
+              <Sidebar />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden md:ml-64">
@@ -70,7 +106,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {/* Mobile Header */}
         <div className="md:hidden flex items-center justify-between py-2 px-4 border-b" style={{ background: 'linear-gradient(to right, rgba(186,185,191,0.9), rgba(57,56,56,0.35))' }}>
           <div className="flex items-center gap-2">
-            <HamburgerMenu />
+            <HamburgerMenu onClick={toggleSidebar} />
             <Link href="/" className="flex items-center gap-2">
               <Image
                 src="/navbar/logo.png"
