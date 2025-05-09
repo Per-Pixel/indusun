@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import Image from 'next/image';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
 import {
-  Search, Info, ChevronDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Bell
+  Search, Info, ChevronDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Bell, DollarSign, User
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 
@@ -52,6 +52,13 @@ const transactions = [
   { id: 4, transaction: 'Payment from Bonnie Green', date: 'Apr 15, 2021', amount: '$5000', status: 'In progress' },
   { id: 5, transaction: 'Payment from Jese Leos', date: 'Apr 15, 2021', amount: '$2300', status: 'In progress' },
   { id: 6, transaction: 'Payment from THEMSBERG LLC', date: 'Apr 11, 2021', amount: '$280', status: 'Completed' },
+  // Additional transactions that will be shown when "View All" is clicked
+  { id: 7, transaction: 'Payment from John Smith', date: 'Apr 10, 2021', amount: '$1200', status: 'Completed' },
+  { id: 8, transaction: 'Payment refund to #00567', date: 'Apr 9, 2021', amount: '-$340', status: 'Completed' },
+  { id: 9, transaction: 'Payment from Sarah Johnson', date: 'Apr 8, 2021', amount: '$890', status: 'Completed' },
+  { id: 10, transaction: 'Payment failed from #092345', date: 'Apr 7, 2021', amount: '$450', status: 'Cancelled' },
+  { id: 11, transaction: 'Payment from Michael Brown', date: 'Apr 6, 2021', amount: '$3200', status: 'Completed' },
+  { id: 12, transaction: 'Payment from Emily Davis', date: 'Apr 5, 2021', amount: '$1800', status: 'In progress' },
 ];
 
 // Stats cards data
@@ -62,20 +69,46 @@ const statsCards = [
 ];
 
 const SalesPage = () => {
-  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState('Metric');
   const [selectedPeriod, setSelectedPeriod] = useState('Today');
   const [showMetricDropdown, setShowMetricDropdown] = useState(false);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
+
+  const metricDropdownRef = useRef<HTMLDivElement>(null);
+  const periodDropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Handle clicks outside of dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (metricDropdownRef.current && !metricDropdownRef.current.contains(event.target as HTMLElement)) {
+        setShowMetricDropdown(false);
+      }
+      if (periodDropdownRef.current && !periodDropdownRef.current.contains(event.target as HTMLElement)) {
+        setShowPeriodDropdown(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target as HTMLElement)) {
+        setShowNotification(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside as any);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside as any);
+    };
+  }, []);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const refreshData = () => {
-    console.log('Refreshing data...');
-  };
+  // Get visible transactions based on showAllTransactions state
+  const visibleTransactions = showAllTransactions
+    ? transactions
+    : transactions.slice(0, 6);
 
   // Custom tooltip for the line chart
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -85,7 +118,7 @@ const SalesPage = () => {
         return (
           <div className="bg-white p-3 shadow-md rounded-md border border-gray-200">
             <p className="text-sm text-gray-600">{payload[0].payload.label}</p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-black">
               Sales: {payload[0].payload.salesValue}
             </p>
           </div>
@@ -95,7 +128,7 @@ const SalesPage = () => {
       return (
         <div className="bg-white p-3 shadow-md rounded-md border border-gray-200">
           <p className="text-sm text-gray-600">{label}</p>
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-sm font-semibold text-black">
             Sales: ${payload[0].value.toLocaleString()}
           </p>
         </div>
@@ -126,9 +159,53 @@ const SalesPage = () => {
           </div>
 
           <div className="flex items-center space-x-3">
-            <button className="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200">
-              <Bell className="h-5 w-5 text-gray-500" />
-            </button>
+            <div className="relative" ref={notificationRef}>
+              <button
+                className="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200"
+                onClick={() => setShowNotification(!showNotification)}
+              >
+                <Bell className="h-5 w-5 text-gray-500" />
+              </button>
+              {showNotification && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-20">
+                  <div className="py-2 px-3 bg-gray-100 border-b border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-sm font-semibold text-black">Notifications</h3>
+                      <button className="text-xs text-blue-500 hover:text-blue-700">Mark all as read</button>
+                    </div>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    <div className="py-2 px-3 hover:bg-gray-50 border-b border-gray-100">
+                      <div className="flex items-start">
+                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                          <DollarSign className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-black">New sale completed</p>
+                          <p className="text-xs text-gray-500">Amount: $2,500</p>
+                          <p className="text-xs text-gray-400 mt-1">2 hours ago</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="py-2 px-3 hover:bg-gray-50">
+                      <div className="flex items-start">
+                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                          <User className="h-4 w-4 text-green-500" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-black">New customer registered</p>
+                          <p className="text-xs text-gray-500">John Smith</p>
+                          <p className="text-xs text-gray-400 mt-1">4 hours ago</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="py-2 text-center border-t border-gray-100">
+                    <button className="text-sm text-blue-500 hover:text-blue-700">View all notifications</button>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="h-8 w-8 rounded-full overflow-hidden">
               <Image
                 src="https://source.unsplash.com/random/100x100?face=1"
@@ -145,7 +222,7 @@ const SalesPage = () => {
         <div className="p-6">
           {/* Sales Header */}
           <div className="flex items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Sales</h1>
+            <h1 className="text-2xl font-bold text-black">Sales</h1>
             <button className="ml-2 p-1 rounded-full hover:bg-gray-100">
               <Info className="h-4 w-4 text-gray-400" />
             </button>
@@ -205,12 +282,12 @@ const SalesPage = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Latest Customers */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm">
+            <div className="lg:col-span-3">
+              <div className="bg-white rounded-lg shadow-sm h-full mx-auto w-[90%]">
                 <div className="p-6 border-b border-gray-100">
-                  <h2 className="text-lg font-semibold text-gray-900">Latest Customers</h2>
+                  <h2 className="text-lg font-semibold text-black">Latest Customers</h2>
                 </div>
                 <div className="p-6">
                   <div className="space-y-4">
@@ -227,11 +304,11 @@ const SalesPage = () => {
                             />
                           </div>
                           <div>
-                            <h3 className="text-sm font-medium text-gray-900">{customer.name}</h3>
+                            <h3 className="text-sm font-medium text-black">{customer.name}</h3>
                             <p className="text-xs text-gray-500">{customer.email}</p>
                           </div>
                         </div>
-                        <div className="text-sm font-semibold">{customer.amount}</div>
+                        <div className="text-sm font-semibold text-black">{customer.amount}</div>
                       </div>
                     ))}
                   </div>
@@ -240,23 +317,23 @@ const SalesPage = () => {
             </div>
 
             {/* Statistics */}
-            <div>
-              <div className="bg-white rounded-lg shadow-sm mb-6">
+            <div className="lg:col-span-6">
+              <div className="bg-white rounded-lg shadow-sm h-full">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-gray-900">Statistics</h2>
+                  <h2 className="text-lg font-semibold text-black">Statistics</h2>
                   <div className="flex space-x-2">
-                    <div className="relative">
+                    <div className="relative" ref={metricDropdownRef}>
                       <button
                         className="flex items-center space-x-1 bg-white border border-gray-200 rounded px-3 py-1.5 text-sm"
                         onClick={() => setShowMetricDropdown(!showMetricDropdown)}
                       >
-                        <span>{selectedMetric}</span>
+                        <span className="text-black">{selectedMetric}</span>
                         <ChevronDown className="h-4 w-4 text-gray-500" />
                       </button>
                       {showMetricDropdown && (
                         <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-10">
                           <div
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm text-black"
                             onClick={() => {
                               setSelectedMetric('Metric');
                               setShowMetricDropdown(false);
@@ -265,7 +342,7 @@ const SalesPage = () => {
                             Metric
                           </div>
                           <div
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm text-black"
                             onClick={() => {
                               setSelectedMetric('Revenue');
                               setShowMetricDropdown(false);
@@ -274,7 +351,7 @@ const SalesPage = () => {
                             Revenue
                           </div>
                           <div
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm text-black"
                             onClick={() => {
                               setSelectedMetric('Customers');
                               setShowMetricDropdown(false);
@@ -285,18 +362,18 @@ const SalesPage = () => {
                         </div>
                       )}
                     </div>
-                    <div className="relative">
+                    <div className="relative" ref={periodDropdownRef}>
                       <button
                         className="flex items-center space-x-1 bg-white border border-gray-200 rounded px-3 py-1.5 text-sm"
                         onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
                       >
-                        <span>{selectedPeriod}</span>
+                        <span className="text-black">{selectedPeriod}</span>
                         <ChevronDown className="h-4 w-4 text-gray-500" />
                       </button>
                       {showPeriodDropdown && (
                         <div className="absolute top-full right-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-10">
                           <div
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm text-black"
                             onClick={() => {
                               setSelectedPeriod('Today');
                               setShowPeriodDropdown(false);
@@ -305,7 +382,7 @@ const SalesPage = () => {
                             Today
                           </div>
                           <div
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm text-black"
                             onClick={() => {
                               setSelectedPeriod('This Week');
                               setShowPeriodDropdown(false);
@@ -314,7 +391,7 @@ const SalesPage = () => {
                             This Week
                           </div>
                           <div
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm text-black"
                             onClick={() => {
                               setSelectedPeriod('This Month');
                               setShowPeriodDropdown(false);
@@ -346,7 +423,7 @@ const SalesPage = () => {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-sm font-medium">
+                        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-sm font-medium fill-black">
                           Projects by account
                         </text>
                       </PieChart>
@@ -356,20 +433,22 @@ const SalesPage = () => {
                     {projectsData.map((project, index) => (
                       <div key={index} className="flex items-center text-xs">
                         <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: project.color }}></div>
-                        <span>{project.name}</span>
+                        <span className="text-black">{project.name}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Stats Cards */}
-              <div className="space-y-4">
+            {/* Stats Cards */}
+            <div className="lg:col-span-3">
+              <div className="space-y-4 h-full mx-auto w-[90%]">
                 {statsCards.map((card) => (
                   <div key={card.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">{card.title}</h3>
+                        <h3 className="text-lg font-bold text-black">{card.title}</h3>
                         <p className="text-xs text-gray-500 mt-1">{card.description}</p>
                       </div>
                       <div className="text-green-500">
@@ -387,9 +466,17 @@ const SalesPage = () => {
           {/* Transactions */}
           <div className="mt-6">
             <div className="bg-white rounded-lg shadow-sm">
-              <div className="p-6 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900">Transactions</h2>
-                <p className="text-sm text-gray-500 mt-1">This is a list of latest transactions.</p>
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-semibold text-black">Transactions</h2>
+                  <p className="text-sm text-gray-500 mt-1">This is a list of latest transactions.</p>
+                </div>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                  onClick={() => setShowAllTransactions(!showAllTransactions)}
+                >
+                  {showAllTransactions ? 'Show Less' : 'View All Transactions'}
+                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -402,15 +489,15 @@ const SalesPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {transactions.map((item) => (
+                    {visibleTransactions.map((item) => (
                       <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
                           {item.transaction}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {item.date}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
                           {item.amount}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">

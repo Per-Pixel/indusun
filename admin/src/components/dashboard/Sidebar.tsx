@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  ShoppingBag, 
-  MessageSquare, 
-  Lock, 
-  FileCode, 
-  Layers, 
+import {
+  LayoutDashboard,
+  FileText,
+  ShoppingBag,
+  MessageSquare,
+  Lock,
+  FileCode,
+  Layers,
   HelpCircle,
   ChevronDown,
   DollarSign
@@ -23,10 +23,10 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
-  const [pagesOpen, setPagesOpen] = useState(true);
-  const [salesOpen, setSalesOpen] = useState(false);
+  const [pagesOpen, setPagesOpen] = useState(false);
+  const [salesOpen, setSalesOpen] = useState(pathname.startsWith('/sales'));
   const [authOpen, setAuthOpen] = useState(false);
-  
+
   const togglePages = () => setPagesOpen(!pagesOpen);
   const toggleSales = () => setSalesOpen(!salesOpen);
   const toggleAuth = () => setAuthOpen(!authOpen);
@@ -40,12 +40,12 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   };
 
   return (
-    <div 
+    <div
       className={`h-screen fixed left-0 top-0 flex flex-col text-gray-700 border-r border-gray-200 rounded-tr-xl rounded-br-xl overflow-hidden transition-all duration-300 w-[200px] ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
-      style={{ 
-        background: 'linear-gradient(to left, rgba(217, 217, 217, 1) 15%, rgba(115, 181, 236, 1) 150%)' 
+      style={{
+        background: 'linear-gradient(to left, rgba(217, 217, 217, 1) 15%, rgba(115, 181, 236, 1) 150%)'
       }}
     >
       {/* Logo */}
@@ -55,15 +55,15 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
         </div>
         <span className="text-xl font-semibold">Indusun</span>
       </div>
-      
+
       {/* Navigation */}
       <nav className="flex-1 p-2 overflow-y-auto">
         <div className="mb-4">
-          <button 
+          <button
             onClick={() => handleNavigation('/dashboard')}
             className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
-              pathname === '/dashboard' 
-                ? 'bg-white text-black' 
+              pathname === '/dashboard'
+                ? 'bg-white text-black'
                 : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
@@ -74,7 +74,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
 
         {/* Pages Section with Dropdown */}
         <div className="mb-2">
-          <div 
+          <div
             className="flex items-center justify-between p-3 text-black hover:bg-gray-600 hover:text-white rounded-md cursor-pointer font-bold transition-colors"
             onClick={togglePages}
           >
@@ -84,45 +84,45 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             </div>
             <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${pagesOpen ? 'transform rotate-180' : ''}`} />
           </div>
-          
+
           {/* Submenu */}
           {pagesOpen && (
             <div className="ml-4 mt-1 space-y-1">
-              <button 
+              <button
                 onClick={() => handleNavigation('/homepage')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/homepage' 
-                    ? 'bg-white text-black' 
+                  pathname === '/homepage'
+                    ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Homepage</span>
               </button>
-              <button 
+              <button
                 onClick={() => handleNavigation('/property-page')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/property-page' 
-                    ? 'bg-white text-black' 
+                  pathname === '/property-page'
+                    ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Property Page</span>
               </button>
-              <button 
+              <button
                 onClick={() => handleNavigation('/about-us')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/about-us' 
-                    ? 'bg-white text-black' 
+                  pathname === '/about-us'
+                    ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>About Us</span>
               </button>
-              <button 
+              <button
                 onClick={() => handleNavigation('/contact-us')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/contact-us' 
-                    ? 'bg-white text-black' 
+                  pathname === '/contact-us'
+                    ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
@@ -131,48 +131,66 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             </div>
           )}
         </div>
-        
+
         {/* Sales Section with Dropdown */}
         <div className="mb-2">
-          <div 
-            className="flex items-center justify-between p-3 text-black hover:bg-gray-600 hover:text-white rounded-md cursor-pointer font-bold transition-colors"
-            onClick={toggleSales}
+          <div
+            className={`flex items-center justify-between p-3 rounded-md cursor-pointer font-bold transition-colors ${
+              pathname.startsWith('/sales')
+                ? 'bg-white text-black'
+                : 'text-black hover:bg-gray-600 hover:text-white'
+            }`}
           >
-            <div className="flex items-center">
+            <div
+              className="flex items-center w-full"
+              onClick={toggleSales}
+            >
               <DollarSign className="w-5 h-5 mr-3 stroke-[2.5px]" />
               <span>Sales</span>
             </div>
-            <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${salesOpen ? 'transform rotate-180' : ''}`} />
+            <div onClick={toggleSales}>
+              <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${salesOpen ? 'transform rotate-180' : ''}`} />
+            </div>
           </div>
-          
+
           {/* Submenu */}
           {salesOpen && (
             <div className="ml-4 mt-1 space-y-1">
-              <button 
+              <button
+                onClick={() => handleNavigation('/sales')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/sales'
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <span>Sales Overview</span>
+              </button>
+              <button
                 onClick={() => handleNavigation('/properties')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/properties' 
-                    ? 'bg-white text-black' 
+                  pathname === '/properties'
+                    ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Properties</span>
               </button>
-              <button 
+              <button
                 onClick={() => handleNavigation('/billing')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/billing' 
-                    ? 'bg-white text-black' 
+                  pathname === '/billing'
+                    ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Billing</span>
               </button>
-              <button 
+              <button
                 onClick={() => handleNavigation('/invoice')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/invoice' 
-                    ? 'bg-white text-black' 
+                  pathname === '/invoice'
+                    ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
@@ -181,13 +199,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             </div>
           )}
         </div>
-        
+
         <div className="mb-2">
-          <button 
+          <button
             onClick={() => handleNavigation('/messages')}
             className={`w-full flex items-center justify-between p-3 rounded-md font-bold transition-colors ${
-              pathname === '/messages' 
-                ? 'bg-white text-black' 
+              pathname === '/messages'
+                ? 'bg-white text-black'
                 : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
@@ -198,9 +216,9 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">1</span>
           </button>
         </div>
-        
+
         <div className="mb-2">
-          <div 
+          <div
             className="flex items-center justify-between p-3 text-black hover:bg-gray-600 hover:text-white rounded-md cursor-pointer font-bold transition-colors"
             onClick={toggleAuth}
           >
@@ -210,24 +228,24 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             </div>
             <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${authOpen ? 'transform rotate-180' : ''}`} />
           </div>
-          
+
           {authOpen && (
             <div className="ml-4 mt-1 space-y-1">
-              <button 
+              <button
                 onClick={() => handleNavigation('/login')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/login' 
-                    ? 'bg-white text-black' 
+                  pathname === '/login'
+                    ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Login</span>
               </button>
-              <button 
+              <button
                 onClick={() => handleNavigation('/register')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/register' 
-                    ? 'bg-white text-black' 
+                  pathname === '/register'
+                    ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
@@ -236,13 +254,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             </div>
           )}
         </div>
-        
+
         <div className="mb-2">
-          <button 
+          <button
             onClick={() => handleNavigation('/docs')}
             className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
-              pathname === '/docs' 
-                ? 'bg-white text-black' 
+              pathname === '/docs'
+                ? 'bg-white text-black'
                 : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
@@ -250,13 +268,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <span>Docs</span>
           </button>
         </div>
-        
+
         <div className="mb-2">
-          <button 
+          <button
             onClick={() => handleNavigation('/components')}
             className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
-              pathname === '/components' 
-                ? 'bg-white text-black' 
+              pathname === '/components'
+                ? 'bg-white text-black'
                 : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
@@ -264,13 +282,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <span>Components</span>
           </button>
         </div>
-        
+
         <div className="mb-2">
-          <button 
+          <button
             onClick={() => handleNavigation('/help')}
             className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
-              pathname === '/help' 
-                ? 'bg-white text-black' 
+              pathname === '/help'
+                ? 'bg-white text-black'
                 : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
