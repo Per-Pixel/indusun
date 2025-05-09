@@ -407,7 +407,10 @@ export default function DashboardPage() {
     <div className="flex min-h-screen bg-gray-50">
       <style>{cssAnimations}</style>
       
-      <Sidebar isOpen={sidebarOpen} />
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        closeSidebar={() => setSidebarOpen(false)} 
+      />
       
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
         <TopNavigation 
@@ -720,6 +723,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
 
 
 

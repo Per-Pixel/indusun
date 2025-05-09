@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -16,8 +15,14 @@ import {
   DollarSign
 } from 'lucide-react';
 
-const Sidebar = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  closeSidebar?: () => void;
+}
+
+const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [pagesOpen, setPagesOpen] = useState(true);
   const [salesOpen, setSalesOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -26,9 +31,19 @@ const Sidebar = () => {
   const toggleSales = () => setSalesOpen(!salesOpen);
   const toggleAuth = () => setAuthOpen(!authOpen);
 
+  // Handle navigation with sidebar closing for mobile
+  const handleNavigation = (path: string) => {
+    if (closeSidebar) {
+      closeSidebar();
+    }
+    router.push(path);
+  };
+
   return (
     <div 
-      className="h-screen w-[200px] fixed left-0 top-0 flex flex-col text-gray-700 border-r border-gray-200 rounded-tr-xl rounded-br-xl overflow-hidden"
+      className={`h-screen fixed left-0 top-0 flex flex-col text-gray-700 border-r border-gray-200 rounded-tr-xl rounded-br-xl overflow-hidden transition-all duration-300 w-[200px] ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}
       style={{ 
         background: 'linear-gradient(to left, rgba(217, 217, 217, 1) 15%, rgba(115, 181, 236, 1) 150%)' 
       }}
@@ -44,9 +59,9 @@ const Sidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 p-2 overflow-y-auto">
         <div className="mb-4">
-          <Link 
-            href="/dashboard" 
-            className={`flex items-center p-3 rounded-md font-bold transition-colors ${
+          <button 
+            onClick={() => handleNavigation('/dashboard')}
+            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
               pathname === '/dashboard' 
                 ? 'bg-white text-black' 
                 : 'text-black hover:bg-gray-600 hover:text-white'
@@ -54,7 +69,7 @@ const Sidebar = () => {
           >
             <LayoutDashboard className="w-5 h-5 mr-3 stroke-[2.5px]" />
             <span>Dashboard</span>
-          </Link>
+          </button>
         </div>
 
         {/* Pages Section with Dropdown */}
@@ -73,46 +88,46 @@ const Sidebar = () => {
           {/* Submenu */}
           {pagesOpen && (
             <div className="ml-4 mt-1 space-y-1">
-              <Link 
-                href="/homepage" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+              <button 
+                onClick={() => handleNavigation('/homepage')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
                   pathname === '/homepage' 
                     ? 'bg-white text-black' 
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Homepage</span>
-              </Link>
-              <Link 
-                href="/property-page" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+              </button>
+              <button 
+                onClick={() => handleNavigation('/property-page')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
                   pathname === '/property-page' 
                     ? 'bg-white text-black' 
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Property Page</span>
-              </Link>
-              <Link 
-                href="/about-us" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+              </button>
+              <button 
+                onClick={() => handleNavigation('/about-us')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
                   pathname === '/about-us' 
                     ? 'bg-white text-black' 
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>About Us</span>
-              </Link>
-              <Link 
-                href="/contact-us" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+              </button>
+              <button 
+                onClick={() => handleNavigation('/contact-us')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
                   pathname === '/contact-us' 
                     ? 'bg-white text-black' 
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Contact Us</span>
-              </Link>
+              </button>
             </div>
           )}
         </div>
@@ -133,44 +148,44 @@ const Sidebar = () => {
           {/* Submenu */}
           {salesOpen && (
             <div className="ml-4 mt-1 space-y-1">
-              <Link 
-                href="/properties" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+              <button 
+                onClick={() => handleNavigation('/properties')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
                   pathname === '/properties' 
                     ? 'bg-white text-black' 
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Properties</span>
-              </Link>
-              <Link 
-                href="/billing" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+              </button>
+              <button 
+                onClick={() => handleNavigation('/billing')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
                   pathname === '/billing' 
                     ? 'bg-white text-black' 
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Billing</span>
-              </Link>
-              <Link 
-                href="/invoice" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+              </button>
+              <button 
+                onClick={() => handleNavigation('/invoice')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
                   pathname === '/invoice' 
                     ? 'bg-white text-black' 
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Invoice</span>
-              </Link>
+              </button>
             </div>
           )}
         </div>
         
         <div className="mb-2">
-          <Link 
-            href="/messages" 
-            className={`flex items-center justify-between p-3 rounded-md font-bold transition-colors ${
+          <button 
+            onClick={() => handleNavigation('/messages')}
+            className={`w-full flex items-center justify-between p-3 rounded-md font-bold transition-colors ${
               pathname === '/messages' 
                 ? 'bg-white text-black' 
                 : 'text-black hover:bg-gray-600 hover:text-white'
@@ -181,7 +196,7 @@ const Sidebar = () => {
               <span>Messages</span>
             </div>
             <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">1</span>
-          </Link>
+          </button>
         </div>
         
         <div className="mb-2">
@@ -198,34 +213,34 @@ const Sidebar = () => {
           
           {authOpen && (
             <div className="ml-4 mt-1 space-y-1">
-              <Link 
-                href="/login" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+              <button 
+                onClick={() => handleNavigation('/login')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
                   pathname === '/login' 
                     ? 'bg-white text-black' 
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Login</span>
-              </Link>
-              <Link 
-                href="/register" 
-                className={`flex items-center p-2 pl-8 rounded-md font-bold transition-colors ${
+              </button>
+              <button 
+                onClick={() => handleNavigation('/register')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
                   pathname === '/register' 
                     ? 'bg-white text-black' 
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
                 <span>Register</span>
-              </Link>
+              </button>
             </div>
           )}
         </div>
         
         <div className="mb-2">
-          <Link 
-            href="/docs" 
-            className={`flex items-center p-3 rounded-md font-bold transition-colors ${
+          <button 
+            onClick={() => handleNavigation('/docs')}
+            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
               pathname === '/docs' 
                 ? 'bg-white text-black' 
                 : 'text-black hover:bg-gray-600 hover:text-white'
@@ -233,13 +248,13 @@ const Sidebar = () => {
           >
             <FileCode className="w-5 h-5 mr-3 stroke-[2.5px]" />
             <span>Docs</span>
-          </Link>
+          </button>
         </div>
         
         <div className="mb-2">
-          <Link 
-            href="/components" 
-            className={`flex items-center p-3 rounded-md font-bold transition-colors ${
+          <button 
+            onClick={() => handleNavigation('/components')}
+            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
               pathname === '/components' 
                 ? 'bg-white text-black' 
                 : 'text-black hover:bg-gray-600 hover:text-white'
@@ -247,13 +262,13 @@ const Sidebar = () => {
           >
             <Layers className="w-5 h-5 mr-3 stroke-[2.5px]" />
             <span>Components</span>
-          </Link>
+          </button>
         </div>
         
         <div className="mb-2">
-          <Link 
-            href="/help" 
-            className={`flex items-center p-3 rounded-md font-bold transition-colors ${
+          <button 
+            onClick={() => handleNavigation('/help')}
+            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
               pathname === '/help' 
                 ? 'bg-white text-black' 
                 : 'text-black hover:bg-gray-600 hover:text-white'
@@ -261,7 +276,7 @@ const Sidebar = () => {
           >
             <HelpCircle className="w-5 h-5 mr-3 stroke-[2.5px]" />
             <span>Help</span>
-          </Link>
+          </button>
         </div>
       </nav>
     </div>
@@ -269,6 +284,8 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
+
 
 
 
