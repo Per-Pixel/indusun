@@ -1,0 +1,13 @@
+{
+  "name": "indusun",
+  "version": "1.0.0",
+  "description": "Indusun project",
+  "main": "index.js",
+  "scripts": {
+    "dev:admin": "cd admin && npm run dev",
+    "dev:main": "cd main && npm run dev",
+    "dev": "npm run dev:admin"
+  },
+  "author": "",
+  "license": "ISC"
+}
