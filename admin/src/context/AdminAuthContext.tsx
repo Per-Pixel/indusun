@@ -35,17 +35,13 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      // Call logout API
-      await fetch('/admin/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
+      // Mock logout for development
+      // In production, this would be a real API call
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       setUser(null);
       toast.success('Logged out successfully');
-      
+
       // Redirect to login page
       window.location.href = '/admin/auth/login';
     } catch (error) {
@@ -57,20 +53,19 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAuth = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/admin/api/auth/me', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // Mock authentication for development
+      // In production, this would be a real API call
+      const mockUser: AdminUser = {
+        id: '1',
+        name: 'Admin User',
+        email: 'admin@indusun.com',
+        role: 'admin'
+      };
 
-      const data = await response.json();
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (response.ok && data.authenticated) {
-        setUser(data.user);
-      } else {
-        setUser(null);
-      }
+      setUser(mockUser);
     } catch (error) {
       console.error('Authentication check error:', error);
       setUser(null);

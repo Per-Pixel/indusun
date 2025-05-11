@@ -169,7 +169,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
               <button
                 onClick={() => handleNavigation('/properties')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/properties'
+                  pathname === '/properties' || pathname.startsWith('/properties/')
                     ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
@@ -179,7 +179,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
               <button
                 onClick={() => handleNavigation('/billing')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/billing'
+                  pathname === '/billing' || pathname.startsWith('/billing/')
                     ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
@@ -187,14 +187,14 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                 <span>Billing</span>
               </button>
               <button
-                onClick={() => handleNavigation('/invoice')}
+                onClick={() => handleNavigation('/invoices')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/invoice'
+                  pathname === '/invoices' || pathname.startsWith('/invoices/')
                     ? 'bg-white text-black'
                     : 'text-black hover:bg-gray-600 hover:text-white'
                 }`}
               >
-                <span>Invoice</span>
+                <span>Invoices</span>
               </button>
             </div>
           )}
