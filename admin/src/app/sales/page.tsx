@@ -141,7 +141,7 @@ const SalesPage = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
 
-      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
+      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
         {/* Top Navigation */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center space-x-4">

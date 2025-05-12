@@ -112,7 +112,7 @@ export default function ClientDetailPage() {
   const router = useRouter();
   const params = useParams();
   const clientId = params.id as string;
-  
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [client, setClient] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,14 +122,14 @@ export default function ClientDetailPage() {
   useEffect(() => {
     // In a real app, you would fetch the client data from an API
     const foundClient = mockClients.find(c => c.id === clientId);
-    
+
     if (foundClient) {
       setClient(foundClient);
     } else {
       toast.error('Client not found');
       router.push('/clients');
     }
-    
+
     setIsLoading(false);
   }, [clientId, router]);
 
@@ -151,7 +151,7 @@ export default function ClientDetailPage() {
 
   const handleFormSubmit = (clientData: Partial<User>) => {
     setIsLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       if (client) {
@@ -159,7 +159,7 @@ export default function ClientDetailPage() {
         setClient({ ...client, ...clientData });
         toast.success(`${clientData.name} has been updated`);
       }
-      
+
       setIsLoading(false);
       setShowEditForm(false);
     }, 1000);
@@ -206,12 +206,12 @@ export default function ClientDetailPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
+      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
         {/* Top Navbar */}
         <div className="sticky top-0 z-10">
           <AdminTopNavbar toggleSidebar={toggleSidebar} />
@@ -261,7 +261,7 @@ export default function ClientDetailPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="p-6">
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Profile Image */}
@@ -289,11 +289,11 @@ export default function ClientDetailPage() {
                           {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
                         </div>
                       </div>
-                      
+
                       {/* Client Details */}
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">{client.name}</h3>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="flex items-start">
                             <Mail className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
@@ -302,7 +302,7 @@ export default function ClientDetailPage() {
                               <p className="text-gray-900">{client.email}</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-start">
                             <Phone className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                             <div>
@@ -310,7 +310,7 @@ export default function ClientDetailPage() {
                               <p className="text-gray-900">{client.phone}</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-start">
                             <MapPin className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                             <div>
@@ -318,7 +318,7 @@ export default function ClientDetailPage() {
                               <p className="text-gray-900">{client.location || 'Not specified'}</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-start">
                             <Calendar className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                             <div>
@@ -326,7 +326,7 @@ export default function ClientDetailPage() {
                               <p className="text-gray-900">{client.createdAt}</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-start">
                             <Clock className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                             <div>
@@ -339,13 +339,13 @@ export default function ClientDetailPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Client Activity */}
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-gray-200">
                     <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
                   </div>
-                  
+
                   <div className="p-6">
                     <div className="space-y-6">
                       {clientActivity.map((activity) => (

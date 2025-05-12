@@ -104,7 +104,7 @@ export default function ClientsPage() {
 
   const handleFormSubmit = (clientData: Partial<User>) => {
     setIsLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       if (selectedClient) {
@@ -129,11 +129,11 @@ export default function ClientsPage() {
           createdAt: new Date().toISOString().split('T')[0],
           lastActive: new Date().toISOString().split('T')[0],
         };
-        
+
         setClients(prevClients => [...prevClients, newClient]);
         toast.success(`${newClient.name} has been added`);
       }
-      
+
       setIsLoading(false);
       setShowForm(false);
     }, 1000);
@@ -144,12 +144,12 @@ export default function ClientsPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
+      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
         {/* Top Navbar */}
         <div className="sticky top-0 z-10">
           <AdminTopNavbar toggleSidebar={toggleSidebar} />
