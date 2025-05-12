@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
@@ -166,6 +166,7 @@ export default function MessagesPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'clients' | 'brokers' | 'admins'>('clients');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('All');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
@@ -178,18 +179,32 @@ export default function MessagesPage() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // Debounce search term to avoid excessive filtering
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Filter recipients based on search term, type, and status
   const filteredRecipients = React.useMemo(() => {
     return mockRecipients.filter(recipient => {
       // Only search if there's a search term
-      const matchesSearch = searchTerm === '' ? true : (
-        recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipient.phone.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesSearch = debouncedSearchTerm === '' ? true : (
+        recipient.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        recipient.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        recipient.phone.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
 
-      const matchesType = filterType === 'All' || recipient.type === filterType;
-      const matchesStatus = filterStatus === 'All' || recipient.status === filterStatus;
+      // Match by type filter
+      const matchesType = filterType === 'All' || recipient.type === filterType.toLowerCase();
+
+      // Match by status filter
+      const matchesStatus = filterStatus === 'All' || recipient.status === filterStatus.toLowerCase();
+
+      // Match by tab selection
       const matchesTab =
         (activeTab === 'clients' && recipient.type === 'client') ||
         (activeTab === 'brokers' && recipient.type === 'broker') ||
@@ -197,7 +212,7 @@ export default function MessagesPage() {
 
       return matchesSearch && matchesType && matchesStatus && matchesTab;
     });
-  }, [searchTerm, filterType, filterStatus, activeTab]);
+  }, [debouncedSearchTerm, filterType, filterStatus, activeTab]);
 
   // Toggle recipient selection
   const toggleRecipientSelection = (id: string) => {
@@ -388,6 +403,21 @@ export default function MessagesPage() {
                         <option value="All" className="text-gray-900">All Status</option>
                         <option value="active" className="text-gray-900">Active</option>
                         <option value="inactive" className="text-gray-900">Inactive</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
+                        <ChevronDown size={16} />
+                      </div>
+                    </div>
+                    <div className="relative flex-1">
+                      <select
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8 text-gray-900"
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                      >
+                        <option value="All" className="text-gray-900">All Types</option>
+                        <option value="client" className="text-gray-900">Client</option>
+                        <option value="broker" className="text-gray-900">Broker</option>
+                        <option value="admin" className="text-gray-900">Admin</option>
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                         <ChevronDown size={16} />

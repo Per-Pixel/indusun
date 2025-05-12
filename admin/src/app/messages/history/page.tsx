@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
@@ -171,6 +171,7 @@ export default function MessageHistoryPage() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('All');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
@@ -182,18 +183,39 @@ export default function MessageHistoryPage() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // Debounce search term to avoid excessive filtering
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, filterType, filterStatus]);
+
   // Filter messages based on search term, type, and status
-  const filteredMessages = mockMessageHistory.filter(message => {
-    const matchesSearch =
-      message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.sender.name.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredMessages = React.useMemo(() => {
+    return mockMessageHistory.filter(message => {
+      // Search in subject, content, and sender name
+      const matchesSearch = debouncedSearchTerm === '' ? true : (
+        message.subject.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        message.content.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        message.sender.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      );
 
-    const matchesType = filterType === 'All' || message.type === filterType;
-    const matchesStatus = filterStatus === 'All' || message.status === filterStatus;
+      // Match by message type
+      const matchesType = filterType === 'All' || message.type === filterType.toLowerCase();
 
-    return matchesSearch && matchesType && matchesStatus;
-  });
+      // Match by message status
+      const matchesStatus = filterStatus === 'All' || message.status === filterStatus.toLowerCase();
+
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [debouncedSearchTerm, filterType, filterStatus]);
 
   // Calculate pagination
   const indexOfLastMessage = currentPage * messagesPerPage;
