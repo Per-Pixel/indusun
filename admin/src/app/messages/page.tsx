@@ -4,17 +4,17 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
-import { 
-  MessageSquare, 
-  Users, 
-  User, 
-  Building, 
-  Search, 
-  Filter, 
-  ChevronDown, 
-  Send, 
-  CheckCircle, 
-  Clock, 
+import {
+  MessageSquare,
+  Users,
+  User,
+  Building,
+  Search,
+  Filter,
+  ChevronDown,
+  Send,
+  CheckCircle,
+  Clock,
   AlertCircle,
   Phone,
   Mail,
@@ -169,6 +169,7 @@ export default function MessagesPage() {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [messageText, setMessageText] = useState('');
+  const [messageType, setMessageType] = useState<'sms' | 'email'>('sms');
   const [isSending, setIsSending] = useState(false);
 
   // Toggle sidebar
@@ -177,21 +178,25 @@ export default function MessagesPage() {
   };
 
   // Filter recipients based on search term, type, and status
-  const filteredRecipients = mockRecipients.filter(recipient => {
-    const matchesSearch = 
-      recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipient.phone.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = filterType === 'All' || recipient.type === filterType;
-    const matchesStatus = filterStatus === 'All' || recipient.status === filterStatus;
-    const matchesTab = 
-      (activeTab === 'clients' && recipient.type === 'client') ||
-      (activeTab === 'brokers' && recipient.type === 'broker') ||
-      (activeTab === 'admins' && recipient.type === 'admin');
-    
-    return matchesSearch && matchesType && matchesStatus && matchesTab;
-  });
+  const filteredRecipients = React.useMemo(() => {
+    return mockRecipients.filter(recipient => {
+      // Only search if there's a search term
+      const matchesSearch = searchTerm === '' ? true : (
+        recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recipient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recipient.phone.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      const matchesType = filterType === 'All' || recipient.type === filterType;
+      const matchesStatus = filterStatus === 'All' || recipient.status === filterStatus;
+      const matchesTab =
+        (activeTab === 'clients' && recipient.type === 'client') ||
+        (activeTab === 'brokers' && recipient.type === 'broker') ||
+        (activeTab === 'admins' && recipient.type === 'admin');
+
+      return matchesSearch && matchesType && matchesStatus && matchesTab;
+    });
+  }, [searchTerm, filterType, filterStatus, activeTab]);
 
   // Toggle recipient selection
   const toggleRecipientSelection = (id: string) => {
@@ -204,10 +209,19 @@ export default function MessagesPage() {
 
   // Select all visible recipients
   const selectAllRecipients = () => {
-    if (selectedRecipients.length === filteredRecipients.length) {
-      setSelectedRecipients([]);
+    const visibleRecipientIds = filteredRecipients.map(recipient => recipient.id);
+
+    // Check if all visible recipients are already selected
+    const allSelected = visibleRecipientIds.every(id => selectedRecipients.includes(id));
+
+    if (allSelected) {
+      // Deselect all visible recipients
+      const newSelected = selectedRecipients.filter(id => !visibleRecipientIds.includes(id));
+      setSelectedRecipients(newSelected);
     } else {
-      setSelectedRecipients(filteredRecipients.map(recipient => recipient.id));
+      // Select all visible recipients (keeping any previously selected that aren't visible)
+      const newSelected = [...new Set([...selectedRecipients, ...visibleRecipientIds])];
+      setSelectedRecipients(newSelected);
     }
   };
 
@@ -228,7 +242,13 @@ export default function MessagesPage() {
     // Simulate sending message
     setTimeout(() => {
       setIsSending(false);
-      toast.success(`Message sent to ${selectedRecipients.length} recipients`);
+
+      // Use the messageType state for the redirect
+
+      // Navigate to the confirmation page with count and type parameters
+      router.push(`/messages/sent?count=${selectedRecipients.length}&type=${messageType}`);
+
+      // Reset form state
       setMessageText('');
       setSelectedRecipients([]);
     }, 1500);
@@ -261,35 +281,35 @@ export default function MessagesPage() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-              <StatsCard 
-                title="Total Messages" 
-                value={mockMessageStats.total} 
-                icon={<MessageSquare size={20} className="text-blue-600" />} 
-                bgColor="bg-blue-50" 
+              <StatsCard
+                title="Total Messages"
+                value={mockMessageStats.total}
+                icon={<MessageSquare size={20} className="text-blue-600" />}
+                bgColor="bg-blue-50"
               />
-              <StatsCard 
-                title="Sent" 
-                value={mockMessageStats.sent} 
-                icon={<CheckCircle size={20} className="text-green-600" />} 
-                bgColor="bg-green-50" 
+              <StatsCard
+                title="Sent"
+                value={mockMessageStats.sent}
+                icon={<CheckCircle size={20} className="text-green-600" />}
+                bgColor="bg-green-50"
               />
-              <StatsCard 
-                title="Received" 
-                value={mockMessageStats.received} 
-                icon={<MessageSquare size={20} className="text-purple-600" />} 
-                bgColor="bg-purple-50" 
+              <StatsCard
+                title="Received"
+                value={mockMessageStats.received}
+                icon={<MessageSquare size={20} className="text-purple-600" />}
+                bgColor="bg-purple-50"
               />
-              <StatsCard 
-                title="Pending" 
-                value={mockMessageStats.pending} 
-                icon={<Clock size={20} className="text-yellow-600" />} 
-                bgColor="bg-yellow-50" 
+              <StatsCard
+                title="Pending"
+                value={mockMessageStats.pending}
+                icon={<Clock size={20} className="text-yellow-600" />}
+                bgColor="bg-yellow-50"
               />
-              <StatsCard 
-                title="Failed" 
-                value={mockMessageStats.failed} 
-                icon={<AlertCircle size={20} className="text-red-600" />} 
-                bgColor="bg-red-50" 
+              <StatsCard
+                title="Failed"
+                value={mockMessageStats.failed}
+                icon={<AlertCircle size={20} className="text-red-600" />}
+                bgColor="bg-red-50"
               />
             </div>
 
@@ -387,10 +407,10 @@ export default function MessagesPage() {
                       />
                       <span className="ml-2 text-sm text-gray-700">Select All ({filteredRecipients.length})</span>
                     </div>
-                    
+
                     {filteredRecipients.map((recipient) => (
-                      <div 
-                        key={recipient.id} 
+                      <div
+                        key={recipient.id}
                         className="flex items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
                         onClick={() => toggleRecipientSelection(recipient.id)}
                       >
@@ -455,13 +475,13 @@ export default function MessagesPage() {
                           const recipient = mockRecipients.find(r => r.id === id);
                           if (!recipient) return null;
                           return (
-                            <div 
-                              key={id} 
+                            <div
+                              key={id}
                               className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                             >
                               {recipient.name}
-                              <button 
-                                type="button" 
+                              <button
+                                type="button"
                                 className="ml-1 text-blue-500 hover:text-blue-700"
                                 onClick={() => toggleRecipientSelection(id)}
                               >
@@ -480,13 +500,23 @@ export default function MessagesPage() {
                   <div className="p-4 border-b border-gray-200">
                     <div className="flex gap-4">
                       <button
-                        className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        onClick={() => setMessageType('sms')}
+                        className={`flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                          messageType === 'sms'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
                       >
                         <Phone size={16} className="mr-2" />
                         <span>Send SMS</span>
                       </button>
                       <button
-                        className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        onClick={() => setMessageType('email')}
+                        className={`flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                          messageType === 'email'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
                       >
                         <Mail size={16} className="mr-2" />
                         <span>Send Email</span>
@@ -502,7 +532,7 @@ export default function MessagesPage() {
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
                     ></textarea>
-                    
+
                     <div className="mt-4 flex justify-end">
                       <button
                         className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed"
