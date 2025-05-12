@@ -4,14 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Clock, 
-  MessageSquare, 
-  User, 
-  Mail, 
-  Phone, 
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  MessageSquare,
+  User,
+  Mail,
+  Phone,
   Download,
   CheckCircle,
   XCircle,
@@ -239,7 +239,7 @@ export default function MessageViewPage() {
   useEffect(() => {
     if (params.id) {
       const messageId = Array.isArray(params.id) ? params.id[0] : params.id;
-      
+
       // Simulate API call
       setTimeout(() => {
         const messageData = mockMessageDetails[messageId];
@@ -339,7 +339,7 @@ export default function MessageViewPage() {
 
                 <div className="p-6">
                   <h1 className="text-xl font-bold text-gray-900 mb-4">{message.subject}</h1>
-                  
+
                   <div className="flex items-center mb-6">
                     <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                       {message.sender.image ? (
@@ -358,7 +358,7 @@ export default function MessageViewPage() {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm font-medium text-gray-900">{message.sender.name}</p>
-                      <div className="flex items-center text-xs text-gray-500">
+                      <div className="flex items-center text-xs text-gray-900">
                         <Calendar size={12} className="mr-1" />
                         <span>{formatDate(message.sentAt)}</span>
                       </div>
@@ -372,9 +372,9 @@ export default function MessageViewPage() {
                     </div>
                   </div>
 
-                  <div className="prose max-w-none">
+                  <div className="prose max-w-none text-gray-900">
                     {message.content.split('\n').map((line, index) => (
-                      <p key={index} className="mb-2">{line}</p>
+                      <p key={index} className="mb-2 text-gray-900">{line}</p>
                     ))}
                   </div>
                 </div>
@@ -413,11 +413,11 @@ export default function MessageViewPage() {
                     <div className="space-y-2">
                       <div className="flex items-center text-sm">
                         <Mail size={16} className="mr-2 text-gray-500" />
-                        <span>{message.sender.email}</span>
+                        <span className="text-gray-900">{message.sender.email}</span>
                       </div>
                       <div className="flex items-center text-sm">
                         <Phone size={16} className="mr-2 text-gray-500" />
-                        <span>{message.sender.phone}</span>
+                        <span className="text-gray-900">{message.sender.phone}</span>
                       </div>
                     </div>
                   </div>
@@ -430,11 +430,11 @@ export default function MessageViewPage() {
                     <div className="flex items-center mt-2 text-sm">
                       <div className="flex items-center mr-4">
                         <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
-                        <span>{message.recipients.delivered} Delivered</span>
+                        <span className="text-gray-900">{message.recipients.delivered} Delivered</span>
                       </div>
                       <div className="flex items-center">
                         <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>
-                        <span>{message.recipients.failed} Failed</span>
+                        <span className="text-gray-900">{message.recipients.failed} Failed</span>
                       </div>
                     </div>
                   </div>
@@ -445,7 +445,7 @@ export default function MessageViewPage() {
                         className={`py-3 px-4 text-sm font-medium ${
                           activeTab === 'all'
                             ? 'border-b-2 border-blue-500 text-blue-600'
-                            : 'text-gray-500 hover:text-gray-700'
+                            : 'text-gray-900 hover:text-gray-700'
                         }`}
                         onClick={() => setActiveTab('all')}
                       >
@@ -455,7 +455,7 @@ export default function MessageViewPage() {
                         className={`py-3 px-4 text-sm font-medium ${
                           activeTab === 'delivered'
                             ? 'border-b-2 border-blue-500 text-blue-600'
-                            : 'text-gray-500 hover:text-gray-700'
+                            : 'text-gray-900 hover:text-gray-700'
                         }`}
                         onClick={() => setActiveTab('delivered')}
                       >
@@ -465,7 +465,7 @@ export default function MessageViewPage() {
                         className={`py-3 px-4 text-sm font-medium ${
                           activeTab === 'failed'
                             ? 'border-b-2 border-blue-500 text-blue-600'
-                            : 'text-gray-500 hover:text-gray-700'
+                            : 'text-gray-900 hover:text-gray-700'
                         }`}
                         onClick={() => setActiveTab('failed')}
                       >
@@ -497,7 +497,7 @@ export default function MessageViewPage() {
                               </div>
                               <div className="ml-3 flex-1">
                                 <p className="text-sm font-medium text-gray-900">{recipient.name}</p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-gray-900">
                                   {recipient.email || recipient.phone}
                                 </p>
                               </div>
@@ -508,7 +508,7 @@ export default function MessageViewPage() {
                               </div>
                             </div>
                             {recipient.deliveredAt && (
-                              <div className="mt-2 text-xs text-gray-500 flex items-center">
+                              <div className="mt-2 text-xs text-gray-900 flex items-center">
                                 <Clock size={12} className="mr-1" />
                                 Delivered at: {formatDate(recipient.deliveredAt)}
                               </div>
