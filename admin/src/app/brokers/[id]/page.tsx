@@ -9,6 +9,8 @@ import UserForm from '@/components/users/UserForm';
 import { User } from '@/components/users/UserList';
 import { toast } from 'react-hot-toast';
 import { ArrowLeft, Edit, Trash2, Mail, Phone, MapPin, Calendar, Clock, FileText, Users, Home, DollarSign, BarChart2 } from 'lucide-react';
+import AgentDetailsForm from '@/components/users/AgentDetailsForm';
+import AgentEditForm from '@/components/users/AgentEditForm';
 
 // Mock data for brokers (same as in the brokers page)
 const mockBrokers: User[] = [
@@ -109,24 +111,49 @@ export default function BrokerDetailPage() {
   const router = useRouter();
   const params = useParams();
   const brokerId = params.id as string;
-  
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [broker, setBroker] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showEditForm, setShowEditForm] = useState(false);
   const [brokerPerformance, setBrokerPerformance] = useState(mockBrokerPerformance);
+  const [formData, setFormData] = useState<any>({});
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   useEffect(() => {
     // In a real app, you would fetch the broker data from an API
     const foundBroker = mockBrokers.find(b => b.id === brokerId);
-    
+
     if (foundBroker) {
       setBroker(foundBroker);
+      // Initialize form data with broker data
+      setFormData({
+        name: foundBroker.name,
+        email: foundBroker.email,
+        phone: foundBroker.phone,
+        status: foundBroker.status,
+        location: foundBroker.location,
+        title: 'Real Estate Agent',
+        practice: 'Residential',
+        branch: 'Mumbai',
+        contract: 'Employee',
+        grade: 'Senior',
+        division: 'Sales',
+        division_manager: 'Vikram Singh',
+        login: foundBroker.id
+      });
     } else {
       toast.error('Broker not found');
       router.push('/brokers');
     }
-    
+
     setIsLoading(false);
   }, [brokerId, router]);
 
@@ -148,7 +175,7 @@ export default function BrokerDetailPage() {
 
   const handleFormSubmit = (brokerData: Partial<User>) => {
     setIsLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       if (broker) {
@@ -156,7 +183,7 @@ export default function BrokerDetailPage() {
         setBroker({ ...broker, ...brokerData });
         toast.success(`${brokerData.name} has been updated`);
       }
-      
+
       setIsLoading(false);
       setShowEditForm(false);
     }, 1000);
@@ -223,119 +250,54 @@ export default function BrokerDetailPage() {
             </button>
 
             {showEditForm ? (
-              <UserForm
-                user={broker}
-                userType="broker"
+              <AgentEditForm
+                agent={{
+                  id: broker?.id || '',
+                  name: broker?.name || '',
+                  title: broker?.title || 'Real Estate Agent',
+                  email: broker?.email || '',
+                  phone: broker?.phone || '',
+                  image: broker?.image,
+                  practice: 'Residential',
+                  branch: 'Mumbai',
+                  contract: 'Employee',
+                  grade: 'Senior',
+                  division: 'Sales',
+                  division_manager: 'Vikram Singh',
+                  login: broker?.id,
+                  status: 'Activated',
+                  status_history: [{ status: 'Activated', date: '13/05/2009' }]
+                }}
                 onSubmit={handleFormSubmit}
                 onCancel={handleFormCancel}
                 isLoading={isLoading}
               />
             ) : (
               <>
-                {/* Broker Profile */}
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-                  <div className="p-6 border-b border-gray-200">
-                    <div className="flex justify-between items-center">
-                      <h2 className="text-xl font-semibold text-gray-900">Broker Profile</h2>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={handleEdit}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        >
-                          <Edit size={16} />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          onClick={handleDelete}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-white border border-red-500 text-red-500 rounded-md hover:bg-red-50"
-                        >
-                          <Trash2 size={16} />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-6">
-                    <div className="flex flex-col md:flex-row gap-6">
-                      {/* Profile Image */}
-                      <div className="flex flex-col items-center">
-                        <div className="h-32 w-32 rounded-full overflow-hidden bg-gray-200 mb-4">
-                          {broker.image ? (
-                            <Image
-                              src={broker.image}
-                              alt={broker.name}
-                              width={128}
-                              height={128}
-                              className="h-32 w-32 object-cover"
-                            />
-                          ) : (
-                            <div className="h-32 w-32 flex items-center justify-center bg-blue-100 text-blue-800 text-4xl font-semibold">
-                              {broker.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          broker.status === 'active' ? 'bg-green-100 text-green-800' :
-                          broker.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {broker.status.charAt(0).toUpperCase() + broker.status.slice(1)}
-                        </div>
-                      </div>
-                      
-                      {/* Broker Details */}
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">{broker.name}</h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="flex items-start">
-                            <Mail className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Email</p>
-                              <p className="text-gray-900">{broker.email}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-start">
-                            <Phone className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Phone</p>
-                              <p className="text-gray-900">{broker.phone}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-start">
-                            <MapPin className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Location</p>
-                              <p className="text-gray-900">{broker.location || 'Not specified'}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-start">
-                            <Calendar className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Member Since</p>
-                              <p className="text-gray-900">{broker.createdAt}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-start">
-                            <Clock className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Last Active</p>
-                              <p className="text-gray-900">{broker.lastActive || 'Unknown'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
+                <AgentDetailsForm
+                  agent={{
+                    id: broker?.id || '',
+                    name: broker?.name || '',
+                    title: broker?.title || 'Real Estate Agent',
+                    email: broker?.email || '',
+                    phone: broker?.phone || '',
+                    image: broker?.image,
+                    practice: 'Residential',
+                    branch: 'Mumbai',
+                    contract: 'Employee',
+                    grade: 'Senior',
+                    division: 'Sales',
+                    division_manager: 'Vikram Singh',
+                    login: broker?.id,
+                    status: 'Activated',
+                    status_history: [{ status: 'Activated', date: '13/05/2009' }]
+                  }}
+                  onEdit={handleEdit}
+                  readOnly={false}
+                />
+
                 {/* Broker Performance */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 mt-6">
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium text-gray-500">Total Sales</h3>
@@ -343,7 +305,7 @@ export default function BrokerDetailPage() {
                     </div>
                     <p className="text-2xl font-semibold text-gray-900">{brokerPerformance.totalSales}</p>
                   </div>
-                  
+
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium text-gray-500">Total Revenue</h3>
@@ -351,7 +313,7 @@ export default function BrokerDetailPage() {
                     </div>
                     <p className="text-2xl font-semibold text-gray-900">{formatCurrency(brokerPerformance.totalRevenue)}</p>
                   </div>
-                  
+
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium text-gray-500">Active Listings</h3>
@@ -359,7 +321,7 @@ export default function BrokerDetailPage() {
                     </div>
                     <p className="text-2xl font-semibold text-gray-900">{brokerPerformance.activeListings}</p>
                   </div>
-                  
+
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium text-gray-500">Clients Managed</h3>
@@ -368,13 +330,13 @@ export default function BrokerDetailPage() {
                     <p className="text-2xl font-semibold text-gray-900">{brokerPerformance.clientsManaged}</p>
                   </div>
                 </div>
-                
+
                 {/* Recent Sales */}
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-gray-200">
                     <h2 className="text-xl font-semibold text-gray-900">Recent Sales</h2>
                   </div>
-                  
+
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
