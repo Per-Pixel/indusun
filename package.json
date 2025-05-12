@@ -9,5 +9,8 @@
     "dev": "npm run dev:admin"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "framer-motion": "^12.11.0"
+  }
 }
