@@ -81,13 +81,13 @@ export default function AdminUsersPage() {
       toast.error("You cannot edit your own account from this page");
       return;
     }
-    
+
     // Check if current user is trying to edit a super admin (only super admins can edit other super admins)
     if (admin.role === 'super_admin' && user?.role !== 'super_admin') {
       toast.error("Only super admins can edit other super admin accounts");
       return;
     }
-    
+
     setSelectedAdmin(admin);
     setShowForm(true);
   };
@@ -98,13 +98,13 @@ export default function AdminUsersPage() {
       toast.error("You cannot delete your own account");
       return;
     }
-    
+
     // Check if current user is trying to delete a super admin (only super admins can delete other super admins)
     if (admin.role === 'super_admin' && user?.role !== 'super_admin') {
       toast.error("Only super admins can delete super admin accounts");
       return;
     }
-    
+
     if (window.confirm(`Are you sure you want to delete ${admin.name}?`)) {
       // In a real app, you would call an API to delete the admin
       setAdminUsers(prevAdmins => prevAdmins.filter(a => a.id !== admin.id));
@@ -114,7 +114,7 @@ export default function AdminUsersPage() {
 
   const handleFormSubmit = (adminData: Partial<User>) => {
     setIsLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       if (selectedAdmin) {
@@ -138,11 +138,11 @@ export default function AdminUsersPage() {
           createdAt: new Date().toISOString().split('T')[0],
           lastActive: new Date().toISOString().split('T')[0],
         };
-        
+
         setAdminUsers(prevAdmins => [...prevAdmins, newAdmin]);
         toast.success(`${newAdmin.name} has been added`);
       }
-      
+
       setIsLoading(false);
       setShowForm(false);
     }, 1000);
@@ -187,6 +187,7 @@ export default function AdminUsersPage() {
                 onAddNew={handleAddNew}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                useEditPage={true}
               />
             )}
           </div>

@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@layer utilities {
+  .placeholder-dark::placeholder {
+    color: #4b5563 !important; /* gray-600 */
+    opacity: 1;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -136,4 +143,10 @@ body {
   height: 100%;
   background-color: var(--primary);
   border-radius: 9999px;
+}
+
+/* Make placeholder text darker */
+::placeholder {
+  color: #4b5563 !important; /* Using gray-600 color */
+  opacity: 1;
 }

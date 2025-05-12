@@ -24,10 +24,10 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  
+
   // Mock notifications data
   const notifications = [
     {
@@ -59,7 +59,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
       type: 'payment'
     }
   ];
-  
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -70,13 +70,13 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
         setShowProfileMenu(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-  
+
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +84,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
       router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
     }
   };
-  
+
   // Get notification icon based on type
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -121,7 +121,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
         >
           <Menu size={20} />
         </button>
-        
+
         <div className="ml-4 relative">
           <form onSubmit={handleSearch} className="flex items-center">
             <div className="relative">
@@ -131,7 +131,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
               <input
                 type="text"
                 placeholder="Search..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-dark focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -145,7 +145,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
           </form>
         </div>
       </div>
-      
+
       {/* Right side - Notifications and profile */}
       <div className="flex items-center">
         {/* Notifications */}
@@ -157,7 +157,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
             <Bell size={20} />
             <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
           </button>
-          
+
           {showNotifications && (
             <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
               <div className="py-2">
@@ -193,7 +193,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
             </div>
           )}
         </div>
-        
+
         {/* Profile dropdown */}
         <div className="relative ml-3" ref={profileMenuRef}>
           <button
@@ -206,7 +206,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
             <span className="ml-2 text-gray-700 hidden md:block">{user?.name || 'Admin User'}</span>
             <ChevronDown size={16} className="ml-1 text-gray-500 hidden md:block" />
           </button>
-          
+
           {showProfileMenu && (
             <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
               <div className="py-1">

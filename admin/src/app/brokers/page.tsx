@@ -104,7 +104,7 @@ export default function BrokersPage() {
 
   const handleFormSubmit = (brokerData: Partial<User>) => {
     setIsLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       if (selectedBroker) {
@@ -129,11 +129,11 @@ export default function BrokersPage() {
           createdAt: new Date().toISOString().split('T')[0],
           lastActive: new Date().toISOString().split('T')[0],
         };
-        
+
         setBrokers(prevBrokers => [...prevBrokers, newBroker]);
         toast.success(`${newBroker.name} has been added`);
       }
-      
+
       setIsLoading(false);
       setShowForm(false);
     }, 1000);
@@ -178,6 +178,7 @@ export default function BrokersPage() {
                 onAddNew={handleAddNew}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                useEditPage={true}
               />
             )}
           </div>

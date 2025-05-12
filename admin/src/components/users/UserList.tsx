@@ -38,6 +38,7 @@ interface UserListProps {
   onAddNew: () => void;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
+  useEditPage?: boolean;
 }
 
 const UserList: React.FC<UserListProps> = ({
@@ -46,7 +47,8 @@ const UserList: React.FC<UserListProps> = ({
   userType,
   onAddNew,
   onEdit,
-  onDelete
+  onDelete,
+  useEditPage = false
 }) => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,13 +58,13 @@ const UserList: React.FC<UserListProps> = ({
 
   // Filter users based on search query and status
   const filteredUsers = users.filter(user => {
-    const matchesSearch = 
+    const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone.includes(searchQuery);
-    
+
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -106,20 +108,20 @@ const UserList: React.FC<UserListProps> = ({
       <div className="p-6 border-b border-gray-200">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-          
+
           <div className="flex flex-col md:flex-row gap-3">
             {/* Search */}
             <div className="relative">
               <input
                 type="text"
                 placeholder={`Search ${userType}s...`}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64 placeholder-dark"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             </div>
-            
+
             {/* Status Filter */}
             <div className="relative">
               <button
@@ -130,7 +132,7 @@ const UserList: React.FC<UserListProps> = ({
                 <span>Status: {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}</span>
                 <ChevronDown size={16} />
               </button>
-              
+
               {showStatusDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
                   <div className="py-1">
@@ -174,7 +176,7 @@ const UserList: React.FC<UserListProps> = ({
                 </div>
               )}
             </div>
-            
+
             {/* Add New Button */}
             <button
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -183,7 +185,7 @@ const UserList: React.FC<UserListProps> = ({
               <UserPlus size={16} />
               <span>Add {userType.charAt(0).toUpperCase() + userType.slice(1)}</span>
             </button>
-            
+
             {/* Export Button */}
             <button
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -194,7 +196,7 @@ const UserList: React.FC<UserListProps> = ({
           </div>
         </div>
       </div>
-      
+
       {/* User Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -273,14 +275,19 @@ const UserList: React.FC<UserListProps> = ({
                       >
                         <MoreHorizontal size={16} />
                       </button>
-                      
+
                       {showActionDropdown === user.id && (
                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
                           <div className="py-1">
                             <button
                               className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               onClick={() => {
-                                onEdit(user);
+                                if (useEditPage) {
+                                  const path = userType === 'admin' ? `/admin-users/${user.id}` : `/brokers/${user.id}`;
+                                  router.push(path);
+                                } else {
+                                  onEdit(user);
+                                }
                                 setShowActionDropdown(null);
                               }}
                             >
