@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Phone,
   Mail,
-  Download
+  Download,
+  X
 } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'react-hot-toast';

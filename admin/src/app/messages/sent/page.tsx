@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
-import { 
-  CheckCircle, 
-  ArrowLeft, 
-  MessageSquare, 
+import {
+  CheckCircle,
+  ArrowLeft,
+  MessageSquare,
   Users,
   Clock
 } from 'lucide-react';
@@ -17,8 +17,7 @@ export default function MessageSentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(true);
-  
+
   // Get parameters from URL
   const count = searchParams.get('count') || '0';
   const type = searchParams.get('type') || 'message';
@@ -27,15 +26,6 @@ export default function MessageSentPage() {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
-
-  // Hide confetti after animation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowConfetti(false);
-    }, 3000);
-    
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -62,43 +52,14 @@ export default function MessageSentPage() {
 
             {/* Success Card */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-8 text-center relative">
-              {/* Confetti Animation */}
-              {showConfetti && (
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  {Array.from({ length: 50 }).map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-2 h-6"
-                      style={{
-                        backgroundColor: [
-                          '#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#9B5DE5'
-                        ][Math.floor(Math.random() * 5)],
-                        top: `${Math.random() * -10}%`,
-                        left: `${Math.random() * 100}%`,
-                        transformOrigin: 'center',
-                        rotate: `${Math.random() * 360}deg`,
-                      }}
-                      animate={{
-                        y: ['0vh', `${100 + Math.random() * 20}vh`],
-                        rotate: [`${Math.random() * 360}deg`, `${Math.random() * 360 + 180}deg`],
-                      }}
-                      transition={{
-                        duration: 2 + Math.random() * 2,
-                        ease: "easeOut",
-                        delay: Math.random() * 0.5,
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
 
               {/* Success Icon with Animation */}
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ 
-                  type: "spring", 
-                  stiffness: 260, 
+                transition={{
+                  type: "spring",
+                  stiffness: 260,
                   damping: 20,
                   delay: 0.2
                 }}
