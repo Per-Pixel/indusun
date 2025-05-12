@@ -134,7 +134,7 @@ export default function MessageSentPage() {
                 </button>
                 <button
                   onClick={() => router.push('/messages/history')}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-900"
                 >
                   View Message History
                 </button>

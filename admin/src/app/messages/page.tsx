@@ -372,7 +372,7 @@ export default function MessagesPage() {
                     <input
                       type="text"
                       placeholder="Search recipients..."
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 placeholder-dark"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -389,7 +389,7 @@ export default function MessagesPage() {
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                         <ChevronDown size={16} />
                       </div>
                     </div>
@@ -529,7 +529,7 @@ export default function MessagesPage() {
                   <div className="p-4">
                     <textarea
                       placeholder="Type your message here..."
-                      className="w-full h-40 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 placeholder-dark"
+                      className="w-full h-40 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
                     ></textarea>

@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
-import { 
-  MessageSquare, 
-  Search, 
-  ChevronDown, 
-  Download, 
+import {
+  MessageSquare,
+  Search,
+  ChevronDown,
+  Download,
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
@@ -174,7 +174,7 @@ export default function MessageHistoryPage() {
   const [filterType, setFilterType] = useState<string>('All');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   const messagesPerPage = 5;
 
   // Toggle sidebar
@@ -184,14 +184,14 @@ export default function MessageHistoryPage() {
 
   // Filter messages based on search term, type, and status
   const filteredMessages = mockMessageHistory.filter(message => {
-    const matchesSearch = 
+    const matchesSearch =
       message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.sender.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesType = filterType === 'All' || message.type === filterType;
     const matchesStatus = filterStatus === 'All' || message.status === filterStatus;
-    
+
     return matchesSearch && matchesType && matchesStatus;
   });
 
@@ -272,7 +272,7 @@ export default function MessageHistoryPage() {
                 <input
                   type="text"
                   placeholder="Search messages..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 placeholder-dark"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -290,7 +290,7 @@ export default function MessageHistoryPage() {
                     <option value="pending">Pending</option>
                     <option value="failed">Failed</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                     <ChevronDown size={16} />
                   </div>
                 </div>
@@ -305,7 +305,7 @@ export default function MessageHistoryPage() {
                     <option value="email">Email</option>
                     <option value="sms">SMS</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                     <ChevronDown size={16} />
                   </div>
                 </div>
@@ -333,7 +333,7 @@ export default function MessageHistoryPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {message.subject}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div className="flex items-center">
                             <div className="h-8 w-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                               {message.sender.image ? (
@@ -353,7 +353,7 @@ export default function MessageHistoryPage() {
                             <span className="ml-2">{message.sender.name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div className="flex items-center">
                             <Calendar size={14} className="mr-1" />
                             {formatDate(message.sentAt)}
@@ -366,12 +366,12 @@ export default function MessageHistoryPage() {
                             {message.type === 'email' ? 'Email' : 'SMS'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div>
                             <span className="font-medium">{message.recipients.total}</span> total
                           </div>
                           <div className="text-xs">
-                            <span className="text-green-600">{message.recipients.delivered}</span> delivered, 
+                            <span className="text-green-600">{message.recipients.delivered}</span> delivered,
                             <span className="text-red-600 ml-1">{message.recipients.failed}</span> failed
                           </div>
                         </td>
@@ -419,7 +419,7 @@ export default function MessageHistoryPage() {
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-gray-900">
                         Showing <span className="font-medium">{indexOfFirstMessage + 1}</span> to{' '}
                         <span className="font-medium">
                           {indexOfLastMessage > filteredMessages.length
