@@ -12,7 +12,17 @@ import {
   Layers,
   HelpCircle,
   ChevronDown,
-  DollarSign
+  DollarSign,
+  Calendar,
+  CheckSquare,
+  StickyNote,
+  FolderOpen,
+  Map,
+  BarChart2,
+  FileInput,
+  Users,
+  UserPlus,
+  UserCog
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,10 +36,12 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const [pagesOpen, setPagesOpen] = useState(false);
   const [salesOpen, setSalesOpen] = useState(pathname.startsWith('/sales'));
   const [authOpen, setAuthOpen] = useState(false);
+  const [componentsOpen, setComponentsOpen] = useState(pathname.startsWith('/components'));
 
   const togglePages = () => setPagesOpen(!pagesOpen);
   const toggleSales = () => setSalesOpen(!salesOpen);
   const toggleAuth = () => setAuthOpen(!authOpen);
+  const toggleComponents = () => setComponentsOpen(!componentsOpen);
 
   // Handle navigation with sidebar closing for mobile
   const handleNavigation = (path: string) => {
@@ -251,6 +263,39 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
               >
                 <span>Register</span>
               </button>
+              <button
+                onClick={() => handleNavigation('/clients')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/clients' || pathname.startsWith('/clients/')
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <Users className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>Clients</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/brokers')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/brokers' || pathname.startsWith('/brokers/')
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <UserPlus className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>Brokers</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/admin-users')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/admin-users' || pathname.startsWith('/admin-users/')
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <UserCog className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>Admin Users</span>
+              </button>
             </div>
           )}
         </div>
@@ -270,17 +315,107 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
         </div>
 
         <div className="mb-2">
-          <button
-            onClick={() => handleNavigation('/components')}
-            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
-              pathname === '/components'
+          <div
+            className={`flex items-center justify-between p-3 rounded-md cursor-pointer font-bold transition-colors ${
+              pathname.startsWith('/components')
                 ? 'bg-white text-black'
                 : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
-            <Layers className="w-5 h-5 mr-3 stroke-[2.5px]" />
-            <span>Components</span>
-          </button>
+            <div
+              className="flex items-center w-full"
+              onClick={toggleComponents}
+            >
+              <Layers className="w-5 h-5 mr-3 stroke-[2.5px]" />
+              <span>Components</span>
+            </div>
+            <div onClick={toggleComponents}>
+              <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${componentsOpen ? 'transform rotate-180' : ''}`} />
+            </div>
+          </div>
+
+          {/* Components Submenu */}
+          {componentsOpen && (
+            <div className="ml-4 mt-1 space-y-1">
+              <button
+                onClick={() => handleNavigation('/components/calendar')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/components/calendar'
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <Calendar className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>Calendar</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/components/tasks')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/components/tasks'
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <CheckSquare className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>Task Manager</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/components/notes')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/components/notes'
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <StickyNote className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>Notes</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/components/files')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/components/files'
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <FolderOpen className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>File Manager</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/components/maps')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/components/maps'
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <Map className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>Maps</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/components/analytics')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/components/analytics'
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <BarChart2 className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>Analytics</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/components/forms')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/components/forms'
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <FileInput className="w-4 h-4 mr-2 stroke-[2.5px]" />
+                <span>Forms</span>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="mb-2">
