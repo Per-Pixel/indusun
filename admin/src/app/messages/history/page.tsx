@@ -281,14 +281,14 @@ export default function MessageHistoryPage() {
               <div className="flex gap-4">
                 <div className="relative">
                   <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8 text-gray-900"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
-                    <option value="All">All Status</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="pending">Pending</option>
-                    <option value="failed">Failed</option>
+                    <option value="All" className="text-gray-900">All Status</option>
+                    <option value="delivered" className="text-gray-900">Delivered</option>
+                    <option value="pending" className="text-gray-900">Pending</option>
+                    <option value="failed" className="text-gray-900">Failed</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                     <ChevronDown size={16} />
@@ -297,13 +297,13 @@ export default function MessageHistoryPage() {
 
                 <div className="relative">
                   <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8 text-gray-900"
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
                   >
-                    <option value="All">All Types</option>
-                    <option value="email">Email</option>
-                    <option value="sms">SMS</option>
+                    <option value="All" className="text-gray-900">All Types</option>
+                    <option value="email" className="text-gray-900">Email</option>
+                    <option value="sms" className="text-gray-900">SMS</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                     <ChevronDown size={16} />

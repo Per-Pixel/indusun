@@ -381,13 +381,13 @@ export default function MessagesPage() {
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <select
-                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8 text-gray-900"
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
                       >
-                        <option value="All">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="All" className="text-gray-900">All Status</option>
+                        <option value="active" className="text-gray-900">Active</option>
+                        <option value="inactive" className="text-gray-900">Inactive</option>
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                         <ChevronDown size={16} />
