@@ -48,12 +48,11 @@ export default function Home() {
       <HeroSection removeSearchBar={true} />
 
       {/* Search Bar - Positioned to overlap with Hero section */}
-      <div className="relative z-30" style={{ marginTop: '-80px', position: 'relative' }}>
+      <div className="relative z-30" style={{ marginTop: '-80px' }}>
         <div className="container mx-auto px-4">
-          <div className="search-container max-w-3xl mx-auto shadow-md rounded-lg overflow-hidden" style={{ position: 'relative', top: '0px' }}>
-            {isMobile ? (
-              <MobileSearchForm onSearch={handleSearch} />
-            ) : (
+          {/* Desktop Search Form */}
+          {!isMobile && (
+            <div className="search-container max-w-3xl mx-auto shadow-md rounded-lg overflow-hidden" style={{ transform: 'translateY(40px)' }}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -61,10 +60,23 @@ export default function Home() {
               >
                 <DesktopSearchForm onSearch={handleSearch} />
               </motion.div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Mobile Search Form - Separate from desktop for better control */}
+      {isMobile && (
+        <div className="md:hidden">
+          <MobileSearchForm 
+            onSearch={(query, type, tab) => {
+              handleSearch(query, type);
+            }}
+            className="mt-[-200px]"
+            style={{ transform: 'translateY(100px)' }}
+          />
+        </div>
+      )}
 
       {/* Counter Section */}
       <CounterSection />
