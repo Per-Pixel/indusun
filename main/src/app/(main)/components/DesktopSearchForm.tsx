@@ -40,18 +40,9 @@ export function DesktopSearchForm({
 
   // Animation effect for search suggestions
   useEffect(() => {
-    if (isFocused) return; // Don't animate if input is focused
-
-    const interval = setInterval(() => {
-      setIsAnimatingOut(true);
-      setTimeout(() => {
-        setCurrentSuggestionIndex((prev) => (prev + 1) % searchSuggestions.length);
-        setIsAnimatingOut(false);
-      }, 800);
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [isFocused, searchSuggestions.length]);
+    // Just set initial suggestion without animation
+    setCurrentSuggestionIndex(0);
+  }, []);
 
   // Animation variants
   const dropdownVariants = {
@@ -195,3 +186,4 @@ export function DesktopSearchForm({
     </div>
   );
 }
+

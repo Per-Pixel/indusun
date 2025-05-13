@@ -32,17 +32,23 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
     "Ready to move property"
   ];
 
-  // Cycle through search suggestions
+  // Remove or comment out the useEffect for cycling through search suggestions
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setIsAnimatingOut(true);
+  //     setTimeout(() => {
+  //       setCurrentSuggestionIndex((prev) => (prev + 1) % searchSuggestions.length);
+  //       setIsAnimatingOut(false);
+  //     }, 500);
+  //   }, 3000);
+  //   return () => clearInterval(interval);
+  // }, [searchSuggestions.length]);
+
+  // Replace with a simple initialization
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIsAnimatingOut(true);
-      setTimeout(() => {
-        setCurrentSuggestionIndex((prev) => (prev + 1) % searchSuggestions.length);
-        setIsAnimatingOut(false);
-      }, 500);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [searchSuggestions.length]);
+    // Just set initial suggestion without animation
+    setCurrentSuggestionIndex(0);
+  }, []);
 
   const dropdownVariants = {
     hidden: { opacity: 0, y: -10 },
@@ -182,3 +188,4 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
     </div>
   );
 }
+
