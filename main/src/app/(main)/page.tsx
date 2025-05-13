@@ -1,9 +1,44 @@
-import Image from "next/image";
+'use client';
+
+import { HeroSection } from './components/HeroSection';
+import { CounterSection } from './components/CounterSection';
+import { FindBetterPlaces } from './components/FindBetterPlaces';
+import { FeaturedSection } from './components/FeaturedSection';
+import { HighlightedProjects } from './components/HighlightedProjects';
+import { ServicesSection } from './components/ServicesSection';
+import { OngoingProjects } from './components/OngoingProjects';
+import { TestimonialsSection } from './components/TestimonialsSection';
+import { WhyChooseUs } from './components/WhyChooseUs';
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      Welcome to Indusun Home Page
-    </div>
+    <main className="min-h-screen">
+      {/* Hero Section with Search */}
+      <HeroSection />
+
+      {/* Counter Section */}
+      <CounterSection />
+
+      {/* Find Better Places Section */}
+      <FindBetterPlaces />
+
+      {/* Featured Properties Section */}
+      <FeaturedSection />
+
+      {/* Highlighted Projects Section */}
+      <HighlightedProjects />
+
+      {/* Services Section */}
+      <ServicesSection />
+
+      {/* Ongoing Projects Section */}
+      <OngoingProjects />
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
+
+      {/* Why Choose Us Section */}
+      <WhyChooseUs />
+    </main>
   );
 }
