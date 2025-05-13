@@ -15,10 +15,10 @@ export function HeroSection() {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkIfMobile();
     window.addEventListener('resize', checkIfMobile);
-    
+
     return () => {
       window.removeEventListener('resize', checkIfMobile);
     };
@@ -29,7 +29,7 @@ export function HeroSection() {
     const params = new URLSearchParams();
     if (query) params.append('q', query);
     if (type !== 'all') params.append('type', type);
-    
+
     router.push(`/properties/search?${params.toString()}`);
   };
 
@@ -49,7 +49,7 @@ export function HeroSection() {
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="max-w-3xl">
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -57,33 +57,31 @@ export function HeroSection() {
           >
             Modern living for everyone
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-white/90 mb-8"
           >
-            Find your dream property with our extensive listings and expert guidance.
+            We provide a complete service for the sale, purchase or rental of real estate. We have been operating in Madrid and Barcelona more than 15 years.
           </motion.p>
-
-          {/* Search Form - Desktop */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="hidden md:block"
-          >
-            <DesktopSearchForm onSearch={handleSearch} />
-          </motion.div>
         </div>
       </div>
 
-      {/* Mobile Search Form - Positioned at bottom of hero */}
-      {isMobile && (
-        <div className="absolute bottom-0 left-0 right-0 z-20">
+      {/* Search Form - Positioned at bottom center for both mobile and desktop */}
+      <div className="absolute bottom-[-30px] left-0 right-0 z-40 mx-auto max-w-3xl px-4">
+        {isMobile ? (
           <MobileSearchForm onSearch={handleSearch} />
-        </div>
-      )}
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <DesktopSearchForm onSearch={handleSearch} />
+          </motion.div>
+        )}
+      </div>
     </section>
   );
 }

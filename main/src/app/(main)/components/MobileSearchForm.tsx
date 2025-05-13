@@ -52,7 +52,7 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchTerm.trim()) return;
-    
+
     if (onSearch) {
       onSearch(searchTerm, propertyType, activeTab);
     } else {
@@ -61,13 +61,13 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
       if (searchTerm) params.append('q', searchTerm);
       if (propertyType !== 'all') params.append('type', propertyType);
       params.append('purpose', activeTab.toLowerCase());
-      
+
       router.push(`/properties/search?${params.toString()}`);
     }
   };
 
   return (
-    <div className={`relative z-10 max-w-3xl mx-auto -mt-16 px-4 ${className}`}>
+    <div className={`relative z-10 max-w-3xl mx-auto px-4 ${className}`}>
       {/* Search Container */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         {/* Top Navigation Area - Mobile version */}
