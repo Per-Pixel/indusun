@@ -38,56 +38,119 @@ export function HeroSection({ removeSearchBar = false }: HeroSectionProps) {
   };
 
   return (
-    <section className="relative w-full h-[80vh] min-h-[600px] overflow-hidden">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop"
-          alt="Modern Home"
-          className="w-full h-full object-cover"
-        />
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/30" />
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="max-w-3xl">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4"
+    <>
+      {/* Mobile Hero Section */}
+      {isMobile && (
+        <div className="md:hidden relative bg-white">
+          {/* Hero Section with clip-path for rounded corners */}
+          <div 
+            className="relative h-[500px]"
+            style={{
+              clipPath: 'inset(0 0 50px 0 round 0 0 20px 20px)'
+            }}
           >
-            Modern living for everyone
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-white/90 mb-8"
-          >
-            We provide a complete service for the sale, purchase or rental of real estate. We have been operating in Madrid and Barcelona more than 15 years.
-          </motion.p>
-        </div>
-      </div>
-
-      {/* Search Form - Only shown if removeSearchBar is false */}
-      {!removeSearchBar && (
-        <div className="fixed-search-container fixed left-0 right-0 mx-auto max-w-3xl px-4" style={{ bottom: 'calc(100vh - 80vh - 40px)' }}>
-          {isMobile ? (
-            <MobileSearchForm onSearch={handleSearch} />
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <DesktopSearchForm onSearch={handleSearch} />
-            </motion.div>
+            <img
+              src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop"
+              alt="Modern Home"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/30" />
+          </div>
+          
+          {/* Content */}
+          <div className="absolute inset-0 flex flex-col justify-center px-4">
+            <div className="max-w-3xl">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="text-4xl font-bold text-white mb-4"
+              >
+                Modern living for everyone
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-lg text-white/90 mb-8"
+              >
+                We provide a complete service for the sale, purchase or rental of real estate. We have been operating in Madrid and Barcelona more than 15 years.
+              </motion.p>
+            </div>
+          </div>
+          
+          {/* Mobile Search Form */}
+          {!removeSearchBar && (
+            <div className="relative z-30 max-w-3xl mx-auto -mt-6 px-4">
+              <MobileSearchForm onSearch={handleSearch} />
+            </div>
           )}
         </div>
       )}
-    </section>
+
+      {/* Desktop/Tablet Hero Section */}
+      {!isMobile && (
+        <section className="hidden md:block relative w-full h-[80vh] min-h-[600px] overflow-hidden bg-white z-10">
+          {/* Background Image */}
+          <div 
+            className="absolute inset-0 z-0 bg-white"
+            style={{
+              clipPath: 'inset(0 0 0 0 round 0 0 30px 30px)'
+            }}
+          >
+            <img
+              src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop"
+              alt="Modern Home"
+              className="w-full h-full object-cover"
+            />
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/30" />
+          </div>
+
+          {/* Content */}
+          <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div className="max-w-3xl">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="text-5xl lg:text-6xl font-bold text-white mb-4"
+              >
+                Modern living for everyone
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-xl text-white/90 mb-8"
+              >
+                We provide a complete service for the sale, purchase or rental of real estate. We have been operating in Madrid and Barcelona more than 15 years.
+              </motion.p>
+            </div>
+          </div>
+
+          {/* Desktop Search Form */}
+          {!removeSearchBar && (
+            <div className="fixed-search-container fixed left-0 right-0 mx-auto max-w-3xl px-4 bg-white z-30" style={{ bottom: 'calc(100vh - 80vh - 40px)' }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <DesktopSearchForm onSearch={handleSearch} />
+              </motion.div>
+            </div>
+          )}
+        </section>
+      )}
+    </>
   );
 }
+
+
+
+
+
+
+
+

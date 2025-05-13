@@ -49,8 +49,8 @@ const Counter = ({ end, label, duration = 2, delay = 0 }: CounterProps) => {
 
 export function CounterSection() {
   return (
-    <section className="relative pt-0 pb-12 md:pt-0 md:pb-16 bg-white" style={{ marginTop: "-50px" }}>
-      <div className="container mx-auto px-4 pt-24 md:pt-28">
+    <section className="relative pt-12 pb-12 md:pt-16 md:pb-16 bg-white">
+      <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -71,3 +71,4 @@ export function CounterSection() {
     </section>
   );
 }
+

@@ -45,7 +45,9 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
-      <HeroSection removeSearchBar={true} />
+      <div className="relative">
+        <HeroSection removeSearchBar={true} />
+      </div>
 
       {/* Search Bar - Positioned to overlap with Hero section */}
       <div className="relative z-30" style={{ marginTop: '-80px' }}>
@@ -67,40 +69,41 @@ export default function Home() {
 
       {/* Mobile Search Form - Separate from desktop for better control */}
       {isMobile && (
-        <div className="md:hidden">
+        <div className="md:hidden relative z-20">
           <MobileSearchForm 
             onSearch={(query, type, tab) => {
               handleSearch(query, type);
             }}
-            className="mt-[-200px]"
-            style={{ transform: 'translateY(100px)' }}
+            className="mt-[-120px]"
           />
         </div>
       )}
 
-      {/* Counter Section */}
-      <CounterSection />
+      {/* Counter Section with white background */}
+      <div className="bg-white relative z-10 -mt-8">
+        <CounterSection />
 
-      {/* Find Better Places Section */}
-      <FindBetterPlaces />
+        {/* Find Better Places Section */}
+        <FindBetterPlaces />
 
-      {/* Featured Properties Section */}
-      <FeaturedSection />
+        {/* Featured Properties Section */}
+        <FeaturedSection />
 
-      {/* Highlighted Projects Section */}
-      <HighlightedProjects />
+        {/* Highlighted Projects Section */}
+        <HighlightedProjects />
 
-      {/* Services Section */}
-      <ServicesSection />
+        {/* Services Section */}
+        <ServicesSection />
 
-      {/* Ongoing Projects Section */}
-      <OngoingProjects />
+        {/* Ongoing Projects Section */}
+        <OngoingProjects />
 
-      {/* Testimonials Section */}
-      <TestimonialsSection />
+        {/* Testimonials Section */}
+        <TestimonialsSection />
 
-      {/* Why Choose Us Section */}
-      <WhyChooseUs />
+        {/* Why Choose Us Section */}
+        <WhyChooseUs />
+      </div>
     </main>
   );
 }
