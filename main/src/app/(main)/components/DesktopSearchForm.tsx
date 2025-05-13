@@ -12,8 +12,8 @@ interface DesktopSearchFormProps {
   initialSearchTerm?: string;
 }
 
-export function DesktopSearchForm({ 
-  onSearch, 
+export function DesktopSearchForm({
+  onSearch,
   className = '',
   initialPropertyType = 'all',
   initialSearchTerm = ''
@@ -41,7 +41,7 @@ export function DesktopSearchForm({
   // Animation effect for search suggestions
   useEffect(() => {
     if (isFocused) return; // Don't animate if input is focused
-    
+
     const interval = setInterval(() => {
       setIsAnimatingOut(true);
       setTimeout(() => {
@@ -55,12 +55,12 @@ export function DesktopSearchForm({
 
   // Animation variants
   const dropdownVariants = {
-    hidden: { 
+    hidden: {
       opacity: 0,
       y: -5,
       transition: { duration: 0.2 }
     },
-    visible: { 
+    visible: {
       opacity: 1,
       y: 0,
       transition: { duration: 0.2 }
@@ -69,7 +69,7 @@ export function DesktopSearchForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (onSearch) {
       onSearch(searchTerm, propertyType);
     } else {
@@ -77,20 +77,20 @@ export function DesktopSearchForm({
       const params = new URLSearchParams();
       if (searchTerm) params.append('q', searchTerm);
       if (propertyType !== 'all') params.append('type', propertyType);
-      
+
       router.push(`/properties/search?${params.toString()}`);
     }
   };
 
   return (
-    <div className={`bg-white shadow-md rounded-lg overflow-hidden ${className}`}>
+    <div className={`bg-white shadow-none rounded-lg overflow-hidden ${className}`}>
       {/* Top Navigation Area */}
       <div className="flex justify-between bg-blue-600 text-white overflow-x-auto">
         <motion.button
           key="buy"
           whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
           className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
-            ${propertyType === 'buy' ? 'bg-blue-700' : ''} 
+            ${propertyType === 'buy' ? 'bg-blue-700' : ''}
             transition-colors`}
           onClick={() => setPropertyType('buy')}
         >
@@ -100,7 +100,7 @@ export function DesktopSearchForm({
           key="new"
           whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
           className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
-            ${propertyType === 'new' ? 'bg-blue-700' : ''} 
+            ${propertyType === 'new' ? 'bg-blue-700' : ''}
             transition-colors`}
           onClick={() => setPropertyType('new')}
         >
@@ -110,7 +110,7 @@ export function DesktopSearchForm({
           key="commercial"
           whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
           className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
-            ${propertyType === 'commercial' ? 'bg-blue-700' : ''} 
+            ${propertyType === 'commercial' ? 'bg-blue-700' : ''}
             transition-colors`}
           onClick={() => setPropertyType('commercial')}
         >
@@ -120,7 +120,7 @@ export function DesktopSearchForm({
           key="plots"
           whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
           className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
-            ${propertyType === 'plots' ? 'bg-blue-700' : ''} 
+            ${propertyType === 'plots' ? 'bg-blue-700' : ''}
             transition-colors`}
           onClick={() => setPropertyType('plots')}
         >
@@ -130,7 +130,7 @@ export function DesktopSearchForm({
           key="projects"
           whileHover={{ backgroundColor: 'rgba(29, 78, 216, 0.8)' }}
           className={`flex-1 px-4 py-4 text-center text-base font-medium whitespace-nowrap
-            ${propertyType === 'projects' ? 'bg-blue-700' : ''} 
+            ${propertyType === 'projects' ? 'bg-blue-700' : ''}
             transition-colors`}
           onClick={() => setPropertyType('projects')}
         >
@@ -142,7 +142,7 @@ export function DesktopSearchForm({
       <form onSubmit={handleSubmit} className="flex p-2 items-center gap-2">
         {/* Dropdown */}
         <div className="relative">
-          <select 
+          <select
             className="px-4 py-2 bg-white appearance-none focus:outline-none pr-8 text-base text-gray-700 border-r border-gray-200"
             value={propertyType}
             onChange={(e) => setPropertyType(e.target.value)}
@@ -185,7 +185,7 @@ export function DesktopSearchForm({
         </div>
 
         {/* Search Button */}
-        <button 
+        <button
           type="submit"
           className="px-6 py-2 bg-blue-400 text-white text-base font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
         >

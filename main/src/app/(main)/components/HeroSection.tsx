@@ -6,7 +6,11 @@ import { MobileSearchForm } from './MobileSearchForm';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
-export function HeroSection() {
+interface HeroSectionProps {
+  removeSearchBar?: boolean;
+}
+
+export function HeroSection({ removeSearchBar = false }: HeroSectionProps) {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -68,20 +72,22 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Search Form - Positioned at bottom center for both mobile and desktop */}
-      <div className="absolute bottom-[-30px] left-0 right-0 z-40 mx-auto max-w-3xl px-4">
-        {isMobile ? (
-          <MobileSearchForm onSearch={handleSearch} />
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <DesktopSearchForm onSearch={handleSearch} />
-          </motion.div>
-        )}
-      </div>
+      {/* Search Form - Only shown if removeSearchBar is false */}
+      {!removeSearchBar && (
+        <div className="fixed-search-container fixed left-0 right-0 mx-auto max-w-3xl px-4" style={{ bottom: 'calc(100vh - 80vh - 40px)' }}>
+          {isMobile ? (
+            <MobileSearchForm onSearch={handleSearch} />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <DesktopSearchForm onSearch={handleSearch} />
+            </motion.div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

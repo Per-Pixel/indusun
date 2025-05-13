@@ -137,3 +137,25 @@ body[data-search-active="true"] [data-search-results="true"] {
   z-index: 9999;
   position: relative;
 }
+
+/* Fixed search container in hero section */
+.fixed-search-container {
+  position: absolute;
+  z-index: 9999 !important; /* Ensure it's above everything */
+}
+
+/* Search container styles */
+.search-container {
+  position: relative;
+  z-index: 30;
+  background-color: white;
+  border-radius: 0.5rem;
+}
+
+/* Ensure search bar doesn't go above nav when scrolling */
+@media (min-width: 768px) {
+  .search-container {
+    position: relative !important;
+    top: auto !important;
+  }
+}
