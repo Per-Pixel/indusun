@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PropertyCard } from '../properties/components/PropertyCard';
+import { PropertyCardDesktop } from '../properties/components/PropertyCardDesktop';
 import { mockProperties } from '../properties/mockData';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 export function FeaturedSection() {
   const [isMobile, setIsMobile] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   
   // Check if mobile on client side
   useEffect(() => {
@@ -22,6 +24,17 @@ export function FeaturedSection() {
     return () => {
       window.removeEventListener('resize', checkIfMobile);
     };
+  }, []);
+  
+  // Check if device is desktop
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024); // lg breakpoint
+    };
+    
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
   }, []);
   
   // Get featured properties
@@ -73,12 +86,21 @@ export function FeaturedSection() {
         >
           {featuredProperties.map((property) => (
             <div key={property.id} className="h-full">
-              <PropertyCard 
-                property={{
-                  ...property,
-                  listedDate: property.postedDate || new Date().toISOString()
-                }}
-              />
+              {isDesktop ? (
+                <PropertyCardDesktop 
+                  property={{
+                    ...property,
+                    listedDate: property.postedDate || new Date().toISOString()
+                  }}
+                />
+              ) : (
+                <PropertyCard 
+                  property={{
+                    ...property,
+                    listedDate: property.postedDate || new Date().toISOString()
+                  }}
+                />
+              )}
             </div>
           ))}
         </motion.div>
@@ -98,3 +120,4 @@ export function FeaturedSection() {
     </section>
   );
 }
+
