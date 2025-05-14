@@ -143,11 +143,15 @@ interface StatsCardProps {
   value: number;
   icon: React.ReactNode;
   bgColor: string;
+  onClick?: () => void;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, bgColor }) => {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, bgColor, onClick }) => {
   return (
-    <div className={`p-4 rounded-lg border border-gray-200 ${bgColor}`}>
+    <div
+      className={`p-4 rounded-lg border border-gray-200 ${bgColor} ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex justify-between items-center">
         <div>
           <p className="text-sm text-gray-600">{title}</p>
@@ -308,12 +312,14 @@ export default function MessagesPage() {
                 value={mockMessageStats.sent}
                 icon={<CheckCircle size={20} className="text-green-600" />}
                 bgColor="bg-green-50"
+                onClick={() => router.push('/messages/history')}
               />
               <StatsCard
                 title="Received"
                 value={mockMessageStats.received}
                 icon={<MessageSquare size={20} className="text-purple-600" />}
                 bgColor="bg-purple-50"
+                onClick={() => router.push('/messages/received')}
               />
               <StatsCard
                 title="Pending"

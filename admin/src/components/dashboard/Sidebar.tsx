@@ -37,11 +37,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const [salesOpen, setSalesOpen] = useState(pathname.startsWith('/sales'));
   const [authOpen, setAuthOpen] = useState(false);
   const [componentsOpen, setComponentsOpen] = useState(pathname.startsWith('/components'));
+  const [messagesOpen, setMessagesOpen] = useState(pathname.startsWith('/messages'));
 
   const togglePages = () => setPagesOpen(!pagesOpen);
   const toggleSales = () => setSalesOpen(!salesOpen);
   const toggleAuth = () => setAuthOpen(!authOpen);
   const toggleComponents = () => setComponentsOpen(!componentsOpen);
+  const toggleMessages = () => setMessagesOpen(!messagesOpen);
 
   // Handle navigation with sidebar closing for mobile
   const handleNavigation = (path: string) => {
@@ -213,20 +215,63 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
         </div>
 
         <div className="mb-2">
-          <button
-            onClick={() => handleNavigation('/messages')}
-            className={`w-full flex items-center justify-between p-3 rounded-md font-bold transition-colors ${
-              pathname === '/messages'
+          <div
+            className={`flex items-center justify-between p-3 rounded-md cursor-pointer font-bold transition-colors ${
+              pathname.startsWith('/messages')
                 ? 'bg-white text-black'
                 : 'text-black hover:bg-gray-600 hover:text-white'
             }`}
           >
-            <div className="flex items-center">
+            <div
+              className="flex items-center w-full"
+              onClick={toggleMessages}
+            >
               <MessageSquare className="w-5 h-5 mr-3 stroke-[2.5px]" />
               <span>Messages</span>
             </div>
-            <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">1</span>
-          </button>
+            <div className="flex items-center">
+              <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 mr-2">1</span>
+              <div onClick={toggleMessages}>
+                <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${messagesOpen ? 'transform rotate-180' : ''}`} />
+              </div>
+            </div>
+          </div>
+
+          {/* Messages Submenu */}
+          {messagesOpen && (
+            <div className="ml-4 mt-1 space-y-1">
+              <button
+                onClick={() => handleNavigation('/messages')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/messages'
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <span>Compose</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/messages/received')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/messages/received' || pathname.startsWith('/messages/received/')
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <span>Received Messages</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('/messages/history')}
+                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                  pathname === '/messages/history' || pathname.startsWith('/messages/history/')
+                    ? 'bg-white text-black'
+                    : 'text-black hover:bg-gray-600 hover:text-white'
+                }`}
+              >
+                <span>Message History</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Authentication Section with Dropdown */}
