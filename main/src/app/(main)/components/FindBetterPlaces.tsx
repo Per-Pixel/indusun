@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export function FindBetterPlaces() {
   return (
-    <section className="pt-0 pb-8 md:pt-0 md:pb-12 bg-white">
+    <section className="pt-0 pb-6 md:pt-0 md:pb-8 bg-white -mt-12 relative z-20">
       <div className="container mx-auto px-4">
         {/* Header text centered */}
         <div className="text-center mb-6">
@@ -60,6 +60,9 @@ export function FindBetterPlaces() {
     </section>
   );
 }
+
+
+
 
 
 
