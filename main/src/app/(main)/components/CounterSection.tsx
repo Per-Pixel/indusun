@@ -13,6 +13,18 @@ interface CounterProps {
 
 const Counter = ({ end, label, duration = 2, delay = 0 }: CounterProps) => {
   const [count, setCount] = useState(0);
+  const [isSmallMobile, setIsSmallMobile] = useState(false);
+  
+  // Check if device is small mobile (375px or less)
+  useEffect(() => {
+    const checkSmallMobile = () => {
+      setIsSmallMobile(window.innerWidth <= 375);
+    };
+    
+    checkSmallMobile();
+    window.addEventListener('resize', checkSmallMobile);
+    return () => window.removeEventListener('resize', checkSmallMobile);
+  }, []);
 
   useEffect(() => {
     let startTime: number;
@@ -42,9 +54,9 @@ const Counter = ({ end, label, duration = 2, delay = 0 }: CounterProps) => {
 
   return (
     <div className="text-left">
-      <div className="text-xs md:text-sm text-gray-600 mb-1">Our {label}</div>
-      <div className="text-3xl md:text-4xl font-bold text-gray-800">{count}+</div>
-      <div className="text-sm md:text-base text-gray-600 mt-1">{label}</div>
+      <div className={`${isSmallMobile ? 'text-[8px]' : 'text-[10px]'} text-[#b2b2b2] opacity-80 mb-1`}>Our {label}</div>
+      <div className={`${isSmallMobile ? 'text-base' : 'text-lg'} font-bold text-[#212121]`}>{count}+</div>
+      <div className={`${isSmallMobile ? 'text-[8px]' : 'text-[10px]'} text-[#b2b2b2] opacity-80 mt-1`}>{label}</div>
     </div>
   );
 };
@@ -68,57 +80,71 @@ export function CounterSection() {
       <div className="container mx-auto px-4">
         {/* Mobile View */}
         {isMobile ? (
-          <div className="bg-white rounded-lg p-6 mb-8" style={{ boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1), 0 -4px 10px rgba(0, 0, 0, 0.05)' }}>
-            {/* Heading */}
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Not sure what you need?</h2>
+          <div className="relative h-[500px] mb-16">
+            {/* Top-left image */}
+            <div className="absolute top-0 left-0 w-2/3">
+              <img 
+                src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop" 
+                alt="Modern Real Estate" 
+                className="w-full h-[350px] object-cover rounded-lg shadow-lg"
+              />
             </div>
             
-            {/* Description */}
-            <div className="mb-6">
-              <p className="text-base text-gray-700">
-                Our dedicated team of professionals is committed to finding the perfect property for you. With years of experience in the real estate market, we understand your needs and preferences.
-              </p>
-            </div>
-            
-            {/* Counters */}
-            <div className="grid grid-cols-3 gap-2 mb-6">
-              <div>
-                <Counter end={31} label="Cities" delay={0.2} />
-              </div>
-              <div>
-                <Counter end={29} label="Properties" delay={0.4} />
-              </div>
-              <div>
-                <Counter end={17} label="Brokers" delay={0.6} />
-              </div>
-            </div>
-            
-            {/* Button */}
-            <div className="flex justify-end">
-              <Link 
-                href="/contact" 
-                className="flex items-center gap-4"
-              >
-                <span className="text-base font-medium text-gray-800">Get in touch</span>
-                <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-gray-700 hover:bg-gray-100 transition-all duration-300 hover:scale-105 group">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="18" 
-                    height="18" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    className="text-gray-700 group-hover:translate-x-1 transition-transform duration-300"
-                  >
-                    <path d="M5 12h14"></path>
-                    <path d="m12 5 7 7-7 7"></path>
-                  </svg>
+            {/* Bottom-right content card */}
+            <div className="absolute bottom-0 right-0 w-2/3">
+              <div className="bg-white rounded-lg p-6" style={{ boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1), 0 -4px 10px rgba(0, 0, 0, 0.05)' }}>
+                {/* Heading */}
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">Not sure what you need?</h2>
                 </div>
-              </Link>
+                
+                {/* Description */}
+                <div className="mb-6">
+                  <p className="text-base text-gray-700">
+                    Our dedicated team of professionals is committed to finding the perfect property for you. With years of experience in the real estate market, we understand your needs and preferences.
+                  </p>
+                </div>
+                
+                {/* Counters */}
+                <div className="grid grid-cols-3 gap-2 mb-6 mt-8">
+                  <div>
+                    <Counter end={31} label="Cities" delay={0.2} />
+                  </div>
+                  <div>
+                    <Counter end={29} label="Properties" delay={0.4} />
+                  </div>
+                  <div>
+                    <Counter end={17} label="Brokers" delay={0.6} />
+                  </div>
+                </div>
+                
+                {/* Button */}
+                <div className="flex justify-end">
+                  <Link 
+                    href="/contact" 
+                    className="flex items-center gap-4"
+                  >
+                    <span className="text-base font-medium text-gray-800">Get in touch</span>
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-gray-700 hover:bg-gray-100 transition-all duration-300 hover:scale-105 group">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="18" 
+                        height="18" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                        className="text-gray-700 group-hover:translate-x-1 transition-transform duration-300"
+                      >
+                        <path d="M5 12h14"></path>
+                        <path d="m12 5 7 7-7 7"></path>
+                      </svg>
+                    </div>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -222,28 +248,6 @@ export function CounterSection() {
     </section>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
