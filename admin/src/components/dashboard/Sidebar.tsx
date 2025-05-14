@@ -229,6 +229,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
           </button>
         </div>
 
+        {/* Authentication Section with Dropdown */}
         <div className="mb-2">
           <div
             className="flex items-center justify-between p-3 text-black hover:bg-gray-600 hover:text-white rounded-md cursor-pointer font-bold transition-colors"
@@ -243,26 +244,6 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
 
           {authOpen && (
             <div className="ml-4 mt-1 space-y-1">
-              <button
-                onClick={() => handleNavigation('/login')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/login'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Login</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/register')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/register'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Register</span>
-              </button>
               <button
                 onClick={() => handleNavigation('/clients')}
                 className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
@@ -300,20 +281,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
           )}
         </div>
 
-        <div className="mb-2">
-          <button
-            onClick={() => handleNavigation('/docs')}
-            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
-              pathname === '/docs'
-                ? 'bg-white text-black'
-                : 'text-black hover:bg-gray-600 hover:text-white'
-            }`}
-          >
-            <FileCode className="w-5 h-5 mr-3 stroke-[2.5px]" />
-            <span>Docs</span>
-          </button>
-        </div>
-
+        {/* Components Section with Dropdown */}
         <div className="mb-2">
           <div
             className={`flex items-center justify-between p-3 rounded-md cursor-pointer font-bold transition-colors ${
@@ -370,50 +338,6 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                 <StickyNote className="w-4 h-4 mr-2 stroke-[2.5px]" />
                 <span>Notes</span>
               </button>
-              <button
-                onClick={() => handleNavigation('/components/files')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/components/files'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <FolderOpen className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>File Manager</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/components/maps')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/components/maps'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <Map className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>Maps</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/components/analytics')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/components/analytics'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <BarChart2 className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>Analytics</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/components/forms')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/components/forms'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <FileInput className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>Forms</span>
-              </button>
             </div>
           )}
         </div>
@@ -437,6 +361,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
 };
 
 export default Sidebar;
+
 
 
 
