@@ -75,7 +75,7 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
   return (
     <div className={`relative z-10 max-w-3xl mx-auto px-4 ${className}`}>
       {/* Search Container */}
-      <div className="bg-white shadow-none rounded-lg overflow-hidden">
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
         {/* Top Navigation Area - Mobile version */}
         <div className="flex justify-between bg-blue-600 text-white md:hidden">
           <motion.button
@@ -188,4 +188,5 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
     </div>
   );
 }
+
 
