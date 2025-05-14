@@ -14,16 +14,18 @@ interface CounterProps {
 const Counter = ({ end, label, duration = 2, delay = 0 }: CounterProps) => {
   const [count, setCount] = useState(0);
   const [isSmallMobile, setIsSmallMobile] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   
-  // Check if device is small mobile (375px or less)
+  // Check if device is small mobile (375px or less) or desktop
   useEffect(() => {
-    const checkSmallMobile = () => {
+    const checkScreenSize = () => {
       setIsSmallMobile(window.innerWidth <= 375);
+      setIsDesktop(window.innerWidth >= 768);
     };
     
-    checkSmallMobile();
-    window.addEventListener('resize', checkSmallMobile);
-    return () => window.removeEventListener('resize', checkSmallMobile);
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   useEffect(() => {
@@ -61,6 +63,54 @@ const Counter = ({ end, label, duration = 2, delay = 0 }: CounterProps) => {
   );
 };
 
+const AnimatedCounter = ({ 
+  end, 
+  className = "", 
+  duration = 2, 
+  delay = 0,
+  suffix = ""
+}: { 
+  end: number; 
+  className?: string; 
+  duration?: number; 
+  delay?: number;
+  suffix?: string;
+}) => {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    let startTime: number;
+    let animationFrame: number;
+
+    const updateCount = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+
+      setCount(Math.floor(progress * end));
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(updateCount);
+      }
+    };
+
+    // Delay the start of the animation
+    const timeoutId = setTimeout(() => {
+      animationFrame = requestAnimationFrame(updateCount);
+    }, delay * 1000);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      clearTimeout(timeoutId);
+    };
+  }, [end, duration, delay]);
+
+  return (
+    <div className={className}>
+      {count}{suffix}
+    </div>
+  );
+};
+
 export function CounterSection() {
   const [isMobile, setIsMobile] = useState(false);
   
@@ -74,7 +124,7 @@ export function CounterSection() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
+  
   return (
     <section className="relative py-16 md:py-24 bg-white">
       <div className="container mx-auto px-4">
@@ -148,99 +198,104 @@ export function CounterSection() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col md:flex-row gap-8 items-center">
-            {/* Left side - Image */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="w-full md:w-1/2 lg:w-5/12"
-            >
-              <img 
-                src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000&auto=format&fit=crop" 
-                alt="Modern Real Estate" 
-                className="w-full h-auto rounded-lg shadow-lg"
-              />
-            </motion.div>
+          <div className="flex flex-col md:flex-row gap-12 items-center px-4 md:px-12 lg:px-16">
+            {/* Left side - Image with container */}
+            <div className="w-full md:w-6/12 lg:w-7/12">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="ml-8 md:ml-16"
+              >
+                <img 
+                  src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop" 
+                  alt="Modern Real Estate" 
+                  className="w-full h-[400px] md:h-[450px] object-cover rounded-lg shadow-lg"
+                />
+              </motion.div>
+            </div>
             
             {/* Right side - Content */}
-            <div className="w-full md:w-1/2 lg:w-7/12">
-              <div className="flex flex-col">
-                {/* Heading */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
-                  className="mb-6"
-                >
-                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Not sure what you need?</h2>
-                </motion.div>
-                
-                {/* Description - Aligned with heading */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="mb-8"
-                >
-                <div className="text-gray-700 py-3 pr-4 pl-0 rounded-lg bg-gray-50 w-11/12 md:w-10/12 mr-auto">
-                  <p className="text-base md:text-lg">
-                    Our dedicated team of professionals is committed to finding the perfect property for you. With years of experience in the real estate market, we understand your needs and preferences. We provide personalized solutions tailored to your requirements, ensuring a smooth and satisfying real estate experience.
-                  </p>
+            <div className="w-full md:w-1/2 lg:w-2/4 flex flex-col items-start text-left pr-8 md:pr-16">
+              {/* Heading */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="mb-4"
+              >
+                <h2 className="text-4xl font-bold text-gray-900">Not sure what you need?</h2>
+              </motion.div>
+              
+              {/* Description */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="mb-8"
+              >
+                <p className="text-lg text-gray-700 w-[80%] h-22">
+                  We're here to help you find the best options for your financial and brokerage needs. Explore our services or reach out to our team for personalized assistance.
+                </p>
+              </motion.div>
+              
+              {/* Counters */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="flex w-full justify-between gap-22 mb-12 pr-32"
+              >
+                <div className="text-left">
+                  <div className="text-sm text-[#b2b2b2] opacity-80 mb-1">PREVIOUS PROJECTS</div>
+                  <AnimatedCounter end={34} className="text-4xl font-bold text-[#212121]" suffix="+" />
                 </div>
-                </motion.div>
-                
-                {/* Counters and Get in touch - in same row */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                  className="flex items-center mb-6"
+                <div className="text-left">
+                  <div className="text-sm text-[#b2b2b2] opacity-80 mb-1">YEARS EXPERIENCE</div>
+                  <AnimatedCounter end={20} className="text-4xl font-bold text-[#212121]" suffix="y" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm text-[#b2b2b2] opacity-80 mb-1">ONGOING PROJECTS</div>
+                  <AnimatedCounter end={12} className="text-4xl font-bold text-[#212121]" />
+                </div>
+              </motion.div>
+              
+              {/* Get in Touch */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="w-full flex justify-end pr-32"
+              >
+                <Link 
+                  href="/contact" 
+                  className="flex items-center gap-4 group"
                 >
-                  {/* Counters */}
-                  <div className="flex flex-1">
-                    <div className="flex-1">
-                      <Counter end={31} label="Cities" delay={0.2} />
-                    </div>
-                    <div className="flex-1 -ml-[100px]">
-                      <Counter end={29} label="Properties" delay={0.4} />
-                    </div>
-                    <div className="flex-1 -ml-[100px]">
-                      <Counter end={17} label="Brokers" delay={0.6} />
-                    </div>
-                  </div>
-                  
-                  {/* Get in touch */}
-                  <div className="flex items-center justify-end gap-4 ml-auto mr-[50px]">
-                    <p className="text-lg font-medium text-gray-800">Get in touch with us</p>
-                    <Link 
-                      href="/contact" 
-                      className="flex items-center justify-center w-12 h-12 rounded-full border-2 border-gray-700 hover:bg-gray-100 transition-all duration-300 hover:scale-105 group"
-                      aria-label="Contact Us"
+                  <p className="text-lg font-medium text-gray-800">Get in Touch</p>
+                  <div className="w-12 h-12 flex items-center justify-center rounded-full border-2 border-gray-700 hover:bg-gray-100 transition-all duration-300 hover:scale-105">
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="22" 
+                      height="22" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      className="text-gray-700 group-hover:translate-x-1 transition-transform duration-300"
                     >
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        width="22" 
-                        height="22" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
-                        className="text-gray-700 group-hover:translate-x-1 transition-transform duration-300"
-                      >
-                        <path d="M5 12h14"></path>
-                        <path d="m12 5 7 7-7 7"></path>
-                      </svg>
-                    </Link>
+                      <path d="M5 12h14"></path>
+                      <path d="m12 5 7 7-7 7"></path>
+                    </svg>
                   </div>
-                </motion.div>
-              </div>
+                </Link>
+              </motion.div>
             </div>
           </div>
         )}
@@ -248,6 +303,28 @@ export function CounterSection() {
     </section>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
