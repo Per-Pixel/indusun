@@ -18,7 +18,7 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/admin/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ export default function AdminLogin() {
 
       if (response.ok) {
         login(data.user);
-        router.push('/admin/dashboard');
+        router.push('/dashboard');
       } else {
         toast.error(data.error || 'Login failed');
       }
@@ -47,11 +47,11 @@ export default function AdminLogin() {
       <div className="w-full max-w-md p-8">
         <div className="flex items-center justify-center mb-8">
           <div className="mr-3">
-            <Image 
-              src="/logo.png" 
-              alt="Indusun" 
-              width={48} 
-              height={48} 
+            <Image
+              src="/logo.png"
+              alt="Indusun"
+              width={48}
+              height={48}
               className="h-12 w-12"
             />
           </div>
@@ -60,10 +60,10 @@ export default function AdminLogin() {
             <p className="text-gray-600 text-sm">Mortgage Service</p>
           </div>
         </div>
-        
+
         <div className="mt-12 mb-8">
           <h2 className="text-xl font-bold text-center text-gray-900 mb-8">Welcome back!</h2>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label htmlFor="email" className="block text-gray-700 text-sm mb-2">
@@ -88,7 +88,7 @@ export default function AdminLogin() {
                 )}
               </div>
             </div>
-            
+
             <div className="mb-2">
               <label htmlFor="password" className="block text-gray-700 text-sm mb-2">
                 Password
@@ -103,7 +103,7 @@ export default function AdminLogin() {
                   required
                   placeholder="••••••••"
                 />
-                <button 
+                <button
                   type="button"
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                   onClick={() => {
@@ -118,11 +118,11 @@ export default function AdminLogin() {
                 </button>
               </div>
             </div>
-            
+
             <p className="text-xs text-gray-600 mb-6">
               Use at least 8 characters with 1 number and one special character.
             </p>
-            
+
             <button
               type="submit"
               disabled={isLoading}
@@ -130,7 +130,7 @@ export default function AdminLogin() {
             >
               {isLoading ? 'LOGGING IN...' : 'LOG IN'}
             </button>
-            
+
             <div className="text-center mt-4">
               <a href="#" className="text-sm text-gray-500 hover:text-green-500">
                 Forgot password?

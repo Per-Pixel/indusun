@@ -11,9 +11,11 @@ export default function AdminRoot() {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        router.push('/admin/dashboard');
+        // Changed from '/admin/dashboard' to '/dashboard'
+        router.push('/dashboard');
       } else {
-        router.push('/admin/auth/login');
+        // Keep the auth path the same for now
+        router.push('/auth/login');
       }
     }
   }, [user, isLoading, router]);

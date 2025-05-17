@@ -11,12 +11,12 @@ export default function AdminNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { name: 'Dashboard', href: '/admin/dashboard' },
-    { name: 'Users', href: '/admin/users' },
-    { name: 'Broker Applications', href: '/admin/broker/applications' },
-    { name: 'Properties', href: '/admin/properties' },
-    { name: 'Payments', href: '/admin/payments' },
-    { name: 'Reports', href: '/admin/reports' },
+    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Users', href: '/users' },
+    { name: 'Broker Applications', href: '/broker/applications' },
+    { name: 'Properties', href: '/properties' },
+    { name: 'Payments', href: '/payments' },
+    { name: 'Reports', href: '/reports' },
   ];
 
   const isActive = (path: string) => {
@@ -29,7 +29,7 @@ export default function AdminNavbar() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <Link href="/admin/dashboard" className="text-white font-bold text-xl">
+              <Link href="/dashboard" className="text-white font-bold text-xl">
                 Indusun Admin
               </Link>
             </div>
