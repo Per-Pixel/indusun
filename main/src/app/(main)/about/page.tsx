@@ -1,161 +1,404 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, Phone, Mail, Award, Users, Building, CheckCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Award, Users, Building, CheckCircle, Star, Calendar, Trophy, Heart, Sparkles } from 'lucide-react';
 import PlaceholderImage from '@/components/ui/PlaceholderImage';
 
 const AboutPage = () => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    budget: '',
+    propertyType: '',
+    location: '',
+    message: ''
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle form submission
+    console.log('Form submitted:', formData);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="relative h-[300px] md:h-[400px] bg-gray-900">
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40 z-10"></div>
-        <PlaceholderImage 
-          className="w-full h-full object-cover" 
+      <div className="relative h-[500px] md:h-[600px] bg-gray-900">
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30 z-10"></div>
+        <PlaceholderImage
+          className="w-full h-full object-cover"
           type="building"
         />
         <div className="absolute inset-0 z-20 flex items-center justify-center text-center">
-          <div className="container px-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">About Indusun</h1>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto">
-              Your trusted partner in finding the perfect property for your needs
-            </p>
+          <div className="container px-4 max-w-4xl mx-auto">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
+              Find Your Dream Home in<br />
+              The Heart of The City
+            </h1>
+            <Link
+              href="/properties"
+              className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg font-medium hover:bg-blue-700 transition-colors text-lg shadow-lg"
+            >
+              Get Started
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Company Introduction */}
+      {/* Statistics Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Our Story</h2>
-            <p className="text-lg text-gray-700 mb-6">
-              Launched in 2020, Indusun is a premier real estate portal that deals with every aspect of consumers' needs in the real estate industry. We provide an online forum where buyers, sellers, and brokers/agents can exchange information about real estate properties quickly, effectively, and inexpensively.
-            </p>
-            <p className="text-lg text-gray-700 mb-6">
-              At Indusun, you can advertise a property, search for a property, browse through properties, build your own property microsite, and keep yourself updated with the latest news and trends making headlines in the realty sector.
-            </p>
-            <p className="text-lg text-gray-700">
-              Our mission is to simplify the property search process and help you make informed decisions about one of life's most significant investments.
-            </p>
+          {/* Desktop Layout */}
+          <div className="hidden md:grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow">
+              <h3 className="text-4xl font-bold text-[#191D23] mb-2">200+</h3>
+              <p className="text-[#191D23] font-medium">Happy Customers</p>
+            </div>
+            <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow">
+              <h3 className="text-4xl font-bold text-[#191D23] mb-2">10k+</h3>
+              <p className="text-[#191D23] font-medium">Properties Listed</p>
+            </div>
+            <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow">
+              <h3 className="text-4xl font-bold text-[#191D23] mb-2">1k+</h3>
+              <p className="text-[#191D23] font-medium">Years of Experience</p>
+            </div>
+          </div>
+
+          {/* Mobile Layout - Horizontal Scrollable */}
+          <div className="md:hidden">
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+              <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-100 text-center min-w-[200px] snap-center flex-shrink-0">
+                <h3 className="text-3xl font-bold text-[#191D23] mb-2">200+</h3>
+                <p className="text-[#191D23] font-medium text-sm">Happy Customers</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-100 text-center min-w-[200px] snap-center flex-shrink-0">
+                <h3 className="text-3xl font-bold text-[#191D23] mb-2">10k+</h3>
+                <p className="text-[#191D23] font-medium text-sm">Properties Listed</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-100 text-center min-w-[200px] snap-center flex-shrink-0">
+                <h3 className="text-3xl font-bold text-[#191D23] mb-2">1k+</h3>
+                <p className="text-[#191D23] font-medium text-sm">Years of Experience</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Why Choose Us */}
+      {/* Building Image Section - Mobile Only */}
+      <section className="md:hidden py-8 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="relative">
+            <PlaceholderImage
+              className="w-full h-[250px] object-cover rounded-lg shadow-lg"
+              type="building"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Our Journey Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Why Choose Indusun?</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-              <div className="text-blue-600 mb-4">
-                <Building size={40} />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">Extensive Property Listings</h3>
-              <p className="text-gray-600">
-                Indusun prides itself on having thousands of property listings spanning across multiple cities in India. We offer a wide range of residential, commercial, and land properties to suit every need and budget.
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#191D23] mb-6">Our Journey</h2>
+              <p className="text-lg text-[#191D23] mb-6 leading-relaxed">
+                Launched in 2020, Indusun is a premier real estate portal that deals with every aspect of consumers' needs in the real estate industry. We provide an online forum where buyers, sellers, and brokers/agents can exchange information about real estate properties quickly, effectively, and inexpensively.
+              </p>
+              <p className="text-lg text-[#191D23] mb-6 leading-relaxed">
+                At Indusun, you can advertise a property, search for a property, browse through properties, build your own property microsite, and keep yourself updated with the latest news and trends making headlines in the realty sector.
+              </p>
+              <p className="text-lg text-[#191D23] leading-relaxed">
+                Our mission is to simplify the property search process and help you make informed decisions about one of life's most significant investments.
               </p>
             </div>
-            
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-              <div className="text-blue-600 mb-4">
-                <Users size={40} />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">Expert Real Estate Agents</h3>
-              <p className="text-gray-600">
-                Our platform connects you with experienced real estate professionals who can guide you through every step of your property journey, whether you're buying, selling, or renting.
-              </p>
+            {/* Desktop Image */}
+            <div className="relative hidden md:block">
+              <PlaceholderImage
+                className="w-full h-[400px] object-cover rounded-lg shadow-lg"
+                type="building"
+              />
             </div>
-            
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-              <div className="text-blue-600 mb-4">
-                <CheckCircle size={40} />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">Verified Listings</h3>
-              <p className="text-gray-600">
-                We strive to provide accurate and verified property information to help you make informed decisions. Our team works diligently to ensure the quality and authenticity of listings.
-              </p>
-            </div>
-          </div>
-          
-          <div className="mt-12 text-center">
-            <Link 
-              href="/properties" 
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
-            >
-              Explore Properties
-            </Link>
           </div>
         </div>
       </section>
 
-      {/* Awards & Recognition (if applicable) */}
+      {/* Our Achievements */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Awards & Recognition</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center p-6">
-              <div className="inline-block p-4 bg-blue-50 rounded-full mb-4">
-                <Award className="h-10 w-10 text-blue-600" />
+          <h2 className="text-3xl md:text-4xl font-bold text-[#191D23] mb-12 text-center">Our Achievements</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="text-center p-8">
+              <div className="inline-block p-4 bg-blue-50 rounded-full mb-6">
+                <Calendar className="h-12 w-12 text-[#191D23]" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Best Real Estate Portal</h3>
-              <p className="text-gray-600 text-sm">Real Estate Excellence Awards 2023</p>
+              <h3 className="text-2xl font-bold text-[#191D23] mb-4">3+ Years of Excellence</h3>
+              <p className="text-[#191D23] leading-relaxed">
+                Since our launch in 2020, we have consistently delivered exceptional real estate services, building trust and reliability in the market through our commitment to excellence and customer satisfaction.
+              </p>
             </div>
-            
-            <div className="text-center p-6">
-              <div className="inline-block p-4 bg-blue-50 rounded-full mb-4">
-                <Award className="h-10 w-10 text-blue-600" />
+
+            <div className="text-center p-8">
+              <div className="inline-block p-4 bg-blue-50 rounded-full mb-6">
+                <Heart className="h-12 w-12 text-[#191D23]" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Most Innovative Platform</h3>
-              <p className="text-gray-600 text-sm">PropTech Innovation Awards 2022</p>
+              <h3 className="text-2xl font-bold text-[#191D23] mb-4">Happy Clients</h3>
+              <p className="text-[#191D23] leading-relaxed">
+                Our success is measured by the satisfaction of our clients. We have helped hundreds of families find their dream homes and assisted numerous investors in making profitable real estate decisions.
+              </p>
             </div>
-            
-            <div className="text-center p-6">
-              <div className="inline-block p-4 bg-blue-50 rounded-full mb-4">
-                <Award className="h-10 w-10 text-blue-600" />
+
+            <div className="text-center p-8">
+              <div className="inline-block p-4 bg-blue-50 rounded-full mb-6">
+                <Trophy className="h-12 w-12 text-[#191D23]" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Customer Satisfaction</h3>
-              <p className="text-gray-600 text-sm">Customer Choice Awards 2022</p>
-            </div>
-            
-            <div className="text-center p-6">
-              <div className="inline-block p-4 bg-blue-50 rounded-full mb-4">
-                <Award className="h-10 w-10 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Best Mobile Experience</h3>
-              <p className="text-gray-600 text-sm">Mobile Excellence Awards 2021</p>
+              <h3 className="text-2xl font-bold text-[#191D23] mb-4">Industry Recognition</h3>
+              <p className="text-[#191D23] leading-relaxed">
+                Our innovative approach and dedication to service excellence have earned us recognition within the real estate industry, establishing us as a trusted and reliable platform for property transactions.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Call to Action */}
-      <section className="py-16 bg-blue-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">Ready to Find Your Dream Property?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who found their perfect property through Indusun.
+      {/* Contact Form Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Sparkles className="h-6 w-6 text-[#191D23]" />
+            <h2 className="text-4xl font-bold text-[#191D23]">Let's make it happen!</h2>
+            <Sparkles className="h-6 w-6 text-[#191D23]" />
+          </div>
+          <p className="text-[#191D23] mb-12 text-center">
+            Ready to take the first step toward your dream property? Fill out the form below, and our real estate wizards will work their magic to find your perfect match. Don't wait; let's embark on this exciting journey together.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/properties" 
-              className="px-6 py-3 bg-white text-blue-600 rounded-md font-medium hover:bg-gray-100 transition-colors"
-            >
-              Browse Properties
-            </Link>
-            <Link 
-              href="/contact" 
-              className="px-6 py-3 border-2 border-white text-white rounded-md font-medium hover:bg-blue-700 transition-colors"
-            >
-              Contact Us
-            </Link>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm text-black mb-2">First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  placeholder="Enter First Name"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  placeholder="Enter Last Name"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Enter your Email"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Phone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="Enter Phone Number"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm text-black mb-2">Preferred Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  placeholder="Enter preferred location"
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Property Type</label>
+                <select
+                  name="propertyType"
+                  value={formData.propertyType}
+                  onChange={handleInputChange}
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors"
+                >
+                  <option value="">Select Property Type</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="villa">Villa</option>
+                  <option value="plot">Plot</option>
+                  <option value="commercial">Commercial</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">Budget</label>
+                <select
+                  name="budget"
+                  value={formData.budget}
+                  onChange={handleInputChange}
+                  className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors"
+                >
+                  <option value="">Select Budget</option>
+                  <option value="under-50L">Under ₹50 Lakhs</option>
+                  <option value="50L-1Cr">₹50 Lakhs - ₹1 Crore</option>
+                  <option value="1Cr-2Cr">₹1 Crore - ₹2 Crores</option>
+                  <option value="above-2Cr">Above ₹2 Crores</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-black mb-2">No. of Bedrooms</label>
+                <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                  <option value="">Select no. of Bedrooms</option>
+                  <option value="1">1 Bedroom</option>
+                  <option value="2">2 Bedrooms</option>
+                  <option value="3">3 Bedrooms</option>
+                  <option value="4">4+ Bedrooms</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-black mb-2">Preferred Contact Method</label>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black">
+                    <Phone className="h-5 w-5 text-gray-500 mr-2" />
+                    <input
+                      type="tel"
+                      placeholder="Enter Your Number"
+                      className="bg-transparent w-full focus:outline-none placeholder:text-gray-600/70 text-black"
+                    />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black">
+                    <Mail className="h-5 w-5 text-gray-500 mr-2" />
+                    <input
+                      type="email"
+                      placeholder="Enter Your Email"
+                      className="bg-transparent w-full focus:outline-none placeholder:text-gray-600/70 text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-black mb-2">Message</label>
+              <textarea
+                name="message"
+                value={formData.message}
+                onChange={handleInputChange}
+                placeholder="Enter your Message here."
+                rows={6}
+                className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+              ></textarea>
+            </div>
+
+            {/* Terms and Send Message button container */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              {/* Terms agreement */}
+              <div className="flex items-start gap-2">
+                <input type="checkbox" className="mt-1" />
+                <p className="text-sm text-black">
+                  I agree with <a href="#" className="underline">Terms of Use</a> and <a href="#" className="underline">Privacy Policy</a>
+                </p>
+              </div>
+
+              {/* Send Message button */}
+              <button
+                type="submit"
+                className="px-8 py-3 bg-[#7C3AED] text-white rounded-lg font-medium hover:bg-[#6D28D9] transition-colors"
+              >
+                Send Your Message
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      {/* Team Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#191D23] mb-4">Meet the Indusun Team</h2>
+            <p className="text-lg text-[#191D23] max-w-2xl mx-auto">
+              Our dedicated team of real estate professionals is here to help you find your perfect property and make your dreams come true.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            <div className="bg-blue-50 p-8 rounded-lg text-center hover:shadow-lg transition-shadow">
+              <div className="w-28 h-28 bg-blue-200 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <Users className="h-12 w-12 text-[#191D23]" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#191D23] mb-2">Rajesh Kumar</h3>
+              <p className="text-blue-600 font-medium mb-2">CEO & Founder</p>
+              <p className="text-[#191D23] text-sm leading-relaxed">Leading the vision and strategy for Indusun's growth</p>
+            </div>
+
+            <div className="bg-blue-50 p-8 rounded-lg text-center hover:shadow-lg transition-shadow">
+              <div className="w-28 h-28 bg-blue-200 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <Users className="h-12 w-12 text-[#191D23]" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#191D23] mb-2">Priya Sharma</h3>
+              <p className="text-blue-600 font-medium mb-2">Head of Sales</p>
+              <p className="text-[#191D23] text-sm leading-relaxed">Expert in property sales and client relations</p>
+            </div>
+
+            <div className="bg-blue-50 p-8 rounded-lg text-center hover:shadow-lg transition-shadow">
+              <div className="w-28 h-28 bg-blue-200 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <Users className="h-12 w-12 text-[#191D23]" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#191D23] mb-2">Amit Patel</h3>
+              <p className="text-blue-600 font-medium mb-2">Marketing Director</p>
+              <p className="text-[#191D23] text-sm leading-relaxed">Digital marketing specialist and brand strategist</p>
+            </div>
+
+            <div className="bg-blue-50 p-8 rounded-lg text-center hover:shadow-lg transition-shadow">
+              <div className="w-28 h-28 bg-blue-200 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <Users className="h-12 w-12 text-[#191D23]" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#191D23] mb-2">Sneha Gupta</h3>
+              <p className="text-blue-600 font-medium mb-2">Customer Relations</p>
+              <p className="text-[#191D23] text-sm leading-relaxed">Ensuring exceptional customer satisfaction</p>
+            </div>
           </div>
         </div>
       </section>
+
+
     </div>
   );
 };
