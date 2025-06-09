@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
     let query = `
       SELECT 
         id,
-        full_name as name,
-        normalized_name,
+        full_name,
+        normalized_name as name,
         contact_number as phone,
         created_at as "createdAt"
       FROM clients
@@ -69,8 +69,8 @@ export async function GET(req: NextRequest) {
 
     // Map database results to expected format
     const clients = clientsResult.rows.map(client => {
-      // Generate a simplified email from the normalized name
-      const nameParts = client.normalized_name.split(' ');
+      // Generate a simplified email from the name (which is now normalized_name)
+      const nameParts = client.name.split(' ');
       const firstName = nameParts[0].toLowerCase();
       const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : '';
       const email = `${firstName}.${lastName}@example.com`;
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
       ) VALUES ($1, $2, $3)
       RETURNING 
         id,
-        full_name as name,
+        normalized_name as name,
         contact_number as phone,
         created_at as "createdAt"
     `, [

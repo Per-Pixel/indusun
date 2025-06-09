@@ -12,7 +12,7 @@ export async function GET(
     const result = await pool.query(`
       SELECT 
         id,
-        full_name as name,
+        normalized_name as name,
         contact_number as phone,
         'client' as role,
         'active' as status,
@@ -29,8 +29,8 @@ export async function GET(
       );
     }
 
-    // Generate a simplified email from the normalized name
-    const nameParts = result.rows[0].normalized_name.split(' ');
+    // Generate a simplified email from the name (which is now normalized_name)
+    const nameParts = result.rows[0].name.split(' ');
     const firstName = nameParts[0].toLowerCase();
     const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : '';
     const email = `${firstName}.${lastName}@example.com`;
@@ -104,7 +104,7 @@ export async function PUT(
       WHERE id = $4
       RETURNING 
         id,
-        full_name as name,
+        normalized_name as name,
         contact_number as phone,
         created_at as createdAt
     `, [
