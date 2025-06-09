@@ -6,6 +6,7 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 import UserList, { User } from '@/components/users/UserList';
 import UserForm from '@/components/users/UserForm';
+import Pagination from '@/components/common/Pagination';
 import { toast } from 'react-hot-toast';
 
 // Initial empty clients array
@@ -19,33 +20,50 @@ export default function ClientsPage() {
   const [selectedClient, setSelectedClient] = useState<User | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch clients from the API
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const response = await fetch('/api/clients');
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch clients');
-        }
-        
-        const data = await response.json();
-        setClients(data.clients);
-      } catch (err) {
-        console.error('Error fetching clients:', err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setIsLoading(false);
+  // Fetch clients from the API with pagination and search
+  const fetchClients = async (page: number = 1, search: string = '') => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: '50',
+      });
+      
+      if (search) {
+        queryParams.append('search', search);
       }
-    };
-    
-    fetchClients();
-  }, []);
+      
+      const response = await fetch(`/api/clients?${queryParams.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch clients');
+      }
+      
+      const data = await response.json();
+      setClients(data.clients);
+      setCurrentPage(data.pagination.page);
+      setTotalPages(data.pagination.totalPages);
+      setTotalItems(data.pagination.totalItems);
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Initial fetch and when page or search changes
+  useEffect(() => {
+    fetchClients(currentPage, searchQuery);
+  }, [currentPage, searchQuery]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -75,8 +93,9 @@ export default function ClientsPage() {
           throw new Error(errorData.error || 'Failed to delete client');
         }
         
-        setClients(prevClients => prevClients.filter(c => c.id !== client.id));
         toast.success(`${client.name} has been deleted`);
+        // Refresh the client list with current page and search
+        fetchClients(currentPage, searchQuery);
       } catch (err) {
         console.error('Error deleting client:', err);
         toast.error(err instanceof Error ? err.message : 'Failed to delete client');
@@ -106,12 +125,6 @@ export default function ClientsPage() {
         }
 
         const data = await response.json();
-        
-        setClients(prevClients =>
-          prevClients.map(client =>
-            client.id === selectedClient.id ? data.client : client
-          )
-        );
         toast.success(`${clientData.name} has been updated`);
       } else {
         // Add new client
@@ -129,11 +142,12 @@ export default function ClientsPage() {
         }
 
         const data = await response.json();
-        setClients(prevClients => [...prevClients, data.client]);
         toast.success(`${data.client.name} has been added`);
       }
 
       setShowForm(false);
+      // Refresh the client list after adding or updating
+      fetchClients(currentPage, searchQuery);
     } catch (err) {
       console.error('Error submitting client form:', err);
       toast.error(err instanceof Error ? err.message : 'An error occurred while saving client');
@@ -180,14 +194,27 @@ export default function ClientsPage() {
                 isLoading={isLoading}
               />
             ) : (
-              <UserList
-                users={clients}
-                title="Clients"
-                userType="client"
-                onAddNew={handleAddNew}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
+              <>
+                <UserList
+                  users={clients}
+                  title="Clients"
+                  userType="client"
+                  onAddNew={handleAddNew}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onSearch={(query) => setSearchQuery(query)}
+                  externalSearchQuery={searchQuery}
+                />
+                
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => setCurrentPage(page)}
+                  />
+                )}
+              </>
             )}
 
             {isLoading && !showForm && (

@@ -5,8 +5,17 @@ export async function GET(req: NextRequest) {
   try {
     console.log('Fetching clients from database...');
     
-    // Get clients from the database
-    const clientsResult = await pool.query(`
+    // Get pagination parameters from query string
+    const url = new URL(req.url);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const search = url.searchParams.get('search') || '';
+    
+    // Calculate offset
+    const offset = (page - 1) * limit;
+    
+    // Build the query based on search parameter
+    let query = `
       SELECT 
         id,
         full_name as name,
@@ -14,13 +23,42 @@ export async function GET(req: NextRequest) {
         contact_number as phone,
         created_at as "createdAt"
       FROM clients
-      ORDER BY created_at DESC
-    `).catch((err: Error) => {
+    `;
+    
+    const queryParams: any[] = [];
+    
+    // Add search condition if search parameter is provided
+    if (search) {
+      query += ` WHERE normalized_name ILIKE $1 OR contact_number ILIKE $1`;
+      queryParams.push(`%${search}%`);
+    }
+    
+    // Add sorting - alphabetical by normalized_name
+    query += ` ORDER BY normalized_name ASC`;
+    
+    // Add pagination
+    query += ` LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    queryParams.push(limit, offset);
+    
+    // Get total count for pagination
+    let countQuery = `SELECT COUNT(*) FROM clients`;
+    if (search) {
+      countQuery += ` WHERE normalized_name ILIKE $1 OR contact_number ILIKE $1`;
+    }
+    
+    // Execute the queries
+    const [clientsResult, countResult] = await Promise.all([
+      pool.query(query, queryParams),
+      pool.query(countQuery, search ? [`%${search}%`] : [])
+    ]).catch((err: Error) => {
       console.error('Database query error:', err.message);
       throw new Error(`Database query failed: ${err.message}`);
     });
     
-    console.log(`Found ${clientsResult.rows.length} clients in database`);
+    const totalClients = parseInt(countResult.rows[0].count);
+    const totalPages = Math.ceil(totalClients / limit);
+    
+    console.log(`Found ${totalClients} clients in database, showing page ${page} of ${totalPages}`);
 
     if (clientsResult.rows.length === 0) {
       return NextResponse.json(
@@ -52,7 +90,15 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ clients });
+    return NextResponse.json({
+      clients,
+      pagination: {
+        page,
+        limit,
+        totalItems: totalClients,
+        totalPages
+      }
+    });
   } catch (error) {
     console.error('Error fetching clients:', error);
     return NextResponse.json(

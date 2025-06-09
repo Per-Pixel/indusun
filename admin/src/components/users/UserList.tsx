@@ -39,6 +39,8 @@ interface UserListProps {
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
   useEditPage?: boolean;
+  onSearch?: (query: string) => void;
+  externalSearchQuery?: string;
 }
 
 const UserList: React.FC<UserListProps> = ({
@@ -48,10 +50,12 @@ const UserList: React.FC<UserListProps> = ({
   onAddNew,
   onEdit,
   onDelete,
-  useEditPage = false
+  useEditPage = false,
+  onSearch,
+  externalSearchQuery
 }) => {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(externalSearchQuery || '');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>('all');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showActionDropdown, setShowActionDropdown] = useState<string | null>(null);
@@ -117,7 +121,17 @@ const UserList: React.FC<UserListProps> = ({
                 placeholder={`Search ${userType}s...`}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64 placeholder-dark"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setSearchQuery(newValue);
+                  if (onSearch) {
+                    // Use a small delay to avoid too many API calls while typing
+                    const timeoutId = setTimeout(() => {
+                      onSearch(newValue);
+                    }, 500);
+                    return () => clearTimeout(timeoutId);
+                  }
+                }}
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             </div>
