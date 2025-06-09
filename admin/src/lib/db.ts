@@ -1,12 +1,10 @@
 import { Pool } from "pg";
 
-// Create a database connection pool
+// Create a database connection pool using the connection string directly
+const connectionString = "postgresql://postgres:1234@localhost:5432/indusun";
+
 const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: Number(process.env.DB_PORT) || 5432,
+    connectionString,
 });
 
 // Test the connection
