@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { MapPin, Phone, Mail, Send, Building, Clock, CheckCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Send, Building, Clock, CheckCircle, Sparkles } from 'lucide-react';
 import PlaceholderImage from '@/components/ui/PlaceholderImage';
 
 const ContactPage = () => {
@@ -93,142 +93,230 @@ const ContactPage = () => {
                 <Phone className="h-6 w-6 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Call Us</h3>
-              <p className="text-gray-600">
+              <p className="text-[#191D23]">
                 <a href="tel:+911800-41-99099" className="hover:text-blue-600 transition-colors">
                   +91 1800-41-99099
                 </a>
               </p>
-              <p className="text-gray-500 text-sm mt-2">
+              <p className="text-[#191D23] text-sm mt-2">
                 Mon-Sun: 9:30 AM - 6:30 PM
               </p>
             </div>
-            
+
             <div className="text-center p-6 bg-gray-50 rounded-lg">
               <div className="inline-block p-4 bg-blue-50 rounded-full mb-4">
                 <Mail className="h-6 w-6 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Email Us</h3>
-              <p className="text-gray-600">
+              <p className="text-[#191D23]">
                 <a href="mailto:info@indusun.com" className="hover:text-blue-600 transition-colors">
                   info@indusun.com
                 </a>
               </p>
-              <p className="text-gray-500 text-sm mt-2">
+              <p className="text-[#191D23] text-sm mt-2">
                 We'll respond as soon as possible
               </p>
             </div>
-            
+
             <div className="text-center p-6 bg-gray-50 rounded-lg">
               <div className="inline-block p-4 bg-blue-50 rounded-full mb-4">
                 <Building className="h-6 w-6 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Visit Us</h3>
-              <p className="text-gray-600">
+              <p className="text-[#191D23]">
                 Mumbai, Bangalore, Delhi NCR, and more
               </p>
-              <p className="text-gray-500 text-sm mt-2">
+              <p className="text-[#191D23] text-sm mt-2">
                 See office locations below
               </p>
             </div>
           </div>
           
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Get in Touch</h2>
+            <div className="flex items-center justify-center gap-2 mb-12">
+              <Sparkles className="h-6 w-6 text-[#191D23]" />
+              <h2 className="text-3xl font-bold text-[#191D23]">Get in Touch</h2>
+              <Sparkles className="h-6 w-6 text-[#191D23]" />
+            </div>
             
             {/* Contact Form */}
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-              {formSubmitted ? (
-                <div className="text-center py-8">
-                  <div className="inline-block p-4 bg-green-50 rounded-full mb-4">
-                    <CheckCircle className="h-12 w-12 text-green-600" />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-2">Thank You!</h3>
-                  <p className="text-gray-600 mb-4">
-                    Your message has been sent successfully. We'll get back to you shortly.
-                  </p>
+            {formSubmitted ? (
+              <div className="text-center py-8">
+                <div className="inline-block p-4 bg-green-50 rounded-full mb-4">
+                  <CheckCircle className="h-12 w-12 text-green-600" />
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                      <select
-                        name="subject"
-                        value={formData.subject}
-                        onChange={handleInputChange}
-                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      >
-                        <option value="">Select a subject</option>
-                        <option value="General Inquiry">General Inquiry</option>
-                        <option value="Property Listing">Property Listing</option>
-                        <option value="Property Search">Property Search</option>
-                        <option value="Partnership">Partnership</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                    <textarea
-                      name="message"
-                      value={formData.message}
+                <h3 className="text-2xl font-semibold mb-2">Thank You!</h3>
+                <p className="text-[#191D23] mb-4">
+                  Your message has been sent successfully. We'll get back to you shortly.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <label className="block text-sm text-[#191D23] mb-2">First Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
                       onChange={handleInputChange}
-                      rows={5}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter First Name"
+                      className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
                       required
-                    ></textarea>
+                    />
                   </div>
-                  
-                  <div className="text-right">
-                    <button
-                      type="submit"
-                      className="px-6 py-3 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-colors inline-flex items-center"
+                  <div>
+                    <label className="block text-sm text-[#191D23] mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      placeholder="Enter Last Name"
+                      className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[#191D23] mb-2">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="Enter your Email"
+                      className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[#191D23] mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="Enter Phone Number"
+                      className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <label className="block text-sm text-[#191D23] mb-2">Preferred Location</label>
+                    <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                      <option value="">Select Location</option>
+                      <option value="Mumbai">Mumbai</option>
+                      <option value="Bangalore">Bangalore</option>
+                      <option value="Delhi NCR">Delhi NCR</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[#191D23] mb-2">Property Type</label>
+                    <select
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors"
+                      required
                     >
-                      <Send className="h-4 w-4 mr-2" />
-                      Send Message
-                    </button>
+                      <option value="">Select Property Type</option>
+                      <option value="Residential">Residential</option>
+                      <option value="Commercial">Commercial</option>
+                      <option value="Land">Land</option>
+                      <option value="Apartment">Apartment</option>
+                    </select>
                   </div>
-                </form>
-              )}
-            </div>
+                  <div>
+                    <label className="block text-sm text-[#191D23] mb-2">No. of Bathrooms</label>
+                    <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                      <option value="">Select no. of Bathrooms</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4+">4+</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[#191D23] mb-2">No. of Bedrooms</label>
+                    <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                      <option value="">Select no. of Bedrooms</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4+">4+</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-[#191D23] mb-2">Budget</label>
+                  <select className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black text-black transition-colors">
+                    <option value="">Select Budget</option>
+                    <option value="Under 50L">Under ₹50 Lakhs</option>
+                    <option value="50L-1Cr">₹50 Lakhs - ₹1 Crore</option>
+                    <option value="1Cr-2Cr">₹1 Crore - ₹2 Crores</option>
+                    <option value="Above 2Cr">Above ₹2 Crores</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-[#191D23] mb-2">Preferred Contact Method</label>
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black">
+                        <Phone className="h-5 w-5 text-gray-500 mr-2" />
+                        <input
+                          type="tel"
+                          placeholder="Enter Your Number"
+                          className="bg-transparent w-full focus:outline-none placeholder:text-gray-600/70 text-black"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black">
+                        <Mail className="h-5 w-5 text-gray-500 mr-2" />
+                        <input
+                          type="email"
+                          placeholder="Enter Your Email"
+                          className="bg-transparent w-full focus:outline-none placeholder:text-gray-600/70 text-black"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-[#191D23] mb-2">Message</label>
+                  <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    placeholder="Enter your Message here."
+                    rows={6}
+                    className="w-full p-3 rounded-lg bg-[#FFF1F1] outline outline-[2px] outline-black focus:outline-black placeholder:text-gray-600/70 text-black transition-colors"
+                    required
+                  ></textarea>
+                </div>
+
+                {/* Terms and Send Message button container */}
+                <div className="flex items-center justify-between">
+                  {/* Terms agreement */}
+                  <div className="flex items-start gap-2">
+                    <input type="checkbox" className="mt-1" />
+                    <p className="text-sm text-[#191D23]">
+                      I agree with <a href="#" className="underline">Terms of Use</a> and <a href="#" className="underline">Privacy Policy</a>
+                    </p>
+                  </div>
+
+                  {/* Send Message button */}
+                  <button
+                    type="submit"
+                    className="px-8 py-3 bg-[#7C3AED] text-white rounded-lg font-medium hover:bg-[#6D28D9] transition-colors"
+                  >
+                    Send Your Message
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </section>
@@ -236,14 +324,14 @@ const ContactPage = () => {
       {/* Office Locations */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Our Offices</h2>
-          
+          <h2 className="text-3xl font-bold text-[#191D23] mb-12 text-center">Our Offices</h2>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {officeLocations.map((office, index) => (
               <div key={index} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                 <h3 className="text-xl font-semibold mb-4">{office.city}</h3>
-                
-                <div className="space-y-4 text-gray-600">
+
+                <div className="space-y-4 text-[#191D23]">
                   <div className="flex">
                     <MapPin className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0" />
                     <p>{office.address}</p>
