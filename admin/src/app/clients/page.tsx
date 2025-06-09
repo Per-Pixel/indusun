@@ -202,7 +202,11 @@ export default function ClientsPage() {
                   onAddNew={handleAddNew}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
-                  onSearch={(query) => setSearchQuery(query)}
+                  onSearch={(query) => {
+                    setSearchQuery(query);
+                    // Reset to page 1 when searching
+                    setCurrentPage(1);
+                  }}
                   externalSearchQuery={searchQuery}
                 />
                 

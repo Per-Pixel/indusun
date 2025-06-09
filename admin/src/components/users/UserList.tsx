@@ -62,10 +62,13 @@ const UserList: React.FC<UserListProps> = ({
 
   // Filter users based on search query and status
   const filteredUsers = users.filter(user => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.phone.includes(searchQuery);
+    // If we're using server-side search (onSearch is provided), only filter by status
+    // Otherwise, filter by both search query and status
+    const matchesSearch = onSearch
+      ? true // Skip client-side search filtering when server-side search is used
+      : (user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         user.phone?.includes(searchQuery));
 
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
 
@@ -122,7 +125,7 @@ const UserList: React.FC<UserListProps> = ({
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64 placeholder-dark"
                 value={searchQuery}
                 onChange={(e) => {
-                  const newValue = e.target.value;
+                  const newValue = e.target.value || '';
                   setSearchQuery(newValue);
                   if (onSearch) {
                     // Use a small delay to avoid too many API calls while typing
