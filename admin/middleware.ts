@@ -37,13 +37,13 @@ export async function middleware(req: NextRequest) {
     || req.headers.get('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
-    return NextResponse.redirect(new URL('/admin/auth/login', req.url));
+    return NextResponse.redirect(new URL('/auth/login', req.url));
   }
 
   // Verify the token
   const isValidAdmin = await verifyAdminToken(token);
   if (!isValidAdmin) {
-    return NextResponse.redirect(new URL('/admin/auth/login', req.url));
+    return NextResponse.redirect(new URL('/auth/login', req.url));
   }
 
   return NextResponse.next();
@@ -51,7 +51,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
-  // Exclude login page and API routes
-  exclude: ['/admin/auth/login', '/admin/api/auth/:path*']
+  // Updated matcher to match all paths in the admin app
+  matcher: ['/:path*'],
+  // Exclude login page and API routes with updated paths
+  exclude: ['/auth/login', '/api/auth/:path*']
 }

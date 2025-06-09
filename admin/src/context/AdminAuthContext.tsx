@@ -42,8 +42,8 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       toast.success('Logged out successfully');
 
-      // Redirect to login page
-      window.location.href = '/admin/auth/login';
+      // Redirect to login page with updated path
+      window.location.href = '/auth/login';
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Logout failed');

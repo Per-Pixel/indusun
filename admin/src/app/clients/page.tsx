@@ -6,79 +6,64 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 import UserList, { User } from '@/components/users/UserList';
 import UserForm from '@/components/users/UserForm';
+import Pagination from '@/components/common/Pagination';
 import { toast } from 'react-hot-toast';
 
-// Mock data for clients
-const mockClients: User[] = [
-  {
-    id: '1',
-    name: 'Robert Johnson',
-    email: 'robert.j@example.com',
-    phone: '+1 (555) 123-7890',
-    role: 'client',
-    status: 'active',
-    image: '/auth/Agents/client-01.jpg',
-    location: 'New York, NY',
-    lastActive: '2023-12-18',
-    createdAt: '2023-10-15',
-  },
-  {
-    id: '2',
-    name: 'Sarah Williams',
-    email: 'sarah.w@example.com',
-    phone: '+1 (555) 987-6543',
-    role: 'client',
-    status: 'active',
-    image: '/auth/Agents/client-02.jpg',
-    location: 'Los Angeles, CA',
-    lastActive: '2023-12-20',
-    createdAt: '2023-11-05',
-  },
-  {
-    id: '3',
-    name: 'Michael Brown',
-    email: 'michael.b@example.com',
-    phone: '+1 (555) 456-7890',
-    role: 'client',
-    status: 'inactive',
-    image: '/auth/Agents/client-03.jpg',
-    location: 'Chicago, IL',
-    lastActive: '2023-11-30',
-    createdAt: '2023-09-22',
-  },
-  {
-    id: '4',
-    name: 'Emily Davis',
-    email: 'emily.d@example.com',
-    phone: '+1 (555) 234-5678',
-    role: 'client',
-    status: 'pending',
-    image: '/auth/Agents/client-04.jpg',
-    location: 'Houston, TX',
-    lastActive: '2023-12-15',
-    createdAt: '2023-12-01',
-  },
-  {
-    id: '5',
-    name: 'David Wilson',
-    email: 'david.w@example.com',
-    phone: '+1 (555) 876-5432',
-    role: 'client',
-    status: 'active',
-    image: '/auth/Agents/client-05.jpg',
-    location: 'Miami, FL',
-    lastActive: '2023-12-19',
-    createdAt: '2023-08-15',
-  },
-];
+// Initial empty clients array
+const initialClients: User[] = [];
 
 export default function ClientsPage() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [clients, setClients] = useState<User[]>(mockClients);
+  const [clients, setClients] = useState<User[]>(initialClients);
   const [showForm, setShowForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState<User | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch clients from the API with pagination and search
+  const fetchClients = async (page: number = 1, search: string = '') => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: '50',
+      });
+      
+      if (search) {
+        queryParams.append('search', search);
+      }
+      
+      const response = await fetch(`/api/clients?${queryParams.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch clients');
+      }
+      
+      const data = await response.json();
+      setClients(data.clients);
+      setCurrentPage(data.pagination.page);
+      setTotalPages(data.pagination.totalPages);
+      setTotalItems(data.pagination.totalItems);
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Initial fetch and when page or search changes
+  useEffect(() => {
+    fetchClients(currentPage, searchQuery);
+  }, [currentPage, searchQuery]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -94,49 +79,81 @@ export default function ClientsPage() {
     setShowForm(true);
   };
 
-  const handleDelete = (client: User) => {
+  const handleDelete = async (client: User) => {
     if (window.confirm(`Are you sure you want to delete ${client.name}?`)) {
-      // In a real app, you would call an API to delete the client
-      setClients(prevClients => prevClients.filter(c => c.id !== client.id));
-      toast.success(`${client.name} has been deleted`);
+      try {
+        setIsLoading(true);
+        
+        const response = await fetch(`/api/clients/${client.id}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete client');
+        }
+        
+        toast.success(`${client.name} has been deleted`);
+        // Refresh the client list with current page and search
+        fetchClients(currentPage, searchQuery);
+      } catch (err) {
+        console.error('Error deleting client:', err);
+        toast.error(err instanceof Error ? err.message : 'Failed to delete client');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleFormSubmit = (clientData: Partial<User>) => {
+  const handleFormSubmit = async (clientData: Partial<User>) => {
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
       if (selectedClient) {
         // Update existing client
-        setClients(prevClients =>
-          prevClients.map(client =>
-            client.id === selectedClient.id ? { ...client, ...clientData } : client
-          )
-        );
+        const response = await fetch(`/api/clients/${selectedClient.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(clientData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update client');
+        }
+
+        const data = await response.json();
         toast.success(`${clientData.name} has been updated`);
       } else {
         // Add new client
-        const newClient: User = {
-          id: Date.now().toString(),
-          name: clientData.name || '',
-          email: clientData.email || '',
-          phone: clientData.phone || '',
-          role: 'client',
-          status: clientData.status as 'active' | 'inactive' | 'pending',
-          image: clientData.image,
-          location: clientData.location,
-          createdAt: new Date().toISOString().split('T')[0],
-          lastActive: new Date().toISOString().split('T')[0],
-        };
+        const response = await fetch('/api/clients', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(clientData),
+        });
 
-        setClients(prevClients => [...prevClients, newClient]);
-        toast.success(`${newClient.name} has been added`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to add client');
+        }
+
+        const data = await response.json();
+        toast.success(`${data.client.name} has been added`);
       }
 
-      setIsLoading(false);
       setShowForm(false);
-    }, 1000);
+      // Refresh the client list after adding or updating
+      fetchClients(currentPage, searchQuery);
+    } catch (err) {
+      console.error('Error submitting client form:', err);
+      toast.error(err instanceof Error ? err.message : 'An error occurred while saving client');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFormCancel = () => {
@@ -162,6 +179,12 @@ export default function ClientsPage() {
               <p className="text-gray-500">Manage your clients and their information</p>
             </div>
 
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600">{error}</p>
+              </div>
+            )}
+
             {showForm ? (
               <UserForm
                 user={selectedClient}
@@ -171,14 +194,37 @@ export default function ClientsPage() {
                 isLoading={isLoading}
               />
             ) : (
-              <UserList
-                users={clients}
-                title="Clients"
-                userType="client"
-                onAddNew={handleAddNew}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
+              <>
+                <UserList
+                  users={clients}
+                  title="Clients"
+                  userType="client"
+                  onAddNew={handleAddNew}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onSearch={(query) => {
+                    setSearchQuery(query);
+                    // Reset to page 1 when searching
+                    setCurrentPage(1);
+                  }}
+                  externalSearchQuery={searchQuery}
+                />
+                
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => setCurrentPage(page)}
+                  />
+                )}
+              </>
+            )}
+
+            {isLoading && !showForm && (
+              <div className="flex justify-center my-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
             )}
           </div>
         </div>
