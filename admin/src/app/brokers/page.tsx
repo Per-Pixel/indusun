@@ -6,79 +6,60 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 import UserList, { User } from '@/components/users/UserList';
 import UserForm from '@/components/users/UserForm';
+import Pagination from '@/components/common/Pagination';
 import { toast } from 'react-hot-toast';
 
-// Mock data for brokers
-const mockBrokers: User[] = [
-  {
-    id: '1',
-    name: 'Arshir Patel',
-    email: 'arshir.p@indusun.com',
-    phone: '+91 98765 43210',
-    role: 'broker',
-    status: 'active',
-    image: '/auth/Agents/agent-03.jpg',
-    location: 'Mumbai, India',
-    lastActive: '2023-12-20',
-    createdAt: '2023-06-15',
-  },
-  {
-    id: '2',
-    name: 'Priya Sharma',
-    email: 'priya.s@indusun.com',
-    phone: '+91 87654 32109',
-    role: 'broker',
-    status: 'active',
-    image: '/auth/Agents/agent-02.jpg',
-    location: 'Delhi, India',
-    lastActive: '2023-12-19',
-    createdAt: '2023-07-22',
-  },
-  {
-    id: '3',
-    name: 'Rahul Verma',
-    email: 'rahul.v@indusun.com',
-    phone: '+91 76543 21098',
-    role: 'broker',
-    status: 'inactive',
-    image: '/auth/Agents/agent-01.jpg',
-    location: 'Bangalore, India',
-    lastActive: '2023-11-30',
-    createdAt: '2023-05-10',
-  },
-  {
-    id: '4',
-    name: 'Ananya Desai',
-    email: 'ananya.d@indusun.com',
-    phone: '+91 65432 10987',
-    role: 'broker',
-    status: 'pending',
-    image: '/auth/Agents/agent-04.jpg',
-    location: 'Pune, India',
-    lastActive: '2023-12-15',
-    createdAt: '2023-11-05',
-  },
-  {
-    id: '5',
-    name: 'Vikram Singh',
-    email: 'vikram.s@indusun.com',
-    phone: '+91 54321 09876',
-    role: 'broker',
-    status: 'active',
-    image: '/auth/Agents/agent-05.jpg',
-    location: 'Chennai, India',
-    lastActive: '2023-12-18',
-    createdAt: '2023-08-30',
-  },
-];
+// Initial empty brokers array
+const initialBrokers: User[] = [];
 
 export default function BrokersPage() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [brokers, setBrokers] = useState<User[]>(mockBrokers);
+  const [brokers, setBrokers] = useState<User[]>(initialBrokers);
   const [showForm, setShowForm] = useState(false);
   const [selectedBroker, setSelectedBroker] = useState<User | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const limit = 10; // 10 brokers per page
+
+  // Fetch brokers from API
+  const fetchBrokers = async () => {
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: limit.toString(),
+        ...(searchQuery && { search: searchQuery })
+      });
+
+      const response = await fetch(`/api/brokers?${queryParams}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setBrokers(data.brokers);
+        setTotalPages(data.pagination.totalPages);
+        setTotalItems(data.pagination.totalItems);
+      } else {
+        console.error('Failed to fetch brokers:', data.error);
+        toast.error('Failed to fetch brokers');
+      }
+    } catch (error) {
+      console.error('Error fetching brokers:', error);
+      toast.error('An error occurred while fetching brokers');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch brokers when page, limit, or search query changes
+  useEffect(() => {
+    fetchBrokers();
+  }, [currentPage, searchQuery]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -94,49 +75,87 @@ export default function BrokersPage() {
     setShowForm(true);
   };
 
-  const handleDelete = (broker: User) => {
+  const handleDelete = async (broker: User) => {
     if (window.confirm(`Are you sure you want to delete ${broker.name}?`)) {
-      // In a real app, you would call an API to delete the broker
-      setBrokers(prevBrokers => prevBrokers.filter(b => b.id !== broker.id));
-      toast.success(`${broker.name} has been deleted`);
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/brokers/${broker.id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          toast.success(`${broker.name} has been deleted`);
+          // Refresh the broker list
+          fetchBrokers();
+        } else {
+          const data = await response.json();
+          toast.error(`Failed to delete broker: ${data.error}`);
+        }
+      } catch (error) {
+        console.error('Error deleting broker:', error);
+        toast.error('An error occurred while deleting the broker');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleFormSubmit = (brokerData: Partial<User>) => {
+  const handleFormSubmit = async (brokerData: Partial<User>) => {
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
       if (selectedBroker) {
         // Update existing broker
-        setBrokers(prevBrokers =>
-          prevBrokers.map(broker =>
-            broker.id === selectedBroker.id ? { ...broker, ...brokerData } : broker
-          )
-        );
-        toast.success(`${brokerData.name} has been updated`);
+        const response = await fetch(`/api/brokers/${selectedBroker.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: brokerData.name,
+            phone: brokerData.phone,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          toast.success(`${data.broker.name} has been updated`);
+          // Refresh the broker list
+          fetchBrokers();
+        } else {
+          const data = await response.json();
+          toast.error(`Failed to update broker: ${data.error}`);
+        }
       } else {
         // Add new broker
-        const newBroker: User = {
-          id: Date.now().toString(),
-          name: brokerData.name || '',
-          email: brokerData.email || '',
-          phone: brokerData.phone || '',
-          role: 'broker',
-          status: brokerData.status as 'active' | 'inactive' | 'pending',
-          image: brokerData.image,
-          location: brokerData.location,
-          createdAt: new Date().toISOString().split('T')[0],
-          lastActive: new Date().toISOString().split('T')[0],
-        };
+        const response = await fetch('/api/brokers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: brokerData.name,
+            phone: brokerData.phone,
+          }),
+        });
 
-        setBrokers(prevBrokers => [...prevBrokers, newBroker]);
-        toast.success(`${newBroker.name} has been added`);
+        if (response.ok) {
+          const data = await response.json();
+          toast.success(`${data.broker.name} has been added`);
+          // Refresh the broker list
+          fetchBrokers();
+        } else {
+          const data = await response.json();
+          toast.error(`Failed to add broker: ${data.error}`);
+        }
       }
-
+    } catch (error) {
+      console.error('Error submitting broker form:', error);
+      toast.error('An error occurred while saving the broker');
+    } finally {
       setIsLoading(false);
       setShowForm(false);
-    }, 1000);
+    }
   };
 
   const handleFormCancel = () => {
@@ -171,15 +190,32 @@ export default function BrokersPage() {
                 isLoading={isLoading}
               />
             ) : (
-              <UserList
-                users={brokers}
-                title="Brokers"
-                userType="broker"
-                onAddNew={handleAddNew}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                useEditPage={true}
-              />
+              <>
+                <UserList
+                  users={brokers}
+                  title="Brokers"
+                  userType="broker"
+                  onAddNew={handleAddNew}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  useEditPage={true}
+                  onSearch={(query) => {
+                    setSearchQuery(query);
+                    // Reset to page 1 when searching
+                    setCurrentPage(1);
+                  }}
+                  externalSearchQuery={searchQuery}
+                />
+                
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => setCurrentPage(page)}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>
