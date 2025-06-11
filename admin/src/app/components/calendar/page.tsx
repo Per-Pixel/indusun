@@ -179,7 +179,19 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showEditEventModal, setShowEditEventModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
+  // New event form state
+  const [newEvent, setNewEvent] = useState<Partial<CalendarEvent>>({
+    title: '',
+    date: selectedDate,
+    time: '09:00 AM',
+    type: 'meeting',
+    location: '',
+    notes: ''
+  });
 
   // Current month and year
   const currentMonth = currentDate.getMonth();
@@ -243,6 +255,79 @@ export default function CalendarPage() {
   const closeEventModal = () => {
     setSelectedEvent(null);
     setShowEventModal(false);
+  };
+
+  // Open add event modal
+  const openAddEventModal = () => {
+    setNewEvent({
+      title: '',
+      date: selectedDate,
+      time: '09:00 AM',
+      type: 'meeting',
+      location: '',
+      notes: ''
+    });
+    setShowAddEventModal(true);
+  };
+
+  // Close add event modal
+  const closeAddEventModal = () => {
+    setShowAddEventModal(false);
+  };
+
+  // Handle new event input change
+  const handleNewEventChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewEvent(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Save new event
+  const saveNewEvent = () => {
+    // In a real app, this would save to a database
+    // For now, we'll just close the modal
+    // You would typically generate a unique ID and add to the events array
+
+    // Mock adding to the array (this won't persist on refresh)
+    const newEventWithId = {
+      ...newEvent,
+      id: `event-${Date.now()}`,
+    } as CalendarEvent;
+
+    // In a real app: mockEvents.push(newEventWithId);
+
+    closeAddEventModal();
+    // You might want to show a success message here
+  };
+
+  // Open edit event modal
+  const openEditEventModal = () => {
+    if (selectedEvent) {
+      setNewEvent({
+        ...selectedEvent
+      });
+      setShowEditEventModal(true);
+      setShowEventModal(false);
+    }
+  };
+
+  // Close edit event modal
+  const closeEditEventModal = () => {
+    setShowEditEventModal(false);
+  };
+
+  // Save edited event
+  const saveEditedEvent = () => {
+    // In a real app, this would update the database
+    // For now, we'll just close the modal
+
+    // Mock updating the array (this won't persist on refresh)
+    // In a real app: update the event in mockEvents
+
+    closeEditEventModal();
+    // You might want to show a success message here
   };
 
   // Get events for selected date
@@ -412,6 +497,7 @@ export default function CalendarPage() {
                   Events for {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </h3>
                 <button
+                  onClick={openAddEventModal}
                   className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                 >
                   <Plus size={16} />
@@ -470,6 +556,7 @@ export default function CalendarPage() {
                 <div className="p-6 text-center">
                   <p className="text-gray-500">No events scheduled for this date.</p>
                   <button
+                    onClick={openAddEventModal}
                     className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                   >
                     <Plus size={16} />
@@ -556,9 +643,270 @@ export default function CalendarPage() {
                       Close
                     </button>
                     <button
+                      onClick={openEditEventModal}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                     >
                       Edit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Add Event Modal */}
+            {showAddEventModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 className="font-medium">Add New Event</h3>
+                    <button
+                      onClick={closeAddEventModal}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <div className="p-4">
+                    <form className="space-y-4">
+                      <div>
+                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                          Event Title*
+                        </label>
+                        <input
+                          type="text"
+                          id="title"
+                          name="title"
+                          value={newEvent.title}
+                          onChange={handleNewEventChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                            Date*
+                          </label>
+                          <input
+                            type="date"
+                            id="date"
+                            name="date"
+                            value={newEvent.date}
+                            onChange={handleNewEventChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">
+                            Time*
+                          </label>
+                          <input
+                            type="time"
+                            id="time"
+                            name="time"
+                            value={newEvent.time?.replace(' AM', '').replace(' PM', '')}
+                            onChange={handleNewEventChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+                          Event Type*
+                        </label>
+                        <select
+                          id="type"
+                          name="type"
+                          value={newEvent.type}
+                          onChange={handleNewEventChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        >
+                          <option value="viewing">Viewing</option>
+                          <option value="meeting">Meeting</option>
+                          <option value="inspection">Inspection</option>
+                          <option value="closing">Closing</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                          Location
+                        </label>
+                        <input
+                          type="text"
+                          id="location"
+                          name="location"
+                          value={newEvent.location}
+                          onChange={handleNewEventChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+                          Notes
+                        </label>
+                        <textarea
+                          id="notes"
+                          name="notes"
+                          value={newEvent.notes}
+                          onChange={handleNewEventChange}
+                          rows={3}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                        />
+                      </div>
+                    </form>
+                  </div>
+
+                  <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
+                    <button
+                      onClick={closeAddEventModal}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveNewEvent}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
+                      Save Event
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Event Modal */}
+            {showEditEventModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 className="font-medium">Edit Event</h3>
+                    <button
+                      onClick={closeEditEventModal}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <div className="p-4">
+                    <form className="space-y-4">
+                      <div>
+                        <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">
+                          Event Title*
+                        </label>
+                        <input
+                          type="text"
+                          id="edit-title"
+                          name="title"
+                          value={newEvent.title}
+                          onChange={handleNewEventChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="edit-date" className="block text-sm font-medium text-gray-700 mb-1">
+                            Date*
+                          </label>
+                          <input
+                            type="date"
+                            id="edit-date"
+                            name="date"
+                            value={newEvent.date}
+                            onChange={handleNewEventChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="edit-time" className="block text-sm font-medium text-gray-700 mb-1">
+                            Time*
+                          </label>
+                          <input
+                            type="time"
+                            id="edit-time"
+                            name="time"
+                            value={newEvent.time?.replace(' AM', '').replace(' PM', '')}
+                            onChange={handleNewEventChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="edit-type" className="block text-sm font-medium text-gray-700 mb-1">
+                          Event Type*
+                        </label>
+                        <select
+                          id="edit-type"
+                          name="type"
+                          value={newEvent.type}
+                          onChange={handleNewEventChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        >
+                          <option value="viewing">Viewing</option>
+                          <option value="meeting">Meeting</option>
+                          <option value="inspection">Inspection</option>
+                          <option value="closing">Closing</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="edit-location" className="block text-sm font-medium text-gray-700 mb-1">
+                          Location
+                        </label>
+                        <input
+                          type="text"
+                          id="edit-location"
+                          name="location"
+                          value={newEvent.location}
+                          onChange={handleNewEventChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="edit-notes" className="block text-sm font-medium text-gray-700 mb-1">
+                          Notes
+                        </label>
+                        <textarea
+                          id="edit-notes"
+                          name="notes"
+                          value={newEvent.notes}
+                          onChange={handleNewEventChange}
+                          rows={3}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                        />
+                      </div>
+                    </form>
+                  </div>
+
+                  <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
+                    <button
+                      onClick={closeEditEventModal}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveEditedEvent}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
+                      Save Changes
                     </button>
                   </div>
                 </div>

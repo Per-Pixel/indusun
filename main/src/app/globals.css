@@ -165,3 +165,13 @@ body[data-search-active="true"] [data-search-results="true"] {
     top: auto !important;
   }
 }
+
+/* Hide scrollbar for horizontal scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}

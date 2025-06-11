@@ -209,10 +209,20 @@ export default function NotesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [showNoteModal, setShowNoteModal] = useState(false);
+  const [showAddNoteModal, setShowAddNoteModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
+
+  // New note state
+  const [newNote, setNewNote] = useState<Partial<Note>>({
+    title: '',
+    content: '',
+    category: 'client',
+    color: 'blue',
+    pinned: false
+  });
 
   // Toggle sidebar
   const toggleSidebar = () => {
@@ -263,6 +273,60 @@ export default function NotesPage() {
     setIsEditing(false);
   };
 
+  // Open add note modal
+  const openAddNoteModal = () => {
+    setNewNote({
+      title: '',
+      content: '',
+      category: 'client',
+      color: 'blue',
+      pinned: false
+    });
+    setShowAddNoteModal(true);
+  };
+
+  // Close add note modal
+  const closeAddNoteModal = () => {
+    setShowAddNoteModal(false);
+  };
+
+  // Handle new note input change
+  const handleNewNoteChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewNote(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle checkbox change for pinned status
+  const handlePinnedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewNote(prev => ({
+      ...prev,
+      pinned: e.target.checked
+    }));
+  };
+
+  // Save new note
+  const saveNewNote = () => {
+    // In a real app, this would save to a database
+    // For now, we'll just close the modal
+    // You would typically generate a unique ID and add to the notes array
+
+    // Mock adding to the array (this won't persist on refresh)
+    const newNoteWithId = {
+      ...newNote,
+      id: `note-${Date.now()}`,
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0]
+    } as Note;
+
+    // In a real app: mockNotes.push(newNoteWithId);
+
+    closeAddNoteModal();
+    // You might want to show a success message here
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
@@ -286,6 +350,7 @@ export default function NotesPage() {
 
               <div className="flex items-center mt-4 md:mt-0">
                 <button
+                  onClick={openAddNoteModal}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                 >
                   <Plus size={16} />
@@ -435,6 +500,7 @@ export default function NotesPage() {
 
                 {/* Add Note Card */}
                 <div
+                  onClick={openAddNoteModal}
                   className="p-4 rounded-lg border border-dashed border-gray-300 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 h-full min-h-[200px]"
                 >
                   <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2">
@@ -574,6 +640,126 @@ export default function NotesPage() {
                         </button>
                       </>
                     )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Add Note Modal */}
+            {showAddNoteModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className={`bg-white rounded-lg shadow-lg w-full max-w-2xl mx-4 ${getNoteColor(newNote.color as Note['color'])}`}>
+                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 className="font-medium">Add New Note</h3>
+                    <button
+                      onClick={closeAddNoteModal}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  <div className="p-6">
+                    <form className="space-y-4">
+                      <div>
+                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                          Title*
+                        </label>
+                        <input
+                          type="text"
+                          id="title"
+                          name="title"
+                          value={newNote.title}
+                          onChange={handleNewNoteChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+                          Content*
+                        </label>
+                        <textarea
+                          id="content"
+                          name="content"
+                          value={newNote.content}
+                          onChange={handleNewNoteChange}
+                          rows={8}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                            Category*
+                          </label>
+                          <select
+                            id="category"
+                            name="category"
+                            value={newNote.category}
+                            onChange={handleNewNoteChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                            required
+                          >
+                            <option value="client">Client</option>
+                            <option value="property">Property</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-1">
+                            Color
+                          </label>
+                          <select
+                            id="color"
+                            name="color"
+                            value={newNote.color}
+                            onChange={handleNewNoteChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          >
+                            <option value="blue">Blue</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="purple">Purple</option>
+                            <option value="gray">Gray</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="pinned"
+                          name="pinned"
+                          checked={newNote.pinned}
+                          onChange={handlePinnedChange}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="pinned" className="ml-2 block text-sm text-gray-700">
+                          Pin this note
+                        </label>
+                      </div>
+                    </form>
+                  </div>
+
+                  <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
+                    <button
+                      onClick={closeAddNoteModal}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveNewNote}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
+                      Save Note
+                    </button>
                   </div>
                 </div>
               </div>

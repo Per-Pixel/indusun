@@ -86,6 +86,9 @@ const HamburgerMenu = () => {
                   <button onClick={() => handleNavigation('/contact')} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
                     Contact
                   </button>
+                  <button onClick={() => handleNavigation('/faq')} className="text-white text-4xl font-bold hover:translate-x-2 transition-transform">
+                    FAQ
+                  </button>
                 </div>
 
                 <div className="mt-auto">
@@ -146,6 +149,9 @@ const HamburgerMenu = () => {
                   </button>
                   <button onClick={() => handleNavigation('/contact')} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
                     Contact
+                  </button>
+                  <button onClick={() => handleNavigation('/faq')} className="text-white text-5xl font-bold mb-6 hover:translate-x-2 transition-transform">
+                    FAQ
                   </button>
                 </div>
               </div>

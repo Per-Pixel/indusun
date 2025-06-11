@@ -255,7 +255,19 @@ export default function TasksPage() {
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showEditTaskModal, setShowEditTaskModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  // New task state
+  const [newTask, setNewTask] = useState<Partial<Task>>({
+    title: '',
+    description: '',
+    dueDate: new Date().toISOString().split('T')[0],
+    priority: 'medium',
+    status: 'todo',
+    category: 'client'
+  });
 
   // Toggle sidebar
   const toggleSidebar = () => {
@@ -294,6 +306,108 @@ export default function TasksPage() {
     setShowTaskModal(false);
   };
 
+  // Open add task modal
+  const openAddTaskModal = (initialStatus: Task['status'] = 'todo') => {
+    setNewTask({
+      title: '',
+      description: '',
+      dueDate: new Date().toISOString().split('T')[0],
+      priority: 'medium',
+      status: initialStatus,
+      category: 'client'
+    });
+    setShowAddTaskModal(true);
+  };
+
+  // Close add task modal
+  const closeAddTaskModal = () => {
+    setShowAddTaskModal(false);
+  };
+
+  // Handle new task input change
+  const handleNewTaskChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewTask(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Save new task
+  const saveNewTask = () => {
+    // In a real app, this would save to a database
+    // For now, we'll just close the modal
+    // You would typically generate a unique ID and add to the tasks array
+
+    // Mock adding to the array (this won't persist on refresh)
+    const newTaskWithId = {
+      ...newTask,
+      id: `task-${Date.now()}`,
+      createdAt: new Date().toISOString().split('T')[0]
+    } as Task;
+
+    // In a real app: mockTasks.push(newTaskWithId);
+
+    closeAddTaskModal();
+    // You might want to show a success message here
+  };
+
+  // Open edit task modal
+  const openEditTaskModal = () => {
+    if (selectedTask) {
+      setNewTask({
+        ...selectedTask
+      });
+      setShowEditTaskModal(true);
+      setShowTaskModal(false);
+    }
+  };
+
+  // Close edit task modal
+  const closeEditTaskModal = () => {
+    setShowEditTaskModal(false);
+  };
+
+  // Save edited task
+  const saveEditedTask = () => {
+    // In a real app, this would update the database
+    // For now, we'll just close the modal
+
+    // Mock updating the array (this won't persist on refresh)
+    // In a real app: update the task in mockTasks
+
+    closeEditTaskModal();
+    // You might want to show a success message here
+  };
+
+  // Mark task as completed
+  const markTaskAsCompleted = () => {
+    if (selectedTask) {
+      // In a real app, this would update the database
+      // For now, we'll just close the modal
+
+      // Mock updating the task status
+      // In a real app: update the task status in mockTasks
+
+      closeTaskModal();
+      // You might want to show a success message here
+    }
+  };
+
+  // Reopen task
+  const reopenTask = () => {
+    if (selectedTask) {
+      // In a real app, this would update the database
+      // For now, we'll just close the modal
+
+      // Mock updating the task status
+      // In a real app: update the task status in mockTasks
+
+      closeTaskModal();
+      // You might want to show a success message here
+    }
+  };
+
   // Format date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -326,6 +440,7 @@ export default function TasksPage() {
 
               <div className="flex items-center mt-4 md:mt-0">
                 <button
+                  onClick={() => openAddTaskModal()}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                 >
                   <Plus size={16} />
@@ -414,7 +529,10 @@ export default function TasksPage() {
                         {todoTasks.length}
                       </span>
                     </h3>
-                    <button className="text-gray-500 hover:text-gray-700">
+                    <button
+                      onClick={() => openAddTaskModal('todo')}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
                       <Plus size={16} />
                     </button>
                   </div>
@@ -487,7 +605,10 @@ export default function TasksPage() {
                         {inProgressTasks.length}
                       </span>
                     </h3>
-                    <button className="text-gray-500 hover:text-gray-700">
+                    <button
+                      onClick={() => openAddTaskModal('in-progress')}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
                       <Plus size={16} />
                     </button>
                   </div>
@@ -560,7 +681,10 @@ export default function TasksPage() {
                         {completedTasks.length}
                       </span>
                     </h3>
-                    <button className="text-gray-500 hover:text-gray-700">
+                    <button
+                      onClick={() => openAddTaskModal('completed')}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
                       <Plus size={16} />
                     </button>
                   </div>
@@ -642,7 +766,10 @@ export default function TasksPage() {
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl font-medium">{selectedTask.title}</h2>
                         <div className="flex space-x-2">
-                          <button className="text-gray-500 hover:text-gray-700">
+                          <button
+                            onClick={openEditTaskModal}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
                             <Edit size={16} />
                           </button>
                           <button className="text-gray-500 hover:text-red-500">
@@ -735,17 +862,293 @@ export default function TasksPage() {
                     </button>
                     {selectedTask.status !== 'completed' ? (
                       <button
+                        onClick={markTaskAsCompleted}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
                       >
                         Mark as Completed
                       </button>
                     ) : (
                       <button
+                        onClick={reopenTask}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                       >
                         Reopen Task
                       </button>
                     )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Add Task Modal */}
+            {showAddTaskModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 className="font-medium">Add New Task</h3>
+                    <button
+                      onClick={closeAddTaskModal}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <div className="p-4">
+                    <form className="space-y-4">
+                      <div>
+                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                          Task Title*
+                        </label>
+                        <input
+                          type="text"
+                          id="title"
+                          name="title"
+                          value={newTask.title}
+                          onChange={handleNewTaskChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                          Description
+                        </label>
+                        <textarea
+                          id="description"
+                          name="description"
+                          value={newTask.description}
+                          onChange={handleNewTaskChange}
+                          rows={3}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
+                          Due Date*
+                        </label>
+                        <input
+                          type="date"
+                          id="dueDate"
+                          name="dueDate"
+                          value={newTask.dueDate}
+                          onChange={handleNewTaskChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
+                            Priority*
+                          </label>
+                          <select
+                            id="priority"
+                            name="priority"
+                            value={newTask.priority}
+                            onChange={handleNewTaskChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                            required
+                          >
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                            Category*
+                          </label>
+                          <select
+                            id="category"
+                            name="category"
+                            value={newTask.category}
+                            onChange={handleNewTaskChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                            required
+                          >
+                            <option value="client">Client</option>
+                            <option value="property">Property</option>
+                            <option value="admin">Admin</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                          Status*
+                        </label>
+                        <select
+                          id="status"
+                          name="status"
+                          value={newTask.status}
+                          onChange={handleNewTaskChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        >
+                          <option value="todo">To Do</option>
+                          <option value="in-progress">In Progress</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+                    </form>
+                  </div>
+
+                  <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
+                    <button
+                      onClick={closeAddTaskModal}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveNewTask}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
+                      Save Task
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Task Modal */}
+            {showEditTaskModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 className="font-medium">Edit Task</h3>
+                    <button
+                      onClick={closeEditTaskModal}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <div className="p-4">
+                    <form className="space-y-4">
+                      <div>
+                        <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">
+                          Task Title*
+                        </label>
+                        <input
+                          type="text"
+                          id="edit-title"
+                          name="title"
+                          value={newTask.title}
+                          onChange={handleNewTaskChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-1">
+                          Description
+                        </label>
+                        <textarea
+                          id="edit-description"
+                          name="description"
+                          value={newTask.description}
+                          onChange={handleNewTaskChange}
+                          rows={3}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="edit-dueDate" className="block text-sm font-medium text-gray-700 mb-1">
+                          Due Date*
+                        </label>
+                        <input
+                          type="date"
+                          id="edit-dueDate"
+                          name="dueDate"
+                          value={newTask.dueDate}
+                          onChange={handleNewTaskChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="edit-priority" className="block text-sm font-medium text-gray-700 mb-1">
+                            Priority*
+                          </label>
+                          <select
+                            id="edit-priority"
+                            name="priority"
+                            value={newTask.priority}
+                            onChange={handleNewTaskChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                            required
+                          >
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label htmlFor="edit-category" className="block text-sm font-medium text-gray-700 mb-1">
+                            Category*
+                          </label>
+                          <select
+                            id="edit-category"
+                            name="category"
+                            value={newTask.category}
+                            onChange={handleNewTaskChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                            required
+                          >
+                            <option value="client">Client</option>
+                            <option value="property">Property</option>
+                            <option value="admin">Admin</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700 mb-1">
+                          Status*
+                        </label>
+                        <select
+                          id="edit-status"
+                          name="status"
+                          value={newTask.status}
+                          onChange={handleNewTaskChange}
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
+                          required
+                        >
+                          <option value="todo">To Do</option>
+                          <option value="in-progress">In Progress</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+                    </form>
+                  </div>
+
+                  <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
+                    <button
+                      onClick={closeEditTaskModal}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveEditedTask}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
+                      Save Changes
+                    </button>
                   </div>
                 </div>
               </div>
