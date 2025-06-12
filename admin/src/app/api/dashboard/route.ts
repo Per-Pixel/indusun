@@ -5,67 +5,45 @@ export async function GET(req: NextRequest) {
   try {
     // Get total clients count
     const clientsResult = await pool.query(`
-      SELECT COUNT(DISTINCT client_name) as count
-      FROM client_data
-    `).catch(() => ({ rows: [{ count: '327' }] })); // Fallback to import summary value
+      SELECT COUNT(*) as count
+      FROM clients
+    `).catch(() => ({ rows: [{ count: '0' }] })); // Fallback to zero if table doesn't exist
     if (clientsResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'No client data found' },
         { status: 404 }
       );
     }
-    // If no clients found, return early
-    if (clientsResult.rows[0].count === '0') {
-      return NextResponse.json(
-        { error: 'No clients found' },
-        { status: 404 }
-      );
-    }
-    // If clients count is zero, return early
-    if (clientsResult.rows[0].count === '0') {
-      return NextResponse.json(
-        { error: 'No clients found' },
-        { status: 404 }
-      );
-    }
+    // If no clients found, continue with zeros but don't return error
+    // This allows the dashboard to load even if some tables are empty
 
     // Query total broker count
     const brokersResult = await pool.query(`
-      SELECT COUNT(DISTINCT broker_name) as count 
-      FROM broker_data
-    `).catch(() => ({ rows: [{ count: '327' }] })); // Fallback to import summary value
+      SELECT COUNT(*) as count 
+      FROM brokers
+    `).catch(() => ({ rows: [{ count: '0' }] })); // Fallback to zero if table doesn't exist
 
     // Query total plots count
     const plotsResult = await pool.query(`
-      SELECT COUNT(DISTINCT plot_id) as count 
-      FROM plot_data
-    `).catch(() => ({ rows: [{ count: '6985' }] })); // Fallback to import summary value
-
-    // Query total installments count
-    const installmentsResult = await pool.query(`
       SELECT COUNT(*) as count 
-      FROM installments
-    `).catch(() => ({ rows: [{ count: '77643' }] })); // Fallback to import summary value
+      FROM plots
+    `).catch(() => ({ rows: [{ count: '0' }] })); // Fallback to zero if table doesn't exist
+
+    // Query total installments count - using fallback for now as we don't have an installments table yet
+    const installmentsResult = { rows: [{ count: '0' }] };
 
     // Get new clients (registered in the last 30 days)
     const newClientsResult = await pool.query(`
-      SELECT COUNT(DISTINCT client_name) as count 
-      FROM client_data 
-      WHERE registration_date >= NOW() - INTERVAL '30 days'
-    `).catch(() => ({ rows: [{ count: '156' }] })); // Fallback value
+      SELECT COUNT(*) as count 
+      FROM clients 
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+    `).catch(() => ({ rows: [{ count: '0' }] })); // Fallback to zero if table doesn't exist
 
-    // Get total transaction value
-    const transactionValueResult = await pool.query(`
-      SELECT SUM(transaction_amount) as total 
-      FROM transactions
-    `).catch(() => ({ rows: [{ total: '335040100' }] })); // Fallback value calculated from sample data
+    // Get total transaction value - using fallback for now as we don't have a transactions table yet
+    const transactionValueResult = { rows: [{ total: '0' }] };
 
-    // Get monthly installment value
-    const monthlyInstallmentResult = await pool.query(`
-      SELECT SUM(installment_amount) as total 
-      FROM installments 
-      WHERE payment_date >= NOW() - INTERVAL '30 days'
-    `).catch(() => ({ rows: [{ total: '5768000' }] })); // Fallback value calculated from sample data
+    // Get monthly installment value - using fallback for now as we don't have an installments table yet
+    const monthlyInstallmentResult = { rows: [{ total: '0' }] };
 
     // Device traffic stats (mocked since we don't have real analytics data yet)
     const deviceTrafficResult = {
@@ -159,16 +137,15 @@ export async function GET(req: NextRequest) {
       ]
     }));
 
-    // Top client list based on transaction value
+    // Top client list - using clients table
     const topClientsResult = await pool.query(`
       SELECT 
-        client_name, 
-        phone_number,
-        SUM(plot_value) as total_value,
-        COUNT(plot_id) as plot_count
-      FROM client_data
-      GROUP BY client_name, phone_number
-      ORDER BY total_value DESC
+        normalized_name as client_name, 
+        contact_number as phone_number,
+        0 as total_value,
+        0 as plot_count
+      FROM clients
+      ORDER BY normalized_name ASC
       LIMIT 5
     `).catch(() => ({
       rows: [
