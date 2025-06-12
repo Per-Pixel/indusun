@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin, Phone, Mail, Award, Users, Building, CheckCircle, Star, Calendar, Trophy, Heart, Sparkles } from 'lucide-react';
 import PlaceholderImage from '@/components/ui/PlaceholderImage';
+import toast, { Toaster } from 'react-hot-toast';
 
 const AboutPage = () => {
   const [formData, setFormData] = useState({
@@ -26,14 +27,90 @@ const AboutPage = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const response = await fetch('/api/messages/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          senderName: `${formData.firstName} ${formData.lastName}`,
+          senderEmail: formData.email,
+          senderPhone: formData.phone,
+          subject: `Property Inquiry - ${formData.propertyType} in ${formData.location}`,
+          messageContent: `Budget: ${formData.budget}\nProperty Type: ${formData.propertyType}\nLocation: ${formData.location}\n\nMessage: ${formData.message}`,
+          source: 'about_page',
+          sourcePage: '/about'
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Show success toast
+        toast.success('Message sent successfully! We\'ll get back to you shortly.', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            background: '#10B981',
+            color: 'white',
+            fontWeight: '500',
+          },
+        });
+
+        setFormSubmitted(true);
+        // Reset form after successful submission
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          budget: '',
+          propertyType: '',
+          location: '',
+          message: ''
+        });
+
+        // Reset form submission status after 5 seconds
+        setTimeout(() => {
+          setFormSubmitted(false);
+        }, 5000);
+      } else {
+        // Show error toast
+        toast.error(result.error || 'Failed to submit message. Please try again.', {
+          duration: 5000,
+          position: 'top-center',
+        });
+        setSubmitError(result.error || 'Failed to submit message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      const errorMessage = 'Network error. Please check your connection and try again.';
+
+      // Show error toast
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: 'top-center',
+      });
+
+      setSubmitError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white">
+      <Toaster />
       {/* Hero Section */}
       <div className="relative h-[500px] md:h-[600px] bg-gray-900">
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30 z-10"></div>

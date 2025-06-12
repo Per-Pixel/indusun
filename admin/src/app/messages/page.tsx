@@ -128,14 +128,7 @@ const mockRecipients: MessageRecipient[] = [
   }
 ];
 
-// Mock message stats
-const mockMessageStats: MessageStats = {
-  total: 1250,
-  sent: 850,
-  received: 400,
-  pending: 15,
-  failed: 5
-};
+// Real message stats will be fetched from API
 
 // Stats Card Component
 interface StatsCardProps {
@@ -177,11 +170,32 @@ export default function MessagesPage() {
   const [messageText, setMessageText] = useState('');
   const [messageType, setMessageType] = useState<'sms' | 'email'>('sms');
   const [isSending, setIsSending] = useState(false);
+  const [messageStats, setMessageStats] = useState<MessageStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Toggle sidebar
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  // Fetch message statistics
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/messages/stats');
+        const data = await response.json();
+        if (data.success) {
+          setMessageStats(data.stats);
+        }
+      } catch (error) {
+        console.error('Error fetching message stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   // Debounce search term to avoid excessive filtering
   useEffect(() => {
@@ -301,38 +315,59 @@ export default function MessagesPage() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-              <StatsCard
-                title="Total Messages"
-                value={mockMessageStats.total}
-                icon={<MessageSquare size={20} className="text-blue-600" />}
-                bgColor="bg-blue-50"
-              />
-              <StatsCard
-                title="Sent"
-                value={mockMessageStats.sent}
-                icon={<CheckCircle size={20} className="text-green-600" />}
-                bgColor="bg-green-50"
-                onClick={() => router.push('/messages/history')}
-              />
-              <StatsCard
-                title="Received"
-                value={mockMessageStats.received}
-                icon={<MessageSquare size={20} className="text-purple-600" />}
-                bgColor="bg-purple-50"
-                onClick={() => router.push('/messages/received')}
-              />
-              <StatsCard
-                title="Pending"
-                value={mockMessageStats.pending}
-                icon={<Clock size={20} className="text-yellow-600" />}
-                bgColor="bg-yellow-50"
-              />
-              <StatsCard
-                title="Failed"
-                value={mockMessageStats.failed}
-                icon={<AlertCircle size={20} className="text-red-600" />}
-                bgColor="bg-red-50"
-              />
+              {loading ? (
+                // Loading skeleton
+                Array.from({ length: 5 }).map((_, index) => (
+                  <div key={index} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))
+              ) : messageStats ? (
+                <>
+                  <StatsCard
+                    title="Total Messages"
+                    value={messageStats.total}
+                    icon={<MessageSquare size={20} className="text-blue-600" />}
+                    bgColor="bg-blue-50"
+                    onClick={() => router.push('/messages/received')}
+                  />
+                  <StatsCard
+                    title="Sent"
+                    value={messageStats.sent}
+                    icon={<CheckCircle size={20} className="text-green-600" />}
+                    bgColor="bg-green-50"
+                    onClick={() => router.push('/messages/history')}
+                  />
+                  <StatsCard
+                    title="Received"
+                    value={messageStats.received}
+                    icon={<MessageSquare size={20} className="text-purple-600" />}
+                    bgColor="bg-purple-50"
+                    onClick={() => router.push('/messages/received')}
+                  />
+                  <StatsCard
+                    title="Unread"
+                    value={messageStats.unread}
+                    icon={<Clock size={20} className="text-yellow-600" />}
+                    bgColor="bg-yellow-50"
+                    onClick={() => router.push('/messages/received?status=unread')}
+                  />
+                  <StatsCard
+                    title="Replied"
+                    value={messageStats.replied}
+                    icon={<CheckCircle size={20} className="text-green-600" />}
+                    bgColor="bg-green-50"
+                    onClick={() => router.push('/messages/received?status=replied')}
+                  />
+                </>
+              ) : (
+                // Error state
+                <div className="col-span-5 bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-600">Failed to load message statistics</p>
+                </div>
+              )}
             </div>
 
             {/* Tabs */}

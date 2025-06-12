@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 import {
@@ -156,19 +156,82 @@ const mockReceivedMessages: ReceivedMessage[] = [
 
 export default function ReceivedMessagesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filterSource, setFilterSource] = useState<string>('All');
-  const [filterStatus, setFilterStatus] = useState<string>('All');
+  const [filterStatus, setFilterStatus] = useState<string>(searchParams.get('status') || 'All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [messages, setMessages] = useState<ReceivedMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const messagesPerPage = 5;
+  const messagesPerPage = 10;
 
   // Toggle sidebar
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  // Fetch messages from API
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      params.append('limit', messagesPerPage.toString());
+      params.append('offset', ((currentPage - 1) * messagesPerPage).toString());
+
+      if (filterStatus !== 'All') {
+        params.append('status', filterStatus.toLowerCase());
+      }
+
+      if (filterSource !== 'All') {
+        const sourceMap: { [key: string]: string } = {
+          'Contact Page': 'contact_page',
+          'Contact Form': 'contact_form',
+          'Email': 'email',
+          'Message': 'message'
+        };
+        params.append('source', sourceMap[filterSource] || filterSource.toLowerCase());
+      }
+
+      const response = await fetch(`/api/messages?${params.toString()}`);
+      const data = await response.json();
+
+      if (data.success) {
+        // Transform API data to match our interface
+        const transformedMessages = data.messages.map((msg: any) => ({
+          id: msg.id.toString(),
+          subject: msg.subject || 'No Subject',
+          content: msg.message_content,
+          receivedAt: msg.created_at,
+          status: msg.status,
+          source: msg.source,
+          sender: {
+            id: `sender-${msg.id}`,
+            name: msg.sender_name,
+            email: msg.sender_email,
+            phone: msg.sender_phone,
+            type: 'guest' as const,
+            image: undefined
+          }
+        }));
+
+        setMessages(transformedMessages);
+        setTotalCount(data.pagination.total);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch messages when component mounts or filters change
+  useEffect(() => {
+    fetchMessages();
+  }, [currentPage, filterSource, filterStatus]);
 
   // Debounce search term to avoid excessive filtering
   useEffect(() => {
@@ -184,39 +247,24 @@ export default function ReceivedMessagesPage() {
     setCurrentPage(1);
   }, [debouncedSearchTerm, filterSource, filterStatus]);
 
-  // Filter messages based on search term, source, and status
+  // Filter messages based on search term (client-side filtering for search)
   const filteredMessages = React.useMemo(() => {
-    return mockReceivedMessages.filter(message => {
+    if (debouncedSearchTerm === '') return messages;
+
+    return messages.filter(message => {
       // Search in subject, content, and sender name
-      const matchesSearch = debouncedSearchTerm === '' ? true : (
+      return (
         message.subject.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         message.content.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         message.sender.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
-
-      // Filter by source
-      const matchesSource = filterSource === 'All' ? true : (
-        filterSource === 'Contact Page' ? message.source === 'contact_page' :
-        filterSource === 'Contact Form' ? message.source === 'contact_form' :
-        filterSource === 'Email' ? message.source === 'email' :
-        filterSource === 'Message' ? message.source === 'message' : true
-      );
-
-      // Filter by status
-      const matchesStatus = filterStatus === 'All' ? true : (
-        filterStatus === 'Read' ? message.status === 'read' :
-        filterStatus === 'Unread' ? message.status === 'unread' : true
-      );
-
-      return matchesSearch && matchesSource && matchesStatus;
     });
-  }, [debouncedSearchTerm, filterSource, filterStatus]);
+  }, [messages, debouncedSearchTerm]);
 
   // Pagination
-  const indexOfLastMessage = currentPage * messagesPerPage;
-  const indexOfFirstMessage = indexOfLastMessage - messagesPerPage;
-  const currentMessages = filteredMessages.slice(indexOfFirstMessage, indexOfLastMessage);
-  const totalPages = Math.ceil(filteredMessages.length / messagesPerPage);
+  const totalPages = Math.ceil(totalCount / messagesPerPage);
+  const indexOfFirstMessage = (currentPage - 1) * messagesPerPage + 1;
+  const indexOfLastMessage = Math.min(currentPage * messagesPerPage, totalCount);
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -330,11 +378,11 @@ export default function ReceivedMessagesPage() {
                     value={filterSource}
                     onChange={(e) => setFilterSource(e.target.value)}
                   >
-                    <option value="All">All Sources</option>
-                    <option value="Contact Page">Contact Page</option>
-                    <option value="Contact Form">Contact Form</option>
-                    <option value="Email">Email</option>
-                    <option value="Message">Message</option>
+                    <option value="All" className="text-black">All Sources</option>
+                    <option value="Contact Page" className="text-black">Contact Page</option>
+                    <option value="Contact Form" className="text-black">Contact Form</option>
+                    <option value="Email" className="text-black">Email</option>
+                    <option value="Message" className="text-black">Message</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     <ChevronDown size={16} className="text-gray-400" />
@@ -350,9 +398,9 @@ export default function ReceivedMessagesPage() {
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
-                    <option value="All">All Status</option>
-                    <option value="Read">Read</option>
-                    <option value="Unread">Unread</option>
+                    <option value="All" className="text-black">All Status</option>
+                    <option value="Read" className="text-black">Read</option>
+                    <option value="Unread" className="text-black">Unread</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     <ChevronDown size={16} className="text-gray-400" />
@@ -376,7 +424,46 @@ export default function ReceivedMessagesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {currentMessages.map((message) => (
+                    {loading ? (
+                      // Loading skeleton
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <tr key={index} className="animate-pulse">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                              <div className="ml-4">
+                                <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                                <div className="h-3 bg-gray-200 rounded w-32"></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="h-4 bg-gray-200 rounded w-48 mb-1"></div>
+                            <div className="h-3 bg-gray-200 rounded w-64"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 bg-gray-200 rounded w-20"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 bg-gray-200 rounded w-16 mb-1"></div>
+                            <div className="h-3 bg-gray-200 rounded w-12"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="h-5 bg-gray-200 rounded w-5 ml-auto"></div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : filteredMessages.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                          No messages found
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredMessages.map((message) => (
                       <tr key={message.id} className={`hover:bg-gray-50 ${message.status === 'unread' ? 'bg-blue-50' : ''}`}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -449,7 +536,8 @@ export default function ReceivedMessagesPage() {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -484,11 +572,9 @@ export default function ReceivedMessagesPage() {
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Showing <span className="font-medium">{indexOfFirstMessage + 1}</span> to{' '}
-                        <span className="font-medium">
-                          {Math.min(indexOfLastMessage, filteredMessages.length)}
-                        </span>{' '}
-                        of <span className="font-medium">{filteredMessages.length}</span> results
+                        Showing <span className="font-medium">{indexOfFirstMessage}</span> to{' '}
+                        <span className="font-medium">{indexOfLastMessage}</span>{' '}
+                        of <span className="font-medium">{totalCount}</span> results
                       </p>
                     </div>
                     <div>

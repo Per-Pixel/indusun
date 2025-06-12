@@ -4,18 +4,7 @@ import pool from '@/lib/db';
 export async function GET() {
   try {
     console.log('Setting up database tables...');
-
-    // Create clients table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS clients (
-        id SERIAL PRIMARY KEY,
-        full_name VARCHAR(255) NOT NULL,
-        normalized_name VARCHAR(255) NOT NULL,
-        contact_number VARCHAR(50) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
+    
     // Create messages table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS messages (
@@ -35,42 +24,43 @@ export async function GET() {
       )
     `);
     
-    // Insert some sample data if the table is empty
-    const countResult = await pool.query('SELECT COUNT(*) FROM clients');
+    // Insert some sample data if the table is empty (for testing)
+    const countResult = await pool.query('SELECT COUNT(*) FROM messages');
     
     if (parseInt(countResult.rows[0].count) === 0) {
       await pool.query(`
-        INSERT INTO clients (full_name, normalized_name, contact_number) VALUES
-        ('John Smith', 'John Smith', '+1 555-123-4567'),
-        ('Mary Johnson', 'Mary Johnson', '+1 555-234-5678'),
-        ('Robert Williams', 'Robert Williams', '+1 555-345-6789'),
-        ('Sarah Davis', 'Sarah Davis', '+1 555-456-7890'),
-        ('Michael Brown', 'Michael Brown', '+1 555-567-8901')
+        INSERT INTO messages (sender_name, sender_email, sender_phone, subject, message_content, source, source_page) VALUES
+        ('John Doe', 'john@example.com', '+1234567890', 'Property Inquiry', 'I am interested in your residential properties.', 'contact_page', '/contact'),
+        ('Jane Smith', 'jane@example.com', '+0987654321', 'Commercial Property', 'Looking for commercial space in Mumbai.', 'about_page', '/about'),
+        ('Bob Johnson', 'bob@example.com', '+1122334455', 'Investment Opportunity', 'Want to discuss investment opportunities.', 'contact_page', '/contact')
       `);
-      console.log('Sample client data inserted');
+      console.log('Sample message data inserted');
     }
     
     // Check that the table was created successfully
     const tablesResult = await pool.query(`
       SELECT table_name 
       FROM information_schema.tables 
-      WHERE table_schema = 'public'
+      WHERE table_schema = 'public' AND table_name = 'messages'
     `);
     
-    const tables = tablesResult.rows.map((row: any) => row.table_name);
-    
-    // Get the structure of the clients table
+    // Get the structure of the messages table
     const columnsResult = await pool.query(`
       SELECT column_name, data_type 
       FROM information_schema.columns 
-      WHERE table_name = 'clients'
+      WHERE table_name = 'messages'
+      ORDER BY ordinal_position
     `);
+    
+    // Get count of messages
+    const messageCountResult = await pool.query('SELECT COUNT(*) FROM messages');
     
     return NextResponse.json({
       success: true,
       message: 'Database setup completed successfully',
-      tables,
-      clientsStructure: columnsResult.rows
+      tables: tablesResult.rows.map((row: any) => row.table_name),
+      messagesTableStructure: columnsResult.rows,
+      messageCount: parseInt(messageCountResult.rows[0].count)
     });
   } catch (error: any) {
     console.error('Database setup failed:', error);
