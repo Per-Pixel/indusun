@@ -10,6 +10,7 @@ import {
   Users,
   UserPlus,
   BarChart2,
+  MessageSquare,
   Settings
 } from 'lucide-react';
 
@@ -59,6 +60,11 @@ const BrokerSidebar = () => {
       href: '/broker/clients',
       icon: <UserPlus size={20} />,
       label: 'Clients',
+    },
+    {
+      href: '/broker/messages',
+      icon: <MessageSquare size={20} />,
+      label: 'Messages',
     },
     {
       href: '/broker/reports',

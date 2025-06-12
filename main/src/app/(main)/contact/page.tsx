@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { MapPin, Phone, Mail, Send, Building, Clock, CheckCircle, Sparkles } from 'lucide-react';
 import PlaceholderImage from '@/components/ui/PlaceholderImage';
+import toast, { Toaster } from 'react-hot-toast';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -24,24 +25,81 @@ const ContactPage = () => {
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // In a real app, you would send this data to your backend
-    setFormSubmitted(true);
-    // Reset form after submission
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: ''
-    });
-    
-    // Reset form submission status after 5 seconds
-    setTimeout(() => {
-      setFormSubmitted(false);
-    }, 5000);
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const response = await fetch('/api/messages/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          senderName: formData.name,
+          senderEmail: formData.email,
+          senderPhone: formData.phone,
+          subject: formData.subject,
+          messageContent: formData.message,
+          source: 'contact_page',
+          sourcePage: '/contact'
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Show success toast
+        toast.success('Message sent successfully! We\'ll get back to you shortly.', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            background: '#10B981',
+            color: 'white',
+            fontWeight: '500',
+          },
+        });
+
+        setFormSubmitted(true);
+        // Reset form after successful submission
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+
+        // Reset form submission status after 5 seconds
+        setTimeout(() => {
+          setFormSubmitted(false);
+        }, 5000);
+      } else {
+        // Show error toast
+        toast.error(result.error || 'Failed to submit message. Please try again.', {
+          duration: 5000,
+          position: 'top-center',
+        });
+        setSubmitError(result.error || 'Failed to submit message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      const errorMessage = 'Network error. Please check your connection and try again.';
+
+      // Show error toast
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: 'top-center',
+      });
+
+      setSubmitError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const officeLocations = [
@@ -67,6 +125,7 @@ const ContactPage = () => {
   
   return (
     <div className="min-h-screen bg-white">
+      <Toaster />
       {/* Hero Section */}
       <div className="relative h-[300px] md:h-[400px] bg-gray-900">
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40 z-10"></div>
@@ -152,6 +211,13 @@ const ContactPage = () => {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Error Message */}
+                {submitError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-600 text-sm">{submitError}</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div>
                     <label className="block text-sm text-[#191D23] mb-2">First Name</label>
@@ -310,9 +376,20 @@ const ContactPage = () => {
                   {/* Send Message button */}
                   <button
                     type="submit"
-                    className="px-8 py-3 bg-[#7C3AED] text-white rounded-lg font-medium hover:bg-[#6D28D9] transition-colors"
+                    disabled={isSubmitting}
+                    className="px-8 py-3 bg-[#7C3AED] text-white rounded-lg font-medium hover:bg-[#6D28D9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Send Your Message
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Send Your Message
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

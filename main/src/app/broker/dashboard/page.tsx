@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, MessageSquare } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend
@@ -65,12 +65,37 @@ export default function BrokerDashboard() {
   const { user, isLoading } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState('Monthly');
   const [selectedYear, setSelectedYear] = useState('December 2021');
+  const [recentMessages, setRecentMessages] = useState([]);
+  const [messageStats, setMessageStats] = useState({ total: 0, unread: 0 });
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== 'broker')) {
       router.push('/login');
     }
   }, [user, isLoading, router]);
+
+  // Fetch recent messages
+  useEffect(() => {
+    const fetchRecentMessages = async () => {
+      if (user?.role === 'broker') {
+        try {
+          const response = await fetch('/api/broker/messages?limit=5');
+          const data = await response.json();
+          if (data.success) {
+            setRecentMessages(data.messages);
+            setMessageStats({
+              total: data.pagination.total,
+              unread: data.messages.filter((m: any) => m.status === 'unread').length
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching recent messages:', error);
+        }
+      }
+    };
+
+    fetchRecentMessages();
+  }, [user]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -319,33 +344,64 @@ export default function BrokerDashboard() {
               </div>
             </div>
 
-            {/* Property List */}
+            {/* Recent Messages */}
             <div className="bg-white rounded-lg shadow p-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-black">Property List</h2>
-                <button className="text-xs text-black">See All Listing</button>
+                <h2 className="text-lg font-medium text-black">Recent Messages</h2>
+                <button
+                  onClick={() => router.push('/broker/messages')}
+                  className="text-xs text-blue-600 hover:text-blue-800"
+                >
+                  View All Messages
+                </button>
               </div>
 
-              <div className="space-y-4">
-                {propertyListData.map((property) => (
-                  <div key={property.id} className="relative rounded-lg overflow-hidden">
-                    <Image
-                      src={property.image}
-                      alt={property.title}
-                      width={400}
-                      height={200}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="absolute top-2 left-2 bg-white text-xs px-2 py-1 rounded-md text-black">
-                      {property.days} Days ago
-                    </div>
-                    <div className="p-3 bg-white">
-                      <h3 className="font-medium text-black">{property.title}</h3>
-                      <p className="text-lg font-bold mt-1 text-black">{property.price}</p>
-                    </div>
+              <div className="space-y-3">
+                {recentMessages.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No messages yet</p>
                   </div>
-                ))}
+                ) : (
+                  recentMessages.slice(0, 3).map((message: any) => (
+                    <div key={message.id} className="border-b border-gray-100 pb-3 last:border-b-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-black text-sm">{message.sender_name}</h4>
+                            {message.status === 'unread' && (
+                              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-600 mb-1">
+                            {message.subject || 'No Subject'}
+                          </p>
+                          <p className="text-xs text-gray-500 line-clamp-2">
+                            {message.message_content}
+                          </p>
+                        </div>
+                        <span className="text-xs text-gray-400 ml-2">
+                          {new Date(message.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
+
+              {messageStats.total > 0 && (
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">
+                      Total: {messageStats.total} messages
+                    </span>
+                    {messageStats.unread > 0 && (
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                        {messageStats.unread} unread
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
