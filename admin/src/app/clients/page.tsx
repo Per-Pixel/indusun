@@ -62,7 +62,11 @@ export default function ClientsPage() {
   
   // Initial fetch and when page or search changes
   useEffect(() => {
-    fetchClients(currentPage, searchQuery);
+    const loadingToast = toast.loading('Loading clients...');
+    fetchClients(currentPage, searchQuery)
+      .finally(() => {
+        toast.dismiss(loadingToast);
+      });
   }, [currentPage, searchQuery]);
 
   const toggleSidebar = () => {
@@ -83,6 +87,7 @@ export default function ClientsPage() {
     if (window.confirm(`Are you sure you want to delete ${client.name}?`)) {
       try {
         setIsLoading(true);
+        const loadingToast = toast.loading(`Deleting ${client.name}...`);
         
         const response = await fetch(`/api/clients/${client.id}`, {
           method: 'DELETE',
@@ -93,11 +98,13 @@ export default function ClientsPage() {
           throw new Error(errorData.error || 'Failed to delete client');
         }
         
+        toast.dismiss(loadingToast);
         toast.success(`${client.name} has been deleted`);
         // Refresh the client list with current page and search
         fetchClients(currentPage, searchQuery);
       } catch (err) {
         console.error('Error deleting client:', err);
+        toast.dismiss();
         toast.error(err instanceof Error ? err.message : 'Failed to delete client');
       } finally {
         setIsLoading(false);

@@ -30,6 +30,7 @@ export default function BrokersPage() {
   // Fetch brokers from API
   const fetchBrokers = async () => {
     setIsLoading(true);
+    const loadingToast = toast.loading('Loading brokers...');
     try {
       const queryParams = new URLSearchParams({
         page: currentPage.toString(),
@@ -46,12 +47,15 @@ export default function BrokersPage() {
         setTotalItems(data.pagination.totalItems);
       } else {
         console.error('Failed to fetch brokers:', data.error);
+        toast.dismiss(loadingToast);
         toast.error('Failed to fetch brokers');
       }
     } catch (error) {
       console.error('Error fetching brokers:', error);
+      toast.dismiss(loadingToast);
       toast.error('An error occurred while fetching brokers');
     } finally {
+      toast.dismiss(loadingToast);
       setIsLoading(false);
     }
   };
@@ -78,21 +82,25 @@ export default function BrokersPage() {
   const handleDelete = async (broker: User) => {
     if (window.confirm(`Are you sure you want to delete ${broker.name}?`)) {
       setIsLoading(true);
+      const deleteToast = toast.loading(`Deleting ${broker.name}...`);
       try {
         const response = await fetch(`/api/brokers/${broker.id}`, {
           method: 'DELETE',
         });
 
         if (response.ok) {
+          toast.dismiss(deleteToast);
           toast.success(`${broker.name} has been deleted`);
           // Refresh the broker list
           fetchBrokers();
         } else {
           const data = await response.json();
+          toast.dismiss(deleteToast);
           toast.error(`Failed to delete broker: ${data.error}`);
         }
       } catch (error) {
         console.error('Error deleting broker:', error);
+        toast.dismiss(deleteToast);
         toast.error('An error occurred while deleting the broker');
       } finally {
         setIsLoading(false);
