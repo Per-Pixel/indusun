@@ -42,89 +42,21 @@ interface MessageStats {
   received: number;
   pending: number;
   failed: number;
+  unread: number;
+  replied: number;
 }
 
-// Mock data for recipients
-const mockRecipients: MessageRecipient[] = [
+// Mock admin data - Adding Sarika Singh as requested
+const mockAdminData: MessageRecipient[] = [
   {
-    id: '1',
-    name: 'Robert Johnson',
-    email: 'robert.j@example.com',
-    phone: '+1 (555) 123-7890',
-    type: 'client',
-    status: 'active',
-    image: '/auth/Agents/client-01.jpg',
-    lastActive: '2 hours ago'
-  },
-  {
-    id: '2',
-    name: 'Sarah Williams',
-    email: 'sarah.w@example.com',
-    phone: '+1 (555) 987-6543',
-    type: 'client',
-    status: 'active',
-    image: '/auth/Agents/client-02.jpg',
-    lastActive: '1 day ago'
-  },
-  {
-    id: '3',
-    name: 'Amit Kumar',
-    email: 'amit.k@example.com',
-    phone: '+1 (555) 234-5678',
-    type: 'broker',
-    status: 'active',
-    image: '/auth/Agents/agent-01.jpg',
-    lastActive: '3 hours ago'
-  },
-  {
-    id: '4',
-    name: 'Priya Patel',
-    email: 'priya.p@example.com',
-    phone: '+1 (555) 876-5432',
-    type: 'client',
-    status: 'inactive',
-    image: '/auth/Agents/client-03.jpg',
-    lastActive: '5 days ago'
-  },
-  {
-    id: '5',
-    name: 'Michael Chen',
-    email: 'michael.c@example.com',
-    phone: '+1 (555) 345-6789',
-    type: 'broker',
-    status: 'active',
-    image: '/auth/Agents/agent-02.jpg',
-    lastActive: 'Just now'
-  },
-  {
-    id: '6',
-    name: 'Jessica Brown',
-    email: 'jessica.b@example.com',
-    phone: '+1 (555) 567-8901',
-    type: 'client',
-    status: 'active',
-    image: '/auth/Agents/client-04.jpg',
-    lastActive: '4 hours ago'
-  },
-  {
-    id: '7',
-    name: 'David Wilson',
-    email: 'david.w@example.com',
-    phone: '+1 (555) 678-9012',
+    id: 'admin-1',
+    name: 'Sarika Singh',
+    email: 'sarika.singh@indusun.com',
+    phone: '+91 98765 43210',
     type: 'admin',
     status: 'active',
     image: '/auth/Agents/admin-01.jpg',
-    lastActive: '1 hour ago'
-  },
-  {
-    id: '8',
-    name: 'Emma Garcia',
-    email: 'emma.g@example.com',
-    phone: '+1 (555) 789-0123',
-    type: 'client',
-    status: 'inactive',
-    image: '/auth/Agents/client-05.jpg',
-    lastActive: '1 week ago'
+    lastActive: 'Just now'
   }
 ];
 
@@ -172,6 +104,18 @@ export default function MessagesPage() {
   const [isSending, setIsSending] = useState(false);
   const [messageStats, setMessageStats] = useState<MessageStats | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // State for real clients and brokers data with pagination
+  const [clients, setClients] = useState<MessageRecipient[]>([]);
+  const [brokers, setBrokers] = useState<MessageRecipient[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [brokersLoading, setBrokersLoading] = useState(false); // Start as false since we load on demand
+  const [clientsPage, setClientsPage] = useState(1);
+  const [brokersPage, setBrokersPage] = useState(1);
+  const [hasMoreClients, setHasMoreClients] = useState(true);
+  const [hasMoreBrokers, setHasMoreBrokers] = useState(true);
+  const [totalClients, setTotalClients] = useState(0);
+  const [totalBrokers, setTotalBrokers] = useState(0);
 
   // Toggle sidebar
   const toggleSidebar = () => {
@@ -196,41 +140,196 @@ export default function MessagesPage() {
 
     fetchStats();
   }, []);
+  
+  // Fetch clients from API with pagination and search
+  useEffect(() => {
+    const fetchClients = async () => {
+      if (!hasMoreClients && clientsPage > 1) return;
+      
+      try {
+        setClientsLoading(true);
+        // Build URL with pagination and search parameters
+        const url = new URL('/api/clients', window.location.origin);
+        url.searchParams.append('page', clientsPage.toString());
+        url.searchParams.append('limit', '50'); // Load 50 clients at a time
+        
+        // Add search term if present
+        if (debouncedSearchTerm) {
+          url.searchParams.append('search', debouncedSearchTerm);
+        }
+        
+        const response = await fetch(url.toString());
+        const data = await response.json();
+        
+        if (data.clients) {
+          // Map the client data to the MessageRecipient interface
+          const formattedClients = data.clients.map((client: any) => ({
+            id: client.id,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+            type: 'client',
+            status: client.status,
+            image: client.image,
+            lastActive: client.lastActive
+          }));
+          
+          // Append new clients to existing list if not on first page
+          if (clientsPage === 1) {
+            setClients(formattedClients);
+          } else {
+            setClients(prev => [...prev, ...formattedClients]);
+          }
+          
+          // Update pagination state
+          setTotalClients(data.totalClients || 0);
+          // Check if there are more clients to load
+          setHasMoreClients(formattedClients.length === 50);
+        } else {
+          setClients([]);
+          setHasMoreClients(false);
+        }
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+      } finally {
+        setClientsLoading(false);
+      }
+    };
 
-  // Debounce search term to avoid excessive filtering
+    fetchClients();
+  }, [debouncedSearchTerm, clientsPage]);
+  
+  // Fetch brokers from API only when broker tab is selected
+  useEffect(() => {
+    // Only fetch brokers when the brokers tab is active
+    if (activeTab !== 'brokers') return;
+    
+    const fetchBrokers = async () => {
+      if (!hasMoreBrokers && brokersPage > 1) return;
+      
+      try {
+        setBrokersLoading(true);
+        // Build URL with pagination and search parameters
+        const url = new URL('/api/brokers', window.location.origin);
+        url.searchParams.append('page', brokersPage.toString());
+        url.searchParams.append('limit', '50'); // Load 50 brokers at a time
+        
+        // Add search term if present
+        if (debouncedSearchTerm) {
+          url.searchParams.append('search', debouncedSearchTerm);
+        }
+        
+        const response = await fetch(url.toString());
+        const data = await response.json();
+        
+        if (data.brokers) {
+          // Map the broker data to the MessageRecipient interface
+          const formattedBrokers = data.brokers.map((broker: any) => ({
+            id: broker.id,
+            name: broker.name,
+            email: broker.email,
+            phone: broker.phone,
+            type: 'broker',
+            status: broker.status,
+            image: broker.image,
+            lastActive: broker.lastActive
+          }));
+          
+          // Append new brokers to existing list if not on first page
+          if (brokersPage === 1) {
+            setBrokers(formattedBrokers);
+          } else {
+            setBrokers(prev => [...prev, ...formattedBrokers]);
+          }
+          
+          // Update pagination state
+          setTotalBrokers(data.totalBrokers || 0);
+          // Check if there are more brokers to load
+          setHasMoreBrokers(formattedBrokers.length === 50);
+        } else {
+          setBrokers([]);
+          setHasMoreBrokers(false);
+        }
+      } catch (error) {
+        console.error('Error fetching brokers:', error);
+      } finally {
+        setBrokersLoading(false);
+      }
+    };
+
+    fetchBrokers();
+  }, [activeTab, debouncedSearchTerm, brokersPage]);
+
+  // Debounce search term and reset pagination when search changes
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
+      // Reset pagination when search term changes
+      setClientsPage(1);
+      setBrokersPage(1);
+      setClients([]);
+      setBrokers([]);
+      setHasMoreClients(true);
+      setHasMoreBrokers(true);
     }, 300);
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Combine all recipients based on the active tab
+  const getAllRecipients = () => {
+    const allRecipients: MessageRecipient[] = [];
+    
+    // Add clients if needed
+    if (!clientsLoading && clients.length > 0) {
+      allRecipients.push(...clients);
+    }
+    
+    // Add brokers if needed
+    if (!brokersLoading && brokers.length > 0) {
+      allRecipients.push(...brokers);
+    }
+    
+    // Add admin data
+    allRecipients.push(...mockAdminData);
+    
+    return allRecipients;
+  };
+  
+  // Filter recipients based on active tab and filters
+  // Search is now handled by the backend API
+  const getFilteredRecipients = () => {
+    let filteredList: MessageRecipient[] = [];
+    
+    // Get recipients based on active tab
+    if (activeTab === 'clients') {
+      filteredList = [...clients];
+    } else if (activeTab === 'brokers') {
+      filteredList = [...brokers];
+    } else if (activeTab === 'admins') {
+      filteredList = [...mockAdminData];
+    }
+    
+    // Apply additional filters (type and status)
+    return filteredList.filter(recipient => {
+      // Check if recipient matches filter type
+      const matchesType = 
+        filterType === 'All' || 
+        recipient.type.toLowerCase() === filterType.toLowerCase();
+      
+      // Check if recipient matches filter status
+      const matchesStatus = 
+        filterStatus === 'All' || 
+        recipient.status.toLowerCase() === filterStatus.toLowerCase();
+      
+      return matchesType && matchesStatus;
+    });
+  };
+
   // Filter recipients based on search term, type, and status
   const filteredRecipients = React.useMemo(() => {
-    return mockRecipients.filter(recipient => {
-      // Only search if there's a search term
-      const matchesSearch = debouncedSearchTerm === '' ? true : (
-        recipient.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        recipient.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        recipient.phone.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-      );
-
-      // Match by type filter
-      const matchesType = filterType === 'All' || recipient.type === filterType.toLowerCase();
-
-      // Match by status filter
-      const matchesStatus = filterStatus === 'All' || recipient.status === filterStatus.toLowerCase();
-
-      // Match by tab selection
-      const matchesTab =
-        (activeTab === 'clients' && recipient.type === 'client') ||
-        (activeTab === 'brokers' && recipient.type === 'broker') ||
-        (activeTab === 'admins' && recipient.type === 'admin');
-
-      return matchesSearch && matchesType && matchesStatus && matchesTab;
-    });
-  }, [debouncedSearchTerm, filterType, filterStatus, activeTab]);
+    return getFilteredRecipients();
+  }, [debouncedSearchTerm, filterType, filterStatus, activeTab, clients, brokers, clientsLoading, brokersLoading]);
 
   // Toggle recipient selection
   const toggleRecipientSelection = (id: string) => {
@@ -528,6 +627,37 @@ export default function MessagesPage() {
                         No recipients found
                       </div>
                     )}
+                    
+                    {/* Load More Button */}
+                    {(activeTab === 'clients' && hasMoreClients && !clientsLoading) && (
+                      <div className="p-2 text-center">
+                        <button 
+                          className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                          onClick={() => setClientsPage(prev => prev + 1)}
+                        >
+                          Load More Clients
+                        </button>
+                      </div>
+                    )}
+                    
+                    {(activeTab === 'brokers' && hasMoreBrokers && !brokersLoading) && (
+                      <div className="p-2 text-center">
+                        <button 
+                          className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                          onClick={() => setBrokersPage(prev => prev + 1)}
+                        >
+                          Load More Brokers
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Loading Indicator */}
+                    {(activeTab === 'clients' && clientsLoading) || (activeTab === 'brokers' && brokersLoading) ? (
+                      <div className="p-4 text-center">
+                        <div className="inline-block animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+                        <span className="text-gray-600">Loading...</span>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -544,7 +674,7 @@ export default function MessagesPage() {
                     <div className="flex flex-wrap gap-2">
                       {selectedRecipients.length > 0 ? (
                         selectedRecipients.map((id) => {
-                          const recipient = mockRecipients.find(r => r.id === id);
+                          const recipient = getAllRecipients().find((r: MessageRecipient) => r.id === id);
                           if (!recipient) return null;
                           return (
                             <div
