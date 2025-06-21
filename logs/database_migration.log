@@ -1,0 +1,39 @@
+2025-06-18 19:39:03,882 - INFO - Starting database migration process...
+2025-06-18 19:39:03,882 - INFO - Connecting to database: indusun at localhost:5432
+2025-06-18 19:39:04,116 - INFO - Table 'clients' exists: True
+2025-06-18 19:39:04,118 - INFO - Table 'brokers' exists: True
+2025-06-18 19:39:04,120 - INFO - Table 'plots' exists: True
+2025-06-18 19:39:04,121 - INFO - Table 'installments' exists: True
+2025-06-18 19:39:04,121 - INFO - Starting database schema migration...
+2025-06-18 19:39:04,256 - INFO - Adding client_id column to installments table
+2025-06-18 19:39:04,375 - INFO - client_id column added to installments table
+2025-06-18 19:39:04,380 - INFO - Adding broker_id column to installments table
+2025-06-18 19:39:04,382 - INFO - broker_id column added to installments table
+2025-06-18 19:39:04,387 - INFO - Adding broker_id column to clients table
+2025-06-18 19:39:04,389 - INFO - broker_id column added to clients table
+2025-06-18 19:39:04,389 - INFO - Creating indexes for new columns
+2025-06-18 19:39:04,615 - INFO - Database schema migration completed successfully
+2025-06-18 19:39:04,615 - INFO - Populating client_id and broker_id in installments table...
+2025-06-18 19:39:08,053 - INFO - Updated client_id for 77643 installment records
+2025-06-18 19:39:15,690 - INFO - Updated broker_id for 77643 installment records
+2025-06-18 19:39:15,690 - INFO - Installment relationships populated successfully
+2025-06-18 19:39:15,691 - INFO - Populating broker_id in clients table...
+2025-06-18 19:39:16,080 - INFO - Updated broker_id for 5005 client records
+2025-06-18 19:39:16,080 - INFO - Client broker relationships populated successfully
+2025-06-18 19:39:16,080 - INFO - Replacing 'gurukrupa' and 'GKC' with 'Indusun' in database...
+2025-06-18 19:39:19,629 - INFO - Updated 'gurukrupa' to 'Indusun' in 37039 installment remarks
+2025-06-18 19:39:19,673 - INFO - Updated 'GKC' to 'Indusun' in 0 installment remarks
+2025-06-18 19:39:19,710 - INFO - Updated 'GKC' to 'Indusun' in 0 receipt numbers
+2025-06-18 19:39:19,710 - INFO - Text replacement completed successfully
+2025-06-18 19:39:19,710 - INFO - Creating installment_summary_view...
+2025-06-18 19:39:19,809 - INFO - installment_summary_view created successfully
+2025-06-18 19:39:19,810 - INFO - Generating database statistics...
+2025-06-18 19:39:20,059 - INFO - Database Statistics:
+2025-06-18 19:39:20,059 - INFO - - clients: 5123
+2025-06-18 19:39:20,059 - INFO - - brokers: 327
+2025-06-18 19:39:20,060 - INFO - - plots: 6985
+2025-06-18 19:39:20,060 - INFO - - installments: 77643
+2025-06-18 19:39:20,060 - INFO - - installments_with_client: 77643
+2025-06-18 19:39:20,061 - INFO - - installments_with_broker: 77515
+2025-06-18 19:39:20,061 - INFO - - clients_with_broker: 5005
+2025-06-18 19:39:20,068 - INFO - Database changes committed successfully

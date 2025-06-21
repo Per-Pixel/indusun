@@ -1,0 +1,39 @@
+2025-06-19 17:07:23,895 - INFO - Attempting to read Excel file from: scripts\data\indusun_data.xlsx
+2025-06-19 17:07:23,896 - INFO - 
+Reading MAIN SHEET with header=1...
+2025-06-19 17:07:45,166 - INFO - Successfully read MAIN SHEET
+2025-06-19 17:07:45,166 - INFO - Rows: 78307, Columns: 24
+2025-06-19 17:07:45,167 - INFO - 
+Column names:
+2025-06-19 17:07:45,167 - INFO - - 1
+2025-06-19 17:07:45,167 - INFO - - \u0950
+2025-06-19 17:07:45,167 - INFO - - \u0950.1
+2025-06-19 17:07:45,168 - INFO - - \u0950.2
+2025-06-19 17:07:45,168 - INFO - - \u0950.3
+2025-06-19 17:07:45,168 - INFO - - \u0950.4
+2025-06-19 17:07:45,168 - INFO - - \u0950.5
+2025-06-19 17:07:45,169 - INFO - - \u0950.6
+2025-06-19 17:07:45,169 - INFO - - \u0950.7
+2025-06-19 17:07:45,169 - INFO - - \u0950.8
+2025-06-19 17:07:45,169 - INFO - - \u0950.9
+2025-06-19 17:07:45,169 - INFO - - \u0950.10
+2025-06-19 17:07:45,170 - INFO - - \u0950.11
+2025-06-19 17:07:45,170 - INFO - - \u0950.12
+2025-06-19 17:07:45,170 - INFO - - \u0950.13
+2025-06-19 17:07:45,170 - INFO - - \u0950.14
+2025-06-19 17:07:45,170 - INFO - - nan
+2025-06-19 17:07:45,171 - INFO - - Unnamed: 17
+2025-06-19 17:07:45,171 - INFO - - Unnamed: 18
+2025-06-19 17:07:45,171 - INFO - - Unnamed: 19
+2025-06-19 17:07:45,171 - INFO - - Unnamed: 20
+2025-06-19 17:07:45,171 - INFO - - Unnamed: 21
+2025-06-19 17:07:45,172 - INFO - - Unnamed: 22
+2025-06-19 17:07:45,172 - INFO - - Unnamed: 23
+2025-06-19 17:07:45,172 - INFO - 
+First 5 rows:
+2025-06-19 17:07:45,174 - INFO - - {1: 2, '\u0950': 'SHIV SAI NAGAR', '\u0950.1': 'SUNITADEVI UMASHANKAR SINGH', '\u0950.2': 9714713298, '\u0950.3': 32, '\u0950.4': '18*36', '\u0950.5': Timestamp('2017-02-10 00:00:00'), '\u0950.6': 104000, '\u0950.7': 2600, '\u0950.8': 'OM', '\u0950.9': ' ', '\u0950.10': 40, '\u0950.11': 'DHANPAT YADAV', '\u0950.12': 'CASH', '\u0950.13': 'RECIEPT CANCEL', '\u0950.14': 1, nan: '22017', 'Unnamed: 17': nan, 'Unnamed: 18': nan, 'Unnamed: 19': nan, 'Unnamed: 20': nan, 'Unnamed: 21': nan, 'Unnamed: 22': nan, 'Unnamed: 23': NaT}
+2025-06-19 17:07:45,175 - INFO - - {1: 3, '\u0950': 'SHIV SAI NAGAR', '\u0950.1': 'RAHUL KUMAR BIND', '\u0950.2': 8866094511, '\u0950.3': 8, '\u0950.4': '18*36', '\u0950.5': Timestamp('2017-02-10 00:00:00'), '\u0950.6': 104000, '\u0950.7': 2600, '\u0950.8': 200, '\u0950.9': 'TWO HUNDRED RUPEES ONLY.', '\u0950.10': 40, '\u0950.11': 'BALRAMBHAI', '\u0950.12': 'CASH', '\u0950.13': nan, '\u0950.14': 1, nan: '22017', 'Unnamed: 17': nan, 'Unnamed: 18': nan, 'Unnamed: 19': nan, 'Unnamed: 20': nan, 'Unnamed: 21': nan, 'Unnamed: 22': nan, 'Unnamed: 23': NaT}
+2025-06-19 17:07:45,176 - INFO - - {1: 4, '\u0950': 'SHIV SAI NAGAR', '\u0950.1': 'RAHUL KUMAR BIND', '\u0950.2': 8866094511, '\u0950.3': 9, '\u0950.4': '14*36', '\u0950.5': Timestamp('2017-02-10 00:00:00'), '\u0950.6': 80000, '\u0950.7': 2000, '\u0950.8': 200, '\u0950.9': 'TWO HUNDRED RUPEES ONLY.', '\u0950.10': 40, '\u0950.11': 'BALRAMBHAI', '\u0950.12': 'CASH', '\u0950.13': ' ', '\u0950.14': 1, nan: '22017', 'Unnamed: 17': nan, 'Unnamed: 18': nan, 'Unnamed: 19': nan, 'Unnamed: 20': nan, 'Unnamed: 21': nan, 'Unnamed: 22': nan, 'Unnamed: 23': NaT}
+2025-06-19 17:07:45,178 - INFO - - {1: 5, '\u0950': 'SHIV SAI NAGAR', '\u0950.1': 'ANILKUMAR', '\u0950.2': 8866094511, '\u0950.3': 10, '\u0950.4': '14*36', '\u0950.5': Timestamp('2017-02-10 00:00:00'), '\u0950.6': 80000, '\u0950.7': 2000, '\u0950.8': 1000, '\u0950.9': 'ONE THOUSAND REPEES ONLY', '\u0950.10': 40, '\u0950.11': 'BALRAMBHAI', '\u0950.12': 'CASH', '\u0950.13': nan, '\u0950.14': 1, nan: '22017', 'Unnamed: 17': nan, 'Unnamed: 18': nan, 'Unnamed: 19': nan, 'Unnamed: 20': nan, 'Unnamed: 21': nan, 'Unnamed: 22': nan, 'Unnamed: 23': NaT}
+2025-06-19 17:07:45,179 - INFO - - {1: 6, '\u0950': 'SHIV SAI NAGAR', '\u0950.1': 'ANILKUMAR BIND', '\u0950.2': 8460176524, '\u0950.3': ' ', '\u0950.4': '14*36', '\u0950.5': Timestamp('2017-02-10 00:00:00'), '\u0950.6': 80000, '\u0950.7': 2000, '\u0950.8': 500, '\u0950.9': 'FIVE HUNDRED RUPEES ONLY.', '\u0950.10': 40, '\u0950.11': 'BALRAMBHAI', '\u0950.12': 'CASH', '\u0950.13': nan, '\u0950.14': 1, nan: '22017', 'Unnamed: 17': nan, 'Unnamed: 18': nan, 'Unnamed: 19': nan, 'Unnamed: 20': nan, 'Unnamed: 21': nan, 'Unnamed: 22': nan, 'Unnamed: 23': NaT}
+2025-06-19 17:07:45,180 - WARNING - Could not find EMI PAID DATE column
