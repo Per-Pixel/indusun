@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -26,16 +26,16 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-// Mock data for billing sources
-const billingSourcesData = [
+// Default data for billing sources
+const defaultBillingSourcesData = [
   { name: 'Property Sales', value: 65 },
   { name: 'Broker Commissions', value: 15 },
   { name: 'Service Fees', value: 10 },
   { name: 'Rental Income', value: 10 },
 ];
 
-// Mock data for billing trends
-const billingTrendsData = [
+// Default data for billing trends
+const defaultBillingTrendsData = [
   { name: 'Jan', value: 400000 },
   { name: 'Feb', value: 300000 },
   { name: 'Mar', value: 550000 },
@@ -48,8 +48,8 @@ const billingTrendsData = [
 // Colors for pie chart
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-// Summary cards data
-const summaryData = [
+// Default summary cards data
+const defaultSummaryData = [
   {
     title: 'Total Revenue',
     value: '₹3.45 Cr',
@@ -222,27 +222,140 @@ export default function BillingPage() {
   const [filterSource, setFilterSource] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // State for real data from API
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [summaryData, setSummaryData] = useState(defaultSummaryData);
+  const [billingTrendsData, setBillingTrendsData] = useState(defaultBillingTrendsData);
+  const [billingSourcesData, setBillingSourcesData] = useState(defaultBillingSourcesData);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  
+  // Define fetchBillingData function at the component level
+  const fetchBillingData = async () => {
+    try {
+      setIsLoading(true);
+      // Add search parameters
+      const searchParams = new URLSearchParams();
+      searchParams.append('page', currentPage.toString());
+      searchParams.append('limit', transactionsPerPage.toString());
+      if (searchTerm) searchParams.append('search', searchTerm);
+      if (filterStatus !== 'All') searchParams.append('status', filterStatus);
+      if (filterSource !== 'All') searchParams.append('source', filterSource);
+      
+      const response = await fetch(`/api/billing?${searchParams.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Received billing data:', data);
 
-  const transactionsPerPage = 5;
+      // Update summary data
+      if (data.summary) {
+        const updatedSummary = [
+          {
+            title: 'Total Revenue',
+            value: `₹${data.summary.totalRevenue ? formatAmount(data.summary.totalRevenue) : '0'}`,
+            icon: <DollarSign size={20} className="text-blue-600" />,
+            bgColor: 'bg-blue-50',
+            change: '+12% from last month' // This could be calculated in the future
+          },
+          {
+            title: 'Pending Payments',
+            value: `₹${data.summary.pendingPayments ? formatAmount(data.summary.pendingPayments) : '0'}`,
+            icon: <CreditCard size={20} className="text-yellow-600" />,
+            bgColor: 'bg-yellow-50',
+            change: '-5% from last month' // This could be calculated in the future
+          },
+          {
+            title: 'Total Transactions',
+            value: `${data.summary.totalTransactions || 0}`,
+            icon: <TrendingUp size={20} className="text-green-600" />,
+            bgColor: 'bg-green-50',
+            change: '+8% from last month' // This could be calculated in the future
+          },
+          {
+            title: 'Invoices Generated',
+            value: `${data.summary.totalTransactions || 0}`, // Using same value as transactions for now
+            icon: <FileText size={20} className="text-purple-600" />,
+            bgColor: 'bg-purple-50',
+            change: '+15% from last month' // This could be calculated in the future
+          }
+        ];
+        setSummaryData(updatedSummary);
+      }
+      
+      // Update billing trends data
+      if (data.trends && data.trends.length > 0) {
+        // Ensure the data is properly formatted for the chart
+        const formattedTrends = data.trends.map((trend: any) => ({
+          name: trend.name || 'Unknown',
+          value: parseFloat(trend.value) || 0
+        }));
+        setBillingTrendsData(formattedTrends);
+        console.log('Updated billing trends data:', formattedTrends);
+      } else {
+        console.log('No trends data available, using default data');
+        // Keep using default data if no real data is available
+      }
+      
+      // Update transactions and pagination
+      if (data.transactions && data.transactions.length > 0) {
+        setTransactions(data.transactions);
+      } else {
+        setTransactions([]);
+      }
+      
+      // Update pagination info
+      if (data.pagination) {
+        setTotalItems(data.pagination.totalItems);
+        setTotalPages(data.pagination.totalPages);
+      }
+      
+      setIsLoading(false);
+    } catch (err: any) {
+      console.error('Error fetching billing data:', err);
+      setError(err.message || 'Error fetching billing data');
+      setIsLoading(false);
+    }
+  };
+  
+  // Fetch data on initial load
+  useEffect(() => {
+    fetchBillingData();
+  }, []);
+  
+  // Helper function to format amount in Indian currency format
+  const formatAmount = (amount: number): string => {
+    if (amount >= 10000000) { // 1 crore or more
+      return `${(amount / 10000000).toFixed(2)} Cr`;
+    } else if (amount >= 100000) { // 1 lakh or more
+      return `${(amount / 100000).toFixed(2)} Lakhs`;
+    } else {
+      return amount.toLocaleString('en-IN');
+    }
+  };
 
-  // Filter transactions based on search term and filters
-  const filteredTransactions = mockTransactions.filter(transaction => {
-    const matchesSearch =
-      transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (transaction.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+  const transactionsPerPage = 25;
 
-    const matchesStatus = filterStatus === 'All' || transaction.status === filterStatus;
-    const matchesSource = filterSource === 'All' || transaction.source === filterSource;
-
-    return matchesSearch && matchesStatus && matchesSource;
-  });
-
-  // Calculate pagination
-  const indexOfLastTransaction = currentPage * transactionsPerPage;
-  const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
-  const currentTransactions = filteredTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
-  const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
+  // Use server-side filtering - this will trigger a refetch when search params change
+  useEffect(() => {
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterSource]);
+  
+  // When page changes, refetch data
+  useEffect(() => {
+    fetchBillingData();
+  }, [currentPage, searchTerm, filterStatus, filterSource]);
+  
+  // Calculate display indexes for UI
+  const indexOfFirstTransaction = (currentPage - 1) * transactionsPerPage + 1;
+  const indexOfLastTransaction = Math.min(currentPage * transactionsPerPage, totalItems);
 
   const getStatusColor = (status: Transaction['status']) => {
     switch (status) {
@@ -304,85 +417,140 @@ export default function BillingPage() {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {summaryData.map((item, index) => (
-                <div key={index} className={`p-4 rounded-lg border border-gray-200 ${item.bgColor}`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <div>
-                      <p className="text-sm text-gray-600">{item.title}</p>
-                      <p className="text-xl font-semibold mt-1 text-black">{item.value}</p>
+              {isLoading ? (
+                // Loading state for summary cards
+                Array(4).fill(0).map((_, index) => (
+                  <div key={index} className="p-4 rounded-lg border border-gray-200 bg-gray-50 animate-pulse">
+                    <div className="flex justify-between items-center mb-2">
+                      <div>
+                        <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                        <div className="h-6 bg-gray-200 rounded w-16 mt-1"></div>
+                      </div>
+                      <div className="p-2 rounded-full bg-gray-200 h-10 w-10"></div>
                     </div>
-                    <div className="p-2 rounded-full bg-white">
-                      {item.icon}
-                    </div>
+                    <div className="h-3 bg-gray-200 rounded w-20 mt-2"></div>
                   </div>
-                  <p className="text-xs text-green-600">{item.change}</p>
+                ))
+              ) : error ? (
+                // Error state
+                <div className="col-span-4 p-4 rounded-lg border border-red-200 bg-red-50">
+                  <p className="text-red-600">Error loading data: {error}</p>
                 </div>
-              ))}
+              ) : (
+                // Data loaded successfully
+                summaryData.map((item, index: number) => (
+                  <div key={index} className={`p-4 rounded-lg border border-gray-200 ${item.bgColor}`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <div>
+                        <p className="text-sm text-gray-600">{item.title}</p>
+                        <p className="text-xl font-semibold mt-1 text-black">{item.value}</p>
+                      </div>
+                      <div className="p-2 rounded-full bg-white">
+                        {item.icon}
+                      </div>
+                    </div>
+                    <p className="text-xs text-green-600">{item.change}</p>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              {/* Billing Trends Chart */}
-              <div className="lg:col-span-2 bg-white p-4 rounded-lg shadow-sm">
-                <h2 className="text-lg font-medium mb-4">Billing Trends</h2>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={billingTrendsData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#9ca3af', fontSize: 12 }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#9ca3af', fontSize: 12 }}
-                        tickFormatter={(value) => `₹${value / 100000}L`}
-                      />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#0088FE"
-                        strokeWidth={3}
-                        dot={{ r: 4, strokeWidth: 2 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+              {isLoading ? (
+                // Loading state for charts
+                <>
+                  <div className="lg:col-span-2 bg-white p-4 rounded-lg shadow-sm">
+                    <h2 className="text-lg font-medium mb-4">Billing Trends</h2>
+                    <div className="h-64 flex items-center justify-center bg-gray-50 animate-pulse">
+                      <p className="text-gray-400">Loading chart data...</p>
+                    </div>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <h2 className="text-lg font-medium mb-4">Billing Sources</h2>
+                    <div className="h-64 flex items-center justify-center bg-gray-50 animate-pulse">
+                      <p className="text-gray-400">Loading chart data...</p>
+                    </div>
+                  </div>
+                </>
+              ) : error ? (
+                // Error state
+                <div className="lg:col-span-3 p-4 rounded-lg border border-red-200 bg-red-50">
+                  <p className="text-red-600">Error loading chart data: {error}</p>
                 </div>
-              </div>
+              ) : (
+                // Data loaded successfully
+                <>
+                  {/* Billing Trends Chart */}
+                  <div className="lg:col-span-2 bg-white p-4 rounded-lg shadow-sm">
+                    <h2 className="text-lg font-medium mb-4">Billing Trends</h2>
+                    <div className="h-64">
+                      {billingTrendsData && billingTrendsData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={billingTrendsData}
+                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis
+                              dataKey="name"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            />
+                            <YAxis
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: '#9ca3af', fontSize: 12 }}
+                              tickFormatter={(value) => `₹${value / 100000}L`}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Line
+                              type="monotone"
+                              dataKey="value"
+                              stroke="#0088FE"
+                              strokeWidth={3}
+                              dot={{ r: 4, strokeWidth: 2 }}
+                              activeDot={{ r: 6 }}
+                              connectNulls={false}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center bg-gray-50">
+                          <p className="text-gray-400">No billing trends data available</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-              {/* Billing Sources Chart */}
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h2 className="text-lg font-medium mb-4">Billing Sources</h2>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={billingSourcesData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {billingSourcesData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+                  {/* Billing Sources Chart */}
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <h2 className="text-lg font-medium mb-4">Billing Sources</h2>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={billingSourcesData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {billingSourcesData.map((entry, index: number) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Filters and Search */}
@@ -447,60 +615,103 @@ export default function BillingPage() {
                   View All
                 </button>
               </div>
-
+              
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <th className="px-6 py-3">Transaction ID</th>
                       <th className="px-6 py-3">Date</th>
                       <th className="px-6 py-3">Description</th>
-                      <th className="px-6 py-3">Client</th>
-                      <th className="px-6 py-3">Source</th>
                       <th className="px-6 py-3">Amount</th>
                       <th className="px-6 py-3">Status</th>
-                      <th className="px-6 py-3 text-right">Actions</th>
+                      <th className="px-6 py-3">Source</th>
+                      <th className="px-6 py-3">Reference</th>
+                      <th className="px-6 py-3">Client</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {currentTransactions.map((transaction) => (
-                      <tr key={transaction.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {transaction.id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(transaction.date).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                          {transaction.description}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {transaction.client?.name || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className="inline-flex items-center">
-                            {getSourceIcon(transaction.source)}
-                            {transaction.source}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {transaction.amount}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}>
-                            {transaction.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                          <button
-                            onClick={() => router.push(`/billing/transactions/${transaction.id}`)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            View
-                          </button>
+                    {isLoading ? (
+                      // Loading state for transactions table
+                      Array(5).fill(0).map((_, idx) => (
+                        <tr key={idx} className="animate-pulse">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 bg-gray-200 rounded w-24"></div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="h-4 bg-gray-200 rounded w-48"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 bg-gray-200 rounded w-20"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 bg-gray-200 rounded w-16"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 bg-gray-200 rounded w-28"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 bg-gray-200 rounded w-24"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-16"></div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : error ? (
+                      // Error state
+                      <tr>
+                        <td colSpan={7} className="px-6 py-4 text-center text-red-600">
+                          Error loading transaction data: {error}
                         </td>
                       </tr>
-                    ))}
+                    ) : transactions.length === 0 ? (
+                      // No data state
+                      <tr>
+                        <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                          No transactions found matching your filters.
+                        </td>
+                      </tr>
+                    ) : (
+                      // Data loaded successfully
+                      transactions.map((transaction, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {transaction.date}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                            {transaction.description}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
+                            {transaction.amount}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(transaction.status)}`}>
+                              {transaction.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="flex items-center">
+                              {getSourceIcon(transaction.source)}
+                              {transaction.source}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {transaction.reference}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {transaction.client?.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {transaction.client?.type}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -531,13 +742,9 @@ export default function BillingPage() {
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Showing <span className="font-medium">{indexOfFirstTransaction + 1}</span> to{' '}
-                        <span className="font-medium">
-                          {indexOfLastTransaction > filteredTransactions.length
-                            ? filteredTransactions.length
-                            : indexOfLastTransaction}
-                        </span>{' '}
-                        of <span className="font-medium">{filteredTransactions.length}</span> results
+                        Showing <span className="font-medium">{transactions.length > 0 ? indexOfFirstTransaction : 0}</span> to{' '}
+                        <span className="font-medium">{indexOfLastTransaction}</span>{' '}
+                        of <span className="font-medium">{totalItems}</span> results
                       </p>
                     </div>
                     <div>
