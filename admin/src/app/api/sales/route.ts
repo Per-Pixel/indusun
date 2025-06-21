@@ -143,12 +143,92 @@ export async function GET(request: NextRequest) {
       throw new Error(`Broker query failed: ${brokerError instanceof Error ? brokerError.message : String(brokerError)}`);
     }
     
-    // Return the sales data and filter options
+    // Get summary statistics for the sales dashboard
+    let summaryStats;
+    try {
+      console.log('Fetching sales summary statistics');
+
+      // Get total clients count
+      const totalClientsResult = await db.query('SELECT COUNT(*) as count FROM clients');
+      const totalClients = parseInt(totalClientsResult.rows[0]?.count || '0');
+
+      // Get active clients count (clients with payments in last 6 months or ongoing installments)
+      const activeClientsResult = await db.query(`
+        SELECT COUNT(DISTINCT c.id) as count
+        FROM clients c
+        JOIN plots p ON c.id = p.client_id
+        LEFT JOIN installments i ON p.id = i.plot_id
+        WHERE (i.payment_date >= CURRENT_DATE - INTERVAL '6 months')
+           OR (i.payment_date IS NULL AND i.created_at >= CURRENT_DATE - INTERVAL '6 months')
+           OR (i.id IS NULL AND p.created_at >= CURRENT_DATE - INTERVAL '6 months')
+      `);
+      const activeClients = parseInt(activeClientsResult.rows[0]?.count || '0');
+
+      // Get total brokers count
+      const totalBrokersResult = await db.query('SELECT COUNT(*) as count FROM brokers');
+      const totalBrokers = parseInt(totalBrokersResult.rows[0]?.count || '0');
+
+      // Get active brokers count (brokers with recent transactions or ongoing deals)
+      const activeBrokersResult = await db.query(`
+        SELECT COUNT(DISTINCT b.id) as count
+        FROM brokers b
+        JOIN plots p ON b.id = p.broker_id
+        LEFT JOIN installments i ON p.id = i.plot_id
+        WHERE (i.payment_date >= CURRENT_DATE - INTERVAL '6 months')
+           OR (i.payment_date IS NULL AND i.created_at >= CURRENT_DATE - INTERVAL '6 months')
+           OR (i.id IS NULL AND p.created_at >= CURRENT_DATE - INTERVAL '6 months')
+      `);
+      const activeBrokers = parseInt(activeBrokersResult.rows[0]?.count || '0');
+
+      // Get total properties count
+      const totalPropertiesResult = await db.query('SELECT COUNT(*) as count FROM plots');
+      const totalProperties = parseInt(totalPropertiesResult.rows[0]?.count || '0');
+
+      // Get properties sold count (plots where all installments have been paid)
+      const propertiesSoldResult = await db.query(`
+        SELECT COUNT(DISTINCT p.id) as count
+        FROM plots p
+        WHERE NOT EXISTS (
+          SELECT 1 FROM installments i
+          WHERE i.plot_id = p.id AND i.payment_date IS NULL
+        )
+        AND EXISTS (
+          SELECT 1 FROM installments i
+          WHERE i.plot_id = p.id AND i.payment_date IS NOT NULL
+        )
+      `);
+      const propertiesSold = parseInt(propertiesSoldResult.rows[0]?.count || '0');
+
+      summaryStats = {
+        totalClients,
+        activeClients,
+        totalBrokers,
+        activeBrokers,
+        totalProperties,
+        propertiesSold
+      };
+
+      console.log('Sales summary statistics:', summaryStats);
+    } catch (statsError) {
+      console.error('Error fetching sales summary statistics:', statsError);
+      // Provide default values if stats query fails
+      summaryStats = {
+        totalClients: 0,
+        activeClients: 0,
+        totalBrokers: 0,
+        activeBrokers: 0,
+        totalProperties: 0,
+        propertiesSold: 0
+      };
+    }
+
+    // Return the sales data, filter options, and summary statistics
     return NextResponse.json({
       sales: result.rows,
       filterOptions: {
         brokers: brokers.rows
-      }
+      },
+      summary: summaryStats
     });
 
   } catch (error) {

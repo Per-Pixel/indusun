@@ -9,7 +9,8 @@ import {
 } from 'recharts';
 import {
   Search, Info, ChevronDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Bell, DollarSign, User,
-  Calendar, Filter, SortAsc, SortDesc, Loader
+  Calendar, Filter, SortAsc, SortDesc, Loader, RefreshCw, Users, UserCheck, Building2,
+  Briefcase, Home, CheckCircle
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 
@@ -33,11 +34,65 @@ interface FilterOptions {
   brokers: Broker[];
 }
 
-// Statistics cards - can be updated later with real data
-const statsCards = [
-  { id: 1, title: 'Total Clients', description: 'Number of active clients' },
-  { id: 2, title: 'Total Brokers', description: 'Number of active brokers' },
-  { id: 3, title: 'Total Properties', description: 'Number of properties sold' },
+interface SalesSummary {
+  totalClients: number;
+  activeClients: number;
+  totalBrokers: number;
+  activeBrokers: number;
+  totalProperties: number;
+  propertiesSold: number;
+}
+
+// Statistics cards with real data and professional icons
+const getStatsCards = (summary: SalesSummary | null) => [
+  {
+    id: 1,
+    title: 'Total Clients',
+    value: summary?.totalClients || 0,
+    description: 'All registered clients',
+    icon: <Users className="h-6 w-6 text-blue-600" />,
+    bgColor: 'bg-blue-50'
+  },
+  {
+    id: 2,
+    title: 'Active Clients',
+    value: summary?.activeClients || 0,
+    description: 'Clients with recent activity',
+    icon: <UserCheck className="h-6 w-6 text-green-600" />,
+    bgColor: 'bg-green-50'
+  },
+  {
+    id: 3,
+    title: 'Total Brokers',
+    value: summary?.totalBrokers || 0,
+    description: 'All registered brokers',
+    icon: <Building2 className="h-6 w-6 text-purple-600" />,
+    bgColor: 'bg-purple-50'
+  },
+  {
+    id: 4,
+    title: 'Active Brokers',
+    value: summary?.activeBrokers || 0,
+    description: 'Brokers with active deals',
+    icon: <Briefcase className="h-6 w-6 text-orange-600" />,
+    bgColor: 'bg-orange-50'
+  },
+  {
+    id: 5,
+    title: 'Total Properties',
+    value: summary?.totalProperties || 0,
+    description: 'All properties in system',
+    icon: <Home className="h-6 w-6 text-indigo-600" />,
+    bgColor: 'bg-indigo-50'
+  },
+  {
+    id: 6,
+    title: 'Properties Sold',
+    value: summary?.propertiesSold || 0,
+    description: 'Fully completed sales',
+    icon: <CheckCircle className="h-6 w-6 text-emerald-600" />,
+    bgColor: 'bg-emerald-50'
+  },
 ];
 
 const SalesPage = () => {
@@ -52,6 +107,7 @@ const SalesPage = () => {
   // Sales data state
   const [salesData, setSalesData] = useState<SaleData[]>([]);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({ brokers: [] });
+  const [salesSummary, setSalesSummary] = useState<SalesSummary | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -60,6 +116,7 @@ const SalesPage = () => {
   const [selectedBrokerId, setSelectedBrokerId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<string>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   const metricDropdownRef = useRef<HTMLDivElement>(null);
   const periodDropdownRef = useRef<HTMLDivElement>(null);
@@ -116,6 +173,8 @@ const SalesPage = () => {
         const data = await response.json();
         setSalesData(data.sales);
         setFilterOptions(data.filterOptions);
+        setSalesSummary(data.summary);
+        console.log('Sales summary data:', data.summary);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch sales data');
       } finally {
@@ -124,7 +183,7 @@ const SalesPage = () => {
     };
     
     fetchSalesData();
-  }, [dateRange.startDate, dateRange.endDate, selectedBrokerId, sortBy, sortOrder]);
+  }, [dateRange.startDate, dateRange.endDate, selectedBrokerId, sortBy, sortOrder, refreshTrigger]);
 
   // Format sales data for chart
   const formattedSalesData = salesData.map((item) => {
@@ -247,6 +306,12 @@ const SalesPage = () => {
     setSortOrder('desc');
   };
 
+  // Refresh data manually
+  const refreshData = () => {
+    // Trigger a re-fetch by updating a dependency
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
@@ -348,6 +413,14 @@ const SalesPage = () => {
                 >
                   <Filter className="h-4 w-4 text-gray-500" />
                   <span>Reset Filters</span>
+                </button>
+                <button
+                  onClick={refreshData}
+                  disabled={isLoading}
+                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
                 </button>
               </div>
             </div>
@@ -574,13 +647,45 @@ const SalesPage = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {statsCards.map((card) => (
-              <div key={card.id} className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-xl font-bold text-black">{card.title}</h3>
-                <p className="text-sm text-gray-500 mt-1">{card.description}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            {isLoading ? (
+              // Loading state for stats cards
+              Array(6).fill(0).map((_, index) => (
+                <div key={index} className="bg-white p-6 rounded-lg shadow-sm animate-pulse border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-gray-100 rounded-lg">
+                      <div className="h-6 w-6 bg-gray-200 rounded"></div>
+                    </div>
+                    <div className="h-4 w-4 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                </div>
+              ))
+            ) : error ? (
+              // Error state
+              <div className="col-span-full bg-white p-6 rounded-lg shadow-sm border border-red-200">
+                <p className="text-red-600">Error loading statistics: {error}</p>
               </div>
-            ))}
+            ) : (
+              // Data loaded successfully
+              getStatsCards(salesSummary).map((card) => (
+                <div key={card.id} className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`p-3 rounded-lg ${card.bgColor}`}>
+                      {card.icon}
+                    </div>
+                    <div className="text-gray-400">
+                      <Info className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{card.title}</h3>
+                  <p className="text-3xl font-bold text-gray-900 mb-2">{card.value.toLocaleString()}</p>
+                  <p className="text-sm text-gray-500">{card.description}</p>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Sales Recommendations (Placeholder for future enhancement) */}
