@@ -5,16 +5,18 @@
 // The dashboard displays data such as total clients, plots, new clients, active brokers,
 // website visits, lead conversion, plot enquiries, and top clients.
 
-import { 
+import {
   RotateCcw, Menu, Star
 } from 'lucide-react';
 
 import React, { useState, useRef, useEffect } from 'react';
 
-import { 
+import {
   XCircleIcon
 } from '@heroicons/react/24/outline';
 import Sidebar from '@/components/dashboard/Sidebar';
+import { useAdminAuth } from '@/context/AdminAuthContext';
+import { RoleIndicator } from '@/components/common/PermissionGuard';
 
 // Simple interface for error handling
 interface DashboardData {}
@@ -72,6 +74,7 @@ const cssAnimations = `
 
 // Top Navigation Component
 const TopNavigation = ({ toggleSidebar, refreshData, sidebarOpen }: TopNavigationProps): JSX.Element => {
+  const { user } = useAdminAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -110,7 +113,15 @@ const TopNavigation = ({ toggleSidebar, refreshData, sidebarOpen }: TopNavigatio
         <span className="text-gray-400">/</span>
         <span className="font-medium text-black">Default</span>
       </div>
-      {/* Add other elements of the navigation bar here */}
+
+      <div className="flex items-center space-x-4">
+        {user && (
+          <div className="flex items-center space-x-3">
+            <span className="text-sm text-gray-600">Welcome, {user.name}</span>
+            <RoleIndicator />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
