@@ -1,58 +1,52 @@
 import { NextResponse, NextRequest } from "next/server";
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import pool from '@/lib/db';
 import { z as zod } from "zod";
+import { hasTooManyAttempts, recordFailedAttempt } from "@/lib/auth-utils";
 import { generateToken } from "@/lib/jwt-utils";
-import { authenticateCustomer } from '@/lib/mock-auth-data';
 
 // schema validation with zod
-const emailLoginSchema = zod.object({
+const loginSchema = zod.object({
     email: zod.string().email("Invalid email address"),
     password: zod.string().min(6, "Password must be at least 6 characters"),
-});
-
-const phoneLoginSchema = zod.object({
-    phone: zod.string().min(10, "Phone number must be at least 10 digits"),
-    otp: zod.string().length(6, "OTP must be 6 digits"),
 });
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        console.log('Received login request for:', body.email || body.phone);
+        console.log('Received login request for:', body.email);
 
-        let parsedBody;
-        let authResponse;
-
-        // Determine authentication method and validate accordingly
-        if (body.email && body.password) {
-            // Email + Password authentication
-            parsedBody = emailLoginSchema.safeParse(body);
-            if (!parsedBody.success) {
-                return NextResponse.json({ error: parsedBody.error.format() }, { status: 400 });
-            }
-
-            const { email, password } = parsedBody.data;
-            authResponse = await authenticateCustomer({ email, password });
-        } else if (body.phone && body.otp) {
-            // Phone + OTP authentication
-            parsedBody = phoneLoginSchema.safeParse(body);
-            if (!parsedBody.success) {
-                return NextResponse.json({ error: parsedBody.error.format() }, { status: 400 });
-            }
-
-            const { phone, otp } = parsedBody.data;
-            authResponse = await authenticateCustomer({ phone, otp });
-        } else {
-            return NextResponse.json({ error: "Invalid authentication method" }, { status: 400 });
+        // Validate input data
+        const parsedBody = loginSchema.safeParse(body);
+        if (!parsedBody.success) {
+            return NextResponse.json({ error: parsedBody.error.format() }, { status: 400 });
         }
 
-        if (!authResponse.success || !authResponse.user) {
-            return NextResponse.json({
-                error: authResponse.message || "Invalid credentials"
-            }, { status: 401 });
+        const { email, password } = parsedBody.data;
+
+        // Prevent brute-force attacks
+        if (hasTooManyAttempts(email)) {
+            return NextResponse.json(
+                { error: "Too many failed attempts. Try again later." },
+                { status: 429 }
+            );
         }
 
-        const user = authResponse.user;
+        // check if the user exists
+        const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (existingUser.rows.length === 0) {
+            return NextResponse.json({ error: "User does not exist" }, { status: 400 });
+        }
+
+        const user = existingUser.rows[0];
+
+        // Compare password
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            recordFailedAttempt(email);
+            return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+        }
 
         // Generate JWT tokens
         if (!process.env.JWT_SECRET) {
@@ -82,9 +76,7 @@ export async function POST(request: NextRequest) {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role,
-                phone: user.phone,
-                customer_data: user.customer_data
+                role: user.role || 'customer' // Default to customer if role is not set
             }
         });
 

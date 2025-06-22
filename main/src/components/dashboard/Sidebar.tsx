@@ -11,7 +11,8 @@ import {
   MessageSquare,
   CreditCard,
   User,
-  Settings
+  Settings,
+  Package
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -65,6 +66,11 @@ const Sidebar = () => {
       href: '/payments',
       icon: <CreditCard size={20} />,
       label: 'Payments',
+    },
+    {
+      href: '/orders',
+      icon: <Package size={20} />,
+      label: 'Orders',
     },
   ];
 

@@ -412,7 +412,7 @@ const SalesPage = () => {
                   className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 flex items-center space-x-1"
                 >
                   <Filter className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-700">Reset Filters</span>
+                  <span>Reset Filters</span>
                 </button>
                 <button
                   onClick={refreshData}
@@ -434,7 +434,7 @@ const SalesPage = () => {
                     className="flex items-center space-x-1 bg-white border border-gray-300 rounded px-3 py-1.5 text-sm min-w-[120px] justify-between"
                     onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
                   >
-                    <span className="text-gray-700">{selectedPeriod}</span>
+                    <span>{selectedPeriod}</span>
                     <ChevronDown className="h-4 w-4 text-gray-500" />
                   </button>
                   {showPeriodDropdown && (
@@ -469,7 +469,7 @@ const SalesPage = () => {
                         handleDateChange('start', e.target.value);
                         setSelectedPeriod('Custom');
                       }}
-                      className="px-2 py-1.5 text-sm border border-gray-300 rounded w-full sm:w-auto text-gray-700"
+                      className="px-2 py-1.5 text-sm border border-gray-300 rounded w-full sm:w-auto"
                     />
                   </div>
 
@@ -482,7 +482,7 @@ const SalesPage = () => {
                         handleDateChange('end', e.target.value);
                         setSelectedPeriod('Custom');
                       }}
-                      className="px-2 py-1.5 text-sm border border-gray-300 rounded w-full sm:w-auto text-gray-700"
+                      className="px-2 py-1.5 text-sm border border-gray-300 rounded w-full sm:w-auto"
                     />
                   </div>
                 </div>
@@ -493,7 +493,7 @@ const SalesPage = () => {
                     className="flex items-center space-x-1 bg-white border border-gray-300 rounded px-3 py-1.5 text-sm min-w-[140px] justify-between"
                     onClick={() => setShowBrokerDropdown(!showBrokerDropdown)}
                   >
-                    <span className="truncate text-gray-700">{selectedBrokerId ? filterOptions.brokers.find(b => b.id === selectedBrokerId)?.name || 'Select Broker' : 'All Brokers'}</span>
+                    <span className="truncate">{selectedBrokerId ? filterOptions.brokers.find(b => b.id === selectedBrokerId)?.name || 'Select Broker' : 'All Brokers'}</span>
                     <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
                   </button>
                   {showBrokerDropdown && (
@@ -537,7 +537,7 @@ const SalesPage = () => {
                     className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm"
                     onClick={() => handleSortChange('date')}
                   >
-                    <span className="text-gray-700">Date</span>
+                    <span>Date</span>
                     {sortBy === 'date' && (
                       sortOrder === 'asc' ? <SortAsc className="h-4 w-4 text-blue-500" /> : <SortDesc className="h-4 w-4 text-blue-500" />
                     )}
@@ -547,7 +547,7 @@ const SalesPage = () => {
                     className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm"
                     onClick={() => handleSortChange('total_amount')}
                   >
-                    <span className="text-gray-700">Amount</span>
+                    <span>Amount</span>
                     {sortBy === 'total_amount' && (
                       sortOrder === 'asc' ? <SortAsc className="h-4 w-4 text-blue-500" /> : <SortDesc className="h-4 w-4 text-blue-500" />
                     )}

@@ -1,21 +1,29 @@
 import { NextResponse, NextRequest } from "next/server";
+import bcrypt from 'bcrypt';
+import pool from '@/lib/db';
 import { generateToken } from '@/lib/jwt-utils';
-import { authenticateAdmin } from '@/lib/mock-auth-data';
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    // Use mock authentication
-    const authResponse = await authenticateAdmin({ email, password });
+    // Get user from database
+    const result = await pool.query(
+      'SELECT * FROM users WHERE email = $1 AND role = $2',
+      [email.toLowerCase(), 'admin']
+    );
 
-    if (!authResponse.success || !authResponse.user) {
-      return NextResponse.json({
-        error: authResponse.message || "Invalid credentials"
-      }, { status: 401 });
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const user = authResponse.user;
+    const user = result.rows[0];
+
+    // Verify password
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
 
     // Generate admin token
     const adminToken = generateToken({
@@ -32,10 +40,7 @@ export async function POST(request: NextRequest) {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
-        permissions: user.permissions,
-        department: user.department,
-        employee_id: user.employee_id
+        role: user.role
       }
     });
 
