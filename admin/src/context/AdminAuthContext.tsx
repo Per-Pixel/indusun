@@ -53,13 +53,20 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAuth = async () => {
     setIsLoading(true);
     try {
-      // Mock authentication for development
+      // Mock authentication for development using our mock admin users
       // In production, this would be a real API call
+
+      // Import mock admin users dynamically to avoid build issues
+      const { mockAdminUsers } = await import('../data/mockUsers');
+
+      // Use the first admin user as the logged-in user for development
+      const mockAdmin = mockAdminUsers[0]; // Super admin
+
       const mockUser: AdminUser = {
-        id: '1',
-        name: 'Admin User',
-        email: 'admin@indusun.com',
-        role: 'admin'
+        id: mockAdmin.id,
+        name: mockAdmin.name,
+        email: mockAdmin.email,
+        role: mockAdmin.role
       };
 
       // Simulate API delay
@@ -68,7 +75,14 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(mockUser);
     } catch (error) {
       console.error('Authentication check error:', error);
-      setUser(null);
+      // Fallback to basic mock user if import fails
+      const fallbackUser: AdminUser = {
+        id: '1',
+        name: 'Admin User',
+        email: 'admin@indusun.com',
+        role: 'admin'
+      };
+      setUser(fallbackUser);
     } finally {
       setIsLoading(false);
     }

@@ -21,13 +21,15 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // TEMPORARY: Create a mock user for development
+  // TEMPORARY: Create a mock user for development using our actual mock data
   const isDevelopment = process.env.NODE_ENV === 'development';
+
+  // Use the first customer user as default for development
   const mockUser: User = {
-    id: '1',
-    name: 'Development User',
-    email: 'dev@example.com',
-    role: 'broker', // Set to broker for testing broker dashboard
+    id: 'customer_1',
+    name: 'Rajesh Kumar',
+    email: 'rajesh.kumar@email.com',
+    role: 'customer',
   };
 
   const [user, setUser] = useState<User | null>(isDevelopment ? mockUser : null);
@@ -45,11 +47,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    if (isDevelopment) {
-      toast.success('Logout disabled in development mode');
-      return;
-    }
     setUser(null);
+    // Clear any stored tokens
+    document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    toast.success('Logged out successfully');
   };
 
   const checkAuth = async () => {

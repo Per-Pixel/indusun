@@ -171,10 +171,21 @@ const Login = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder="+1 (123) 456-7890"
+                      placeholder="+91 9876543210"
                       className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
                       required
                     />
+                    {/* OTP Option */}
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/otp-login?phone=${encodeURIComponent(formData.phone)}`)}
+                        className="text-blue-800 hover:text-blue-700 font-medium transition-colors text-lg underline"
+                        disabled={!formData.phone}
+                      >
+                        Get OTP to login instead
+                      </button>
+                    </div>
                   </div>
                 )}
 

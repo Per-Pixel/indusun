@@ -5,47 +5,113 @@ import pool from '@/lib/db';
 import { z as zod } from "zod";
 import { hasTooManyAttempts, recordFailedAttempt } from "@/lib/auth-utils";
 import { generateToken } from "@/lib/jwt-utils";
+import { getUserByEmail, getUserByPhone, mockLoginCredentials } from "@/data/mockUsers";
 
-// schema validation with zod
-const loginSchema = zod.object({
+// Enhanced schema validation to support both email and phone login
+const emailLoginSchema = zod.object({
     email: zod.string().email("Invalid email address"),
+    password: zod.string().min(6, "Password must be at least 6 characters"),
+});
+
+const phoneLoginSchema = zod.object({
+    phone: zod.string().min(10, "Invalid phone number"),
     password: zod.string().min(6, "Password must be at least 6 characters"),
 });
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        console.log('Received login request for:', body.email);
+        console.log('Received login request:', body);
 
-        // Validate input data
-        const parsedBody = loginSchema.safeParse(body);
-        if (!parsedBody.success) {
-            return NextResponse.json({ error: parsedBody.error.format() }, { status: 400 });
+        // Determine login method (email or phone)
+        const isEmailLogin = !!body.email;
+        const isPhoneLogin = !!body.phone;
+
+        if (!isEmailLogin && !isPhoneLogin) {
+            return NextResponse.json({ error: "Email or phone number is required" }, { status: 400 });
         }
 
-        const { email, password } = parsedBody.data;
+        let user;
+        let identifier;
+
+        if (isEmailLogin) {
+            // Validate email login
+            const parsedBody = emailLoginSchema.safeParse(body);
+            if (!parsedBody.success) {
+                return NextResponse.json({ error: parsedBody.error.format() }, { status: 400 });
+            }
+
+            const { email, password } = parsedBody.data;
+            identifier = email.toLowerCase();
+
+            // Check mock users first (for development)
+            const mockCredentials = mockLoginCredentials[identifier];
+            if (mockCredentials && mockCredentials.password === password) {
+                user = mockCredentials.user;
+                console.log('✅ Mock user authenticated:', user.name);
+            } else {
+                // Fallback to database only if no mock user found
+                try {
+                    const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [identifier]);
+                    if (existingUser.rows.length === 0) {
+                        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+                    }
+
+                    const dbUser = existingUser.rows[0];
+                    const passwordMatch = await bcrypt.compare(password, dbUser.password);
+                    if (!passwordMatch) {
+                        recordFailedAttempt(identifier);
+                        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+                    }
+                    user = dbUser;
+                } catch (dbError) {
+                    console.log('Database not available, using mock data only');
+                    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+                }
+            }
+        } else {
+            // Validate phone login
+            const parsedBody = phoneLoginSchema.safeParse(body);
+            if (!parsedBody.success) {
+                return NextResponse.json({ error: parsedBody.error.format() }, { status: 400 });
+            }
+
+            const { phone, password } = parsedBody.data;
+            identifier = phone;
+
+            // Check mock users first (for development)
+            const mockCredentials = mockLoginCredentials[phone];
+            if (mockCredentials && mockCredentials.password === password) {
+                user = mockCredentials.user;
+                console.log('✅ Mock user authenticated via phone:', user.name);
+            } else {
+                // Fallback to database only if no mock user found
+                try {
+                    const existingUser = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
+                    if (existingUser.rows.length === 0) {
+                        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+                    }
+
+                    const dbUser = existingUser.rows[0];
+                    const passwordMatch = await bcrypt.compare(password, dbUser.password);
+                    if (!passwordMatch) {
+                        recordFailedAttempt(phone);
+                        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+                    }
+                    user = dbUser;
+                } catch (dbError) {
+                    console.log('Database not available, using mock data only');
+                    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+                }
+            }
+        }
 
         // Prevent brute-force attacks
-        if (hasTooManyAttempts(email)) {
+        if (hasTooManyAttempts && hasTooManyAttempts(identifier)) {
             return NextResponse.json(
                 { error: "Too many failed attempts. Try again later." },
                 { status: 429 }
             );
-        }
-
-        // check if the user exists
-        const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (existingUser.rows.length === 0) {
-            return NextResponse.json({ error: "User does not exist" }, { status: 400 });
-        }
-
-        const user = existingUser.rows[0];
-
-        // Compare password
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) {
-            recordFailedAttempt(email);
-            return NextResponse.json({ error: "Invalid password" }, { status: 401 });
         }
 
         // Generate JWT tokens
@@ -76,6 +142,7 @@ export async function POST(request: NextRequest) {
                 id: user.id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
                 role: user.role || 'customer' // Default to customer if role is not set
             }
         });

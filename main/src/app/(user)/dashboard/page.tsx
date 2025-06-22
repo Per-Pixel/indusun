@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -9,6 +9,8 @@ import PaymentHistory from '@/components/dashboard/PaymentHistory';
 import RemainingAmount from '@/components/dashboard/RemainingAmount';
 import TransactionList from '@/components/dashboard/TransactionList';
 import { FileText, CreditCard } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { getUserById, getCustomerPayments, getCustomerTransactions } from '@/data/mockUsers';
 
 // Mock data
 const mockPayments = [
@@ -54,18 +56,49 @@ const mockTransactions = [
 
 const Dashboard = () => {
   const router = useRouter();
+  const { user } = useAuth();
   const [showNotification, setShowNotification] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
+  const [userPayments, setUserPayments] = useState<any[]>([]);
+  const [userTransactions, setUserTransactions] = useState<any[]>([]);
+
+  // Load user data when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      const fullUserData = getUserById(user.id);
+      if (fullUserData) {
+        setUserData(fullUserData);
+        setUserPayments(getCustomerPayments(user.id));
+        setUserTransactions(getCustomerTransactions(user.id));
+      }
+    }
+  }, [user]);
 
   const handlePayNow = () => {
     // Handle payment logic
     console.log('Pay now clicked');
+    router.push('/payments');
   };
+
+  // Show loading state if user is not loaded yet
+  if (!user || !userData) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-800 mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       {/* Welcome Section */}
       <div className="mb-4 w-full">
-        <h1 className="text-2xl font-semibold mb-1 text-black">Hello, Chotu</h1>
+        <h1 className="text-2xl font-semibold mb-1 text-black">Hello, {userData.name.split(' ')[0]}</h1>
         <p className="text-gray-500 text-sm">Your current summary and activity.</p>
       </div>
 
@@ -73,14 +106,14 @@ const Dashboard = () => {
       <div className="hidden md:grid grid-cols-3 gap-4 mb-6">
         <SummaryCard
           title="Overdue Invoices"
-          amount="INR 6,947.00"
+          amount={userData.overdueAmount || "INR 0.00"}
           icon={<FileText size={20} />}
           onClick={() => router.push('/invoices')}
         />
 
         <SummaryCard
           title="Upcoming Payments"
-          amount="INR 6,947.00"
+          amount={userData.upcomingAmount || "INR 0.00"}
           icon={<CreditCard size={20} />}
           onClick={() => router.push('/payments')}
         />
@@ -89,16 +122,18 @@ const Dashboard = () => {
           title="Your Agent"
           image={
             <div className="flex items-center">
-              <span className="mr-2 text-black">Arshir Patel</span>
-              <div className="h-10 w-10 rounded-full overflow-hidden">
-                <Image
-                  src="/auth/Agents/agent-03.jpg"
-                  alt="Agent Profile"
-                  width={40}
-                  height={40}
-                  className="object-cover"
-                />
-              </div>
+              <span className="mr-2 text-black">{userData.agentName || 'No Agent Assigned'}</span>
+              {userData.agentImage && (
+                <div className="h-10 w-10 rounded-full overflow-hidden">
+                  <Image
+                    src={userData.agentImage}
+                    alt="Agent Profile"
+                    width={40}
+                    height={40}
+                    className="object-cover"
+                  />
+                </div>
+              )}
             </div>
           }
           onClick={() => router.push('/agent')}
@@ -109,7 +144,7 @@ const Dashboard = () => {
       <div className="grid md:hidden grid-cols-2 gap-4 mb-6">
         <SummaryCard
           title="Upcoming Payments"
-          amount="INR 6,947.00"
+          amount={userData.upcomingAmount || "INR 0.00"}
           badge="9 New"
           onClick={() => router.push('/payments')}
           viewAlign="left"
@@ -120,16 +155,18 @@ const Dashboard = () => {
           badge="9 New"
           customContent={
             <div className="flex items-center justify-between mt-3 mb-1">
-              <div className="text-sm font-medium text-black">Arshir Patel</div>
-              <div className="h-7 w-7 rounded-full overflow-hidden">
-                <Image
-                  src="/auth/Agents/agent-03.jpg"
-                  alt="Agent Profile"
-                  width={28}
-                  height={28}
-                  className="object-cover"
-                />
-              </div>
+              <div className="text-sm font-medium text-black">{userData.agentName || 'No Agent'}</div>
+              {userData.agentImage && (
+                <div className="h-7 w-7 rounded-full overflow-hidden">
+                  <Image
+                    src={userData.agentImage}
+                    alt="Agent Profile"
+                    width={28}
+                    height={28}
+                    className="object-cover"
+                  />
+                </div>
+              )}
             </div>
           }
           onClick={() => router.push('/agent')}
@@ -140,11 +177,11 @@ const Dashboard = () => {
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-3 gap-4 mt-6">
         <div>
-          <RemainingAmount amount="6,071.00" onPayNow={handlePayNow} />
+          <RemainingAmount amount={userData.remainingAmount || "0.00"} onPayNow={handlePayNow} />
         </div>
 
         <div className="md:col-span-2">
-          <PaymentHistory payments={mockPayments} />
+          <PaymentHistory payments={userPayments.length > 0 ? userPayments : mockPayments} />
         </div>
       </div>
 
@@ -155,8 +192,8 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 relative overflow-hidden">
             <div className="relative z-10">
               <h3 className="text-sm font-medium text-gray-500">Remaining Amount</h3>
-              <p className="text-lg font-semibold mt-1 text-black">INR 6,071.00</p>
-              <p className="text-xs text-gray-500 mt-1">Lorem ipsum dolor amet, consectetur adipiscing elit.</p>
+              <p className="text-lg font-semibold mt-1 text-black">INR {userData.remainingAmount || "0.00"}</p>
+              <p className="text-xs text-gray-500 mt-1">Your outstanding balance for property payments.</p>
             </div>
             <div className="absolute right-0 top-0 w-20 h-20 rounded-bl-3xl overflow-hidden bg-black">
               <div className="w-full h-full flex items-center justify-center">
@@ -184,12 +221,12 @@ const Dashboard = () => {
 
         {/* Transaction List */}
         <div>
-          <TransactionList transactions={mockTransactions} />
+          <TransactionList transactions={userTransactions.length > 0 ? userTransactions.slice(0, 4) : mockTransactions} />
         </div>
 
         {/* Payment History */}
         <div>
-          <PaymentHistory payments={mockPayments} />
+          <PaymentHistory payments={userPayments.length > 0 ? userPayments : mockPayments} />
         </div>
       </div>
 
