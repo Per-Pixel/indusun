@@ -198,18 +198,82 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
         <div className="relative ml-3" ref={profileMenuRef}>
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 hover:bg-gray-50 p-1 rounded-lg transition-colors"
           >
-            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-              <User size={16} className="text-gray-600" />
+            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+              {user?.profile_picture ? (
+                <img
+                  src={user.profile_picture}
+                  alt={user.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <User size={16} className="text-gray-600" />
+              )}
             </div>
-            <span className="ml-2 text-gray-700 hidden md:block">{user?.name || 'Admin User'}</span>
+            <div className="ml-2 hidden md:block">
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-700 font-medium">{user?.name || 'Admin User'}</span>
+                {user?.role === 'super_admin' && (
+                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                    Super Admin
+                  </span>
+                )}
+                {user?.role === 'admin' && (
+                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                    Admin
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-gray-500">
+                {user?.department || 'Administration'}
+              </div>
+            </div>
             <ChevronDown size={16} className="ml-1 text-gray-500 hidden md:block" />
           </button>
 
           {showProfileMenu && (
-            <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+            <div className="origin-top-right absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
               <div className="py-1">
+                {/* User Info Header */}
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      {user?.profile_picture ? (
+                        <img
+                          src={user.profile_picture}
+                          alt={user.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <User size={20} className="text-gray-600" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{user?.name || 'Admin User'}</div>
+                      <div className="text-sm text-gray-500">{user?.email}</div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        {user?.role === 'super_admin' && (
+                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                            Super Admin
+                          </span>
+                        )}
+                        {user?.role === 'admin' && (
+                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                            Admin
+                          </span>
+                        )}
+                        {user?.department && (
+                          <span className="text-xs text-gray-500">
+                            {user.department}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);

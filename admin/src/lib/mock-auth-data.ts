@@ -149,8 +149,8 @@ export const MOCK_ADMIN_USERS: AdminUser[] = [
   },
   {
     id: '2',
-    name: 'Sarika Singh',
-    email: 'sarika.singh@indusun.com',
+    name: 'Sarkia Singh',
+    email: 'priya.sharma@indusun.com',
     password: 'Admin@123', // In production, this would be hashed
     role: 'admin',
     created_at: '2023-03-15T00:00:00Z',
@@ -351,7 +351,7 @@ export const getMockAdminDashboardData = (): AdminDashboardData => {
       {
         id: 'act_001',
         admin_id: '2',
-        admin_name: 'Sarika Singh',
+        admin_name: 'Sarkia Singh',
         action: 'Updated user profile',
         target: 'User: Hritik',
         timestamp: '2024-12-20T09:45:00Z',
@@ -369,7 +369,7 @@ export const getMockAdminDashboardData = (): AdminDashboardData => {
       {
         id: 'act_003',
         admin_id: '2',
-        admin_name: 'Sarika Singh',
+        admin_name: 'Sarkia Singh',
         action: 'Processed payment',
         target: 'Payment ID: pay_001',
         timestamp: '2024-12-19T16:20:00Z',
@@ -396,7 +396,7 @@ export const DEFAULT_ADMIN_CREDENTIALS = {
     password: 'SuperAdmin@123'
   },
   ADMIN: {
-    email: 'sarika.singh@indusun.com',
+    email: 'priya.sharma@indusun.com',
     password: 'Admin@123'
   }
 };

@@ -20,8 +20,11 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
-    password: ''
+    password: '',
+    otp: ''
   });
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
   const { login } = useAuth();
 
   // Show message if redirected with a message parameter
@@ -47,17 +50,98 @@ const Login = () => {
     });
   };
 
+  const handleMethodChange = (method: 'email' | 'phone') => {
+    setLoginMethod(method);
+    setOtpSent(false);
+    setFormData({
+      email: '',
+      phone: '',
+      password: '',
+      otp: ''
+    });
+  };
+
+  const sendOTP = async () => {
+    if (!formData.phone) {
+      toast.error('Please enter your phone number');
+      return;
+    }
+
+    setOtpLoading(true);
+    try {
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone: formData.phone }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOtpSent(true);
+        toast.success('OTP sent successfully');
+        // In development, show the OTP
+        if (data.otp) {
+          toast.success(`Development OTP: ${data.otp}`);
+        }
+      } else {
+        toast.error(data.error || 'Failed to send OTP');
+      }
+    } catch (error) {
+      console.error('Send OTP error:', error);
+      toast.error('Failed to send OTP');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Use email for login (phone login not implemented in mock data yet)
-      const email = loginMethod === 'email' ? formData.email : formData.phone;
-      const success = await login(email, formData.password);
+      let success = false;
+
+      if (loginMethod === 'email') {
+        // Email + Password authentication
+        success = await login(formData.email, formData.password);
+      } else {
+        // Phone + OTP authentication
+        if (!otpSent) {
+          toast.error('Please send OTP first');
+          setIsLoading(false);
+          return;
+        }
+
+        // For phone login, we need to update the auth context to handle OTP
+        // For now, we'll use a direct API call
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            phone: formData.phone,
+            otp: formData.otp
+          }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          // Update auth context with user data
+          success = true;
+          // Store user data in localStorage for now
+          localStorage.setItem('customer_token', `phone_token_${Date.now()}`);
+          localStorage.setItem('customer_user', JSON.stringify(data.user));
+        } else {
+          toast.error(data.error || 'Login failed');
+        }
+      }
 
       if (success) {
-        router.push('/dashboard'); // Redirect to dashboard or home
+        router.push('/dashboard');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -118,14 +202,14 @@ const Login = () => {
               <div className="flex space-x-6 mb-6">
                 <button
                   type="button"
-                  onClick={() => setLoginMethod('email')}
+                  onClick={() => handleMethodChange('email')}
                   className={`flex-1 py-3 border-b-2 ${loginMethod === 'email' ? 'border-blue-800 text-blue-800' : 'border-gray-200 text-gray-500 hover:text-blue-800 hover:border-blue-800'} font-medium transition-colors text-xl`}
                 >
                   Email
                 </button>
                 <button
                   type="button"
-                  onClick={() => setLoginMethod('phone')}
+                  onClick={() => handleMethodChange('phone')}
                   className={`flex-1 py-3 border-b-2 ${loginMethod === 'phone' ? 'border-blue-800 text-blue-800' : 'border-gray-200 text-gray-500 hover:text-blue-800 hover:border-blue-800'} font-medium transition-colors text-xl`}
                 >
                   Phone
@@ -143,39 +227,70 @@ const Login = () => {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="example@email.com"
-                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14 text-black placeholder-gray-400"
                       required
                     />
                   </div>
                 ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="phone" className="block text-xl font-medium text-gray-700 mb-3">Phone Number</label>
+                      <div className="flex gap-2">
+                        <input
+                          id="phone"
+                          type="tel"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          placeholder="+91 98765 12345"
+                          className="flex-1 p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14 text-black placeholder-gray-400"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={sendOTP}
+                          disabled={otpLoading || !formData.phone}
+                          className="px-6 py-4 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed text-lg"
+                        >
+                          {otpLoading ? 'Sending...' : otpSent ? 'Resend' : 'Send OTP'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {otpSent && (
+                      <div>
+                        <label htmlFor="otp" className="block text-xl font-medium text-gray-700 mb-3">Enter OTP</label>
+                        <input
+                          id="otp"
+                          type="text"
+                          name="otp"
+                          value={formData.otp}
+                          onChange={handleChange}
+                          placeholder="123456"
+                          maxLength={6}
+                          className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14 text-black placeholder-gray-400"
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {loginMethod === 'email' && (
                   <div>
-                    <label htmlFor="phone" className="block text-xl font-medium text-gray-700 mb-3">Phone Number</label>
+                    <label htmlFor="password" className="block text-xl font-medium text-gray-700 mb-3">Password</label>
                     <input
-                      id="phone"
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
+                      id="password"
+                      type="password"
+                      name="password"
+                      value={formData.password}
                       onChange={handleChange}
-                      placeholder="+1 (123) 456-7890"
-                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
+                      placeholder="••••••••"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14 text-black placeholder-gray-400"
                       required
                     />
                   </div>
                 )}
-
-                <div>
-                  <label htmlFor="password" className="block text-xl font-medium text-gray-700 mb-3">Password</label>
-                  <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
-                    required
-                  />
-                </div>
 
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">

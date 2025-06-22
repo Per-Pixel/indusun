@@ -5,26 +5,46 @@ import { generateToken } from "@/lib/jwt-utils";
 import { authenticateCustomer } from '@/lib/mock-auth-data';
 
 // schema validation with zod
-const loginSchema = zod.object({
+const emailLoginSchema = zod.object({
     email: zod.string().email("Invalid email address"),
     password: zod.string().min(6, "Password must be at least 6 characters"),
+});
+
+const phoneLoginSchema = zod.object({
+    phone: zod.string().min(10, "Phone number must be at least 10 digits"),
+    otp: zod.string().length(6, "OTP must be 6 digits"),
 });
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        console.log('Received login request for:', body.email);
+        console.log('Received login request for:', body.email || body.phone);
 
-        // Validate input data
-        const parsedBody = loginSchema.safeParse(body);
-        if (!parsedBody.success) {
-            return NextResponse.json({ error: parsedBody.error.format() }, { status: 400 });
+        let parsedBody;
+        let authResponse;
+
+        // Determine authentication method and validate accordingly
+        if (body.email && body.password) {
+            // Email + Password authentication
+            parsedBody = emailLoginSchema.safeParse(body);
+            if (!parsedBody.success) {
+                return NextResponse.json({ error: parsedBody.error.format() }, { status: 400 });
+            }
+
+            const { email, password } = parsedBody.data;
+            authResponse = await authenticateCustomer({ email, password });
+        } else if (body.phone && body.otp) {
+            // Phone + OTP authentication
+            parsedBody = phoneLoginSchema.safeParse(body);
+            if (!parsedBody.success) {
+                return NextResponse.json({ error: parsedBody.error.format() }, { status: 400 });
+            }
+
+            const { phone, otp } = parsedBody.data;
+            authResponse = await authenticateCustomer({ phone, otp });
+        } else {
+            return NextResponse.json({ error: "Invalid authentication method" }, { status: 400 });
         }
-
-        const { email, password } = parsedBody.data;
-
-        // Use mock authentication
-        const authResponse = await authenticateCustomer({ email, password });
 
         if (!authResponse.success || !authResponse.user) {
             return NextResponse.json({

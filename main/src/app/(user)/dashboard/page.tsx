@@ -9,6 +9,7 @@ import PaymentHistory from '@/components/dashboard/PaymentHistory';
 import RemainingAmount from '@/components/dashboard/RemainingAmount';
 import TransactionList from '@/components/dashboard/TransactionList';
 import { FileText, CreditCard } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 // Mock data
 const mockPayments = [
@@ -54,6 +55,7 @@ const mockTransactions = [
 
 const Dashboard = () => {
   const router = useRouter();
+  const { user, dashboardData, isLoading } = useAuth();
   const [showNotification, setShowNotification] = useState(true);
 
   const handlePayNow = () => {
@@ -61,11 +63,35 @@ const Dashboard = () => {
     console.log('Pay now clicked');
   };
 
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!user) {
+    router.push('/auth/login');
+    return null;
+  }
+
+  // Get user's broker information
+  const userProperty = user.customer_data?.properties[0];
+  const brokerName = userProperty?.broker_name || 'Arshir Patel';
+
+  // Calculate amounts from dashboard data
+  const upcomingPaymentAmount = dashboardData?.nextEMIAmount || 0;
+  const overdueAmount = dashboardData?.accountSummary.overdueAmount || 0;
+  const remainingAmount = dashboardData?.accountSummary.remainingAmount || 0;
+
   return (
     <DashboardLayout>
       {/* Welcome Section */}
       <div className="mb-4 w-full">
-        <h1 className="text-2xl font-semibold mb-1 text-black">Hello, Chotu</h1>
+        <h1 className="text-2xl font-semibold mb-1 text-black">Hello, {user.name}</h1>
         <p className="text-gray-500 text-sm">Your current summary and activity.</p>
       </div>
 
@@ -73,14 +99,14 @@ const Dashboard = () => {
       <div className="hidden md:grid grid-cols-3 gap-4 mb-6">
         <SummaryCard
           title="Overdue Invoices"
-          amount="INR 6,947.00"
+          amount={`INR ${overdueAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
           icon={<FileText size={20} />}
           onClick={() => router.push('/invoices')}
         />
 
         <SummaryCard
           title="Upcoming Payments"
-          amount="INR 6,947.00"
+          amount={`INR ${upcomingPaymentAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
           icon={<CreditCard size={20} />}
           onClick={() => router.push('/payments')}
         />
@@ -89,7 +115,7 @@ const Dashboard = () => {
           title="Your Agent"
           image={
             <div className="flex items-center">
-              <span className="mr-2 text-black">Arshir Patel</span>
+              <span className="mr-2 text-black">{brokerName}</span>
               <div className="h-10 w-10 rounded-full overflow-hidden">
                 <Image
                   src="/auth/Agents/agent-03.jpg"
@@ -109,18 +135,18 @@ const Dashboard = () => {
       <div className="grid md:hidden grid-cols-2 gap-4 mb-6">
         <SummaryCard
           title="Upcoming Payments"
-          amount="INR 6,947.00"
-          badge="9 New"
+          amount={`INR ${upcomingPaymentAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+          badge={dashboardData?.upcomingPayments.length ? `${dashboardData.upcomingPayments.length} New` : undefined}
           onClick={() => router.push('/payments')}
           viewAlign="left"
         />
 
         <SummaryCard
           title="Your Agent"
-          badge="9 New"
+          badge={dashboardData?.recentTransactions.length ? `${dashboardData.recentTransactions.length} New` : undefined}
           customContent={
             <div className="flex items-center justify-between mt-3 mb-1">
-              <div className="text-sm font-medium text-black">Arshir Patel</div>
+              <div className="text-sm font-medium text-black">{brokerName}</div>
               <div className="h-7 w-7 rounded-full overflow-hidden">
                 <Image
                   src="/auth/Agents/agent-03.jpg"
@@ -140,11 +166,14 @@ const Dashboard = () => {
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-3 gap-4 mt-6">
         <div>
-          <RemainingAmount amount="6,071.00" onPayNow={handlePayNow} />
+          <RemainingAmount
+            amount={remainingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            onPayNow={handlePayNow}
+          />
         </div>
 
         <div className="md:col-span-2">
-          <PaymentHistory payments={mockPayments} />
+          <PaymentHistory payments={dashboardData?.recentTransactions || []} />
         </div>
       </div>
 
@@ -155,7 +184,7 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 relative overflow-hidden">
             <div className="relative z-10">
               <h3 className="text-sm font-medium text-gray-500">Remaining Amount</h3>
-              <p className="text-lg font-semibold mt-1 text-black">INR 6,071.00</p>
+              <p className="text-lg font-semibold mt-1 text-black">INR {remainingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
               <p className="text-xs text-gray-500 mt-1">Lorem ipsum dolor amet, consectetur adipiscing elit.</p>
             </div>
             <div className="absolute right-0 top-0 w-20 h-20 rounded-bl-3xl overflow-hidden bg-black">
@@ -184,12 +213,12 @@ const Dashboard = () => {
 
         {/* Transaction List */}
         <div>
-          <TransactionList transactions={mockTransactions} />
+          <TransactionList transactions={dashboardData?.recentTransactions || []} />
         </div>
 
         {/* Payment History */}
         <div>
-          <PaymentHistory payments={mockPayments} />
+          <PaymentHistory payments={dashboardData?.recentTransactions || []} />
         </div>
       </div>
 

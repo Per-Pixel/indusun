@@ -9,6 +9,7 @@ import PaymentHistory from '@/components/dashboard/PaymentHistory';
 import RemainingAmount from '@/components/dashboard/RemainingAmount';
 import TransactionList from '@/components/dashboard/TransactionList';
 import { FileText, CreditCard } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 // Mock data
 const mockPayments = [
@@ -54,6 +55,7 @@ const mockTransactions = [
 
 const Dashboard = () => {
   const router = useRouter();
+  const { user, dashboardData, isLoading } = useAuth();
   const [showNotification, setShowNotification] = useState(true);
 
   const handlePayNow = () => {
@@ -61,11 +63,35 @@ const Dashboard = () => {
     console.log('Pay now clicked');
   };
 
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!user) {
+    router.push('/auth/login');
+    return null;
+  }
+
+  // Get user's broker information
+  const userProperty = user.customer_data?.properties[0];
+  const brokerName = userProperty?.broker_name || 'Arshir Patel';
+
+  // Calculate amounts from dashboard data
+  const upcomingPaymentAmount = dashboardData?.nextEMIAmount || 0;
+  const overdueAmount = dashboardData?.accountSummary.overdueAmount || 0;
+  const remainingAmount = dashboardData?.accountSummary.remainingAmount || 0;
+
   return (
     <DashboardLayout>
       {/* Welcome Section */}
       <div className="mb-4 w-full">
-        <h1 className="text-2xl font-semibold mb-1 text-black">Hello, Chotu</h1>
+        <h1 className="text-2xl font-semibold mb-1 text-black">Hello, {user.name}</h1>
         <p className="text-gray-500 text-sm">Your current summary and activity.</p>
       </div>
 

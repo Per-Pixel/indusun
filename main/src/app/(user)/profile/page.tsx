@@ -2,174 +2,326 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useAuth } from '@/context/AuthContext';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { motion } from 'framer-motion';
+import { User, Phone, Mail, MapPin, Calendar, CreditCard, FileText, Edit2, Save, X } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const Profile = () => {
+  const { user, isLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: 'Chotu Kumar',
-    email: 'chotu.kumar@example.com',
-    phone: '+91 9876543210',
-    address: '123 Main Street, Mumbai, India',
-    bio: 'I am a customer looking for real estate opportunities.'
+  const [editedData, setEditedData] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    occupation: '',
+    annual_income: 0
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  React.useEffect(() => {
+    if (user?.customer_data) {
+      setEditedData({
+        name: user.name || '',
+        phone: user.phone || '',
+        address: user.customer_data.address || '',
+        occupation: user.customer_data.occupation || '',
+        annual_income: user.customer_data.annual_income || 0
+      });
+    }
+  }, [user]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Save profile data
+  const handleSave = () => {
+    // In a real app, this would make an API call to update user data
+    toast.success('Profile updated successfully');
     setIsEditing(false);
   };
 
+  const handleCancel = () => {
+    // Reset to original data
+    if (user?.customer_data) {
+      setEditedData({
+        name: user.name || '',
+        phone: user.phone || '',
+        address: user.customer_data.address || '',
+        occupation: user.customer_data.occupation || '',
+        annual_income: user.customer_data.annual_income || 0
+      });
+    }
+    setIsEditing(false);
+  };
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setEditedData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-600">Please log in to view your profile</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const customerData = user.customer_data;
+
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-semibold mb-6">My Profile</h1>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-          {/* Profile Header */}
-          <div className="bg-green-800 h-32 relative">
-            <div className="absolute -bottom-16 left-8">
-              <div className="h-32 w-32 rounded-full border-4 border-white overflow-hidden bg-white">
-                <Image
-                  src="/auth/User Profile/Profile Placehlder.png"
-                  alt="Profile"
-                  width={128}
-                  height={128}
-                  className="object-cover"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Profile Content */}
-          <div className="pt-20 px-8 pb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">{formData.name}</h2>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsEditing(!isEditing)}
-                className="px-4 py-2 bg-green-800 text-white rounded-md font-medium hover:bg-green-900 transition-colors"
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+          {!isEditing ? (
+            <button
+              onClick={handleEdit}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Edit2 size={16} />
+              <span>Edit Profile</span>
+            </button>
+          ) : (
+            <div className="flex space-x-2">
+              <button
+                onClick={handleSave}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
-                {isEditing ? 'Cancel' : 'Edit Profile'}
-              </motion.button>
+                <Save size={16} />
+                <span>Save</span>
+              </button>
+              <button
+                onClick={handleCancel}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                <X size={16} />
+                <span>Cancel</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Personal Information */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <User className="mr-2" size={20} />
+            Personal Information
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-lg">{user.name}</p>
+              )}
             </div>
 
-            {isEditing ? (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input
-                      id="name"
-                      name="name"
-                      type="text"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-green-800 focus:ring-1 focus:ring-green-800 transition-all"
-                    />
-                  </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <p className="p-3 bg-gray-50 rounded-lg flex items-center">
+                <Mail className="mr-2" size={16} />
+                {user.email}
+              </p>
+            </div>
 
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-green-800 focus:ring-1 focus:ring-green-800 transition-all"
-                    />
-                  </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+              {isEditing ? (
+                <input
+                  type="tel"
+                  value={editedData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-lg flex items-center">
+                  <Phone className="mr-2" size={16} />
+                  {user.phone}
+                </p>
+              )}
+            </div>
 
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-green-800 focus:ring-1 focus:ring-green-800 transition-all"
-                    />
-                  </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+              <p className="p-3 bg-gray-50 rounded-lg flex items-center">
+                <Calendar className="mr-2" size={16} />
+                {customerData?.date_of_birth ? new Date(customerData.date_of_birth).toLocaleDateString() : 'Not provided'}
+              </p>
+            </div>
 
-                  <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <input
-                      id="address"
-                      name="address"
-                      type="text"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-green-800 focus:ring-1 focus:ring-green-800 transition-all"
-                    />
-                  </div>
-                </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+              {isEditing ? (
+                <textarea
+                  value={editedData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-lg flex items-start">
+                  <MapPin className="mr-2 mt-1" size={16} />
+                  {customerData?.address || 'Not provided'}
+                </p>
+              )}
+            </div>
 
-                <div>
-                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                  <textarea
-                    id="bio"
-                    name="bio"
-                    rows={4}
-                    value={formData.bio}
-                    onChange={handleChange}
-                    className="w-full p-2.5 bg-gray-50 rounded-md border border-gray-300 focus:border-green-800 focus:ring-1 focus:ring-green-800 transition-all"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Occupation</label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedData.occupation}
+                  onChange={(e) => handleInputChange('occupation', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-lg">{customerData?.occupation || 'Not provided'}</p>
+              )}
+            </div>
 
-                <div className="flex justify-end">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    type="submit"
-                    className="px-4 py-2 bg-green-800 text-white rounded-md font-medium hover:bg-green-900 transition-colors"
-                  >
-                    Save Changes
-                  </motion.button>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Full Name</h3>
-                    <p className="mt-1">{formData.name}</p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Email</h3>
-                    <p className="mt-1">{formData.email}</p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Phone</h3>
-                    <p className="mt-1">{formData.phone}</p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Address</h3>
-                    <p className="mt-1">{formData.address}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Bio</h3>
-                  <p className="mt-1">{formData.bio}</p>
-                </div>
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Annual Income</label>
+              {isEditing ? (
+                <input
+                  type="number"
+                  value={editedData.annual_income}
+                  onChange={(e) => handleInputChange('annual_income', parseInt(e.target.value) || 0)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-lg">
+                  ₹{customerData?.annual_income?.toLocaleString('en-IN') || 'Not provided'}
+                </p>
+              )}
+            </div>
           </div>
+        </div>
+
+        {/* Account Information */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <CreditCard className="mr-2" size={20} />
+            Account Information
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">
+                ₹{customerData?.account_balance?.toLocaleString('en-IN') || '0'}
+              </div>
+              <div className="text-sm text-gray-600">Account Balance</div>
+            </div>
+
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">
+                {customerData?.credit_score || 'N/A'}
+              </div>
+              <div className="text-sm text-gray-600">Credit Score</div>
+            </div>
+
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600 capitalize">
+                {customerData?.kyc_status || 'Pending'}
+              </div>
+              <div className="text-sm text-gray-600">KYC Status</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Properties */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <FileText className="mr-2" size={20} />
+            My Properties
+          </h2>
+
+          {customerData?.properties && customerData.properties.length > 0 ? (
+            <div className="space-y-4">
+              {customerData.properties.map((property) => (
+                <div key={property.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-lg">{property.title}</h3>
+                      <p className="text-gray-600">{property.location}</p>
+                      <p className="text-sm text-gray-500">{property.type} • {property.size}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-green-600">
+                        ₹{property.current_value.toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-sm text-gray-500">Current Value</div>
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
+                        property.status === 'owned' ? 'bg-green-100 text-green-800' :
+                        property.status === 'under_construction' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {property.status.replace('_', ' ').toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No properties found</p>
+          )}
+        </div>
+
+        {/* Documents */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <FileText className="mr-2" size={20} />
+            Documents
+          </h2>
+
+          {customerData?.documents && customerData.documents.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {customerData.documents.map((doc) => (
+                <div key={doc.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium">{doc.name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      doc.verification_status === 'verified' ? 'bg-green-100 text-green-800' :
+                      doc.verification_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {doc.verification_status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 capitalize">{doc.type.replace('_', ' ')}</p>
+                  <p className="text-xs text-gray-500">
+                    Uploaded: {new Date(doc.upload_date).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No documents found</p>
+          )}
         </div>
       </div>
     </DashboardLayout>

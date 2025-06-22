@@ -24,6 +24,243 @@ import {
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 
+// Helper function to get all customer invoices from main application data
+const getAllCustomerInvoices = () => {
+  // Import customer data from main application
+  const fs = require('fs');
+  const path = require('path');
+
+  try {
+    // Read the main application mock data
+    const mainDataPath = path.join(process.cwd(), '..', 'main', 'src', 'lib', 'mock-auth-data.ts');
+
+    // For now, we'll use hardcoded data that matches the main application structure
+    // In a real application, this would be fetched from a shared database or API
+    const customerInvoices = [
+      // Hritik's invoices
+      {
+        id: 'inv_001',
+        invoice_number: 'INV-2024-001',
+        date: '2024-12-01',
+        due_date: '2024-12-15',
+        amount: 65000,
+        tax_amount: 11700,
+        total_amount: 76700,
+        status: 'paid',
+        customer_name: 'Hritik',
+        customer_id: '3',
+        property_id: 'prop_001',
+        description: 'Monthly EMI Payment - December 2024',
+        payment_terms: 'Net 15 days',
+        invoice_url: '/invoices/INV-2024-001.pdf',
+        items: [
+          {
+            description: 'Principal Amount',
+            quantity: 1,
+            rate: 45000,
+            amount: 45000,
+          },
+          {
+            description: 'Interest Amount',
+            quantity: 1,
+            rate: 20000,
+            amount: 20000,
+          },
+        ],
+      },
+      {
+        id: 'inv_003',
+        invoice_number: 'INV-2024-003',
+        date: '2024-11-01',
+        due_date: '2024-11-15',
+        amount: 45000,
+        tax_amount: 8100,
+        total_amount: 53100,
+        status: 'overdue',
+        customer_name: 'Hritik',
+        customer_id: '3',
+        property_id: 'prop_001',
+        description: 'Monthly EMI Payment - November 2024',
+        payment_terms: 'Net 15 days',
+        invoice_url: '/invoices/INV-2024-003.pdf',
+        late_fee: 2500,
+        penalty_charges: 1000,
+        days_overdue: 37,
+        items: [
+          {
+            description: 'Principal Amount',
+            quantity: 1,
+            rate: 30000,
+            amount: 30000,
+          },
+          {
+            description: 'Interest Amount',
+            quantity: 1,
+            rate: 15000,
+            amount: 15000,
+          },
+        ],
+      },
+      {
+        id: 'inv_004',
+        invoice_number: 'INV-2024-004',
+        date: '2024-10-01',
+        due_date: '2024-10-15',
+        amount: 65000,
+        tax_amount: 11700,
+        total_amount: 76700,
+        status: 'overdue',
+        customer_name: 'Hritik',
+        customer_id: '3',
+        property_id: 'prop_001',
+        description: 'Monthly EMI Payment - October 2024',
+        payment_terms: 'Net 15 days',
+        invoice_url: '/invoices/INV-2024-004.pdf',
+        late_fee: 3500,
+        penalty_charges: 1500,
+        days_overdue: 68,
+        items: [
+          {
+            description: 'Principal Amount',
+            quantity: 1,
+            rate: 45000,
+            amount: 45000,
+          },
+          {
+            description: 'Interest Amount',
+            quantity: 1,
+            rate: 20000,
+            amount: 20000,
+          },
+        ],
+      },
+      {
+        id: 'inv_005',
+        invoice_number: 'INV-2024-005',
+        date: '2024-09-01',
+        due_date: '2024-09-15',
+        amount: 25000,
+        tax_amount: 4500,
+        total_amount: 29500,
+        status: 'overdue',
+        customer_name: 'Hritik',
+        customer_id: '3',
+        property_id: 'prop_001',
+        description: 'Maintenance Charges - September 2024',
+        payment_terms: 'Net 15 days',
+        invoice_url: '/invoices/INV-2024-005.pdf',
+        late_fee: 1500,
+        penalty_charges: 750,
+        days_overdue: 98,
+        items: [
+          {
+            description: 'Maintenance Fee',
+            quantity: 1,
+            rate: 25000,
+            amount: 25000,
+          },
+        ],
+      },
+      // Romit's invoices
+      {
+        id: 'inv_002',
+        invoice_number: 'INV-2024-002',
+        date: '2024-12-01',
+        due_date: '2024-12-15',
+        amount: 95000,
+        tax_amount: 17100,
+        total_amount: 112100,
+        status: 'paid',
+        customer_name: 'Romit',
+        customer_id: '4',
+        property_id: 'prop_002',
+        description: 'Monthly EMI Payment - December 2024',
+        payment_terms: 'Net 15 days',
+        invoice_url: '/invoices/INV-2024-002.pdf',
+        items: [
+          {
+            description: 'Principal Amount',
+            quantity: 1,
+            rate: 65000,
+            amount: 65000,
+          },
+          {
+            description: 'Interest Amount',
+            quantity: 1,
+            rate: 30000,
+            amount: 30000,
+          },
+        ],
+      },
+      {
+        id: 'inv_006',
+        invoice_number: 'INV-2024-006',
+        date: '2024-10-01',
+        due_date: '2024-10-15',
+        amount: 75000,
+        tax_amount: 13500,
+        total_amount: 88500,
+        status: 'overdue',
+        customer_name: 'Romit',
+        customer_id: '4',
+        property_id: 'prop_002',
+        description: 'Monthly EMI Payment - October 2024',
+        payment_terms: 'Net 15 days',
+        invoice_url: '/invoices/INV-2024-006.pdf',
+        late_fee: 4000,
+        penalty_charges: 2000,
+        days_overdue: 68,
+        items: [
+          {
+            description: 'Principal Amount',
+            quantity: 1,
+            rate: 50000,
+            amount: 50000,
+          },
+          {
+            description: 'Interest Amount',
+            quantity: 1,
+            rate: 25000,
+            amount: 25000,
+          },
+        ],
+      },
+      {
+        id: 'inv_007',
+        invoice_number: 'INV-2024-007',
+        date: '2024-09-01',
+        due_date: '2024-09-15',
+        amount: 35000,
+        tax_amount: 6300,
+        total_amount: 41300,
+        status: 'overdue',
+        customer_name: 'Romit',
+        customer_id: '4',
+        property_id: 'prop_003',
+        description: 'Plot Development Fee - September 2024',
+        payment_terms: 'Net 15 days',
+        invoice_url: '/invoices/INV-2024-007.pdf',
+        late_fee: 2000,
+        penalty_charges: 1000,
+        days_overdue: 98,
+        items: [
+          {
+            description: 'Development Fee',
+            quantity: 1,
+            rate: 35000,
+            amount: 35000,
+          },
+        ],
+      },
+    ];
+
+    return customerInvoices;
+  } catch (error) {
+    console.error('Error loading customer invoices:', error);
+    return [];
+  }
+};
+
 // Types for invoices
 interface Invoice {
   id: string;
@@ -51,8 +288,49 @@ interface Invoice {
   }[];
 }
 
-// Mock data for invoices
+// Convert customer invoices to admin interface format
+const convertCustomerInvoicesToAdminFormat = () => {
+  const customerInvoices = getAllCustomerInvoices();
+
+  return customerInvoices.map(invoice => ({
+    id: invoice.id,
+    invoiceNumber: invoice.invoice_number,
+    date: invoice.date,
+    dueDate: invoice.due_date,
+    amount: `₹${(invoice.total_amount + (invoice.late_fee || 0) + (invoice.penalty_charges || 0)).toLocaleString('en-IN')}`,
+    status: invoice.status === 'paid' ? 'Paid' as const :
+            invoice.status === 'overdue' ? 'Overdue' as const :
+            'Pending' as const,
+    client: {
+      name: invoice.customer_name,
+      type: 'Individual' as const,
+      id: invoice.customer_id
+    },
+    property: {
+      id: invoice.property_id,
+      title: invoice.description.includes('Villa') ? 'Prestige Lakeside Habitat Villa' :
+             invoice.description.includes('Plot') ? 'Sobha City Plot' :
+             invoice.description.includes('Apartment') ? 'Godrej Splendour Apartment' :
+             'Property'
+    },
+    generatedBy: 'System' as const,
+    items: invoice.items.map(item => ({
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: `₹${item.rate.toLocaleString('en-IN')}`,
+      total: `₹${item.amount.toLocaleString('en-IN')}`
+    })),
+    // Additional fields for overdue invoices
+    lateFee: invoice.late_fee,
+    penaltyCharges: invoice.penalty_charges,
+    daysOverdue: invoice.days_overdue
+  }));
+};
+
+// Mock data for invoices - now using customer data
 const mockInvoices: Invoice[] = [
+  ...convertCustomerInvoicesToAdminFormat(),
+  // Keep some original admin invoices for variety
   {
     id: '1',
     invoiceNumber: 'INV-2023-001',
@@ -252,33 +530,66 @@ const mockInvoices: Invoice[] = [
   },
 ];
 
+// Calculate summary data from actual invoices
+const calculateSummaryData = () => {
+  const allInvoices = mockInvoices;
+
+  const totalAmount = allInvoices.reduce((sum, invoice) => {
+    const amount = parseFloat(invoice.amount.replace(/[₹,]/g, ''));
+    return sum + amount;
+  }, 0);
+
+  const paidAmount = allInvoices
+    .filter(invoice => invoice.status === 'Paid')
+    .reduce((sum, invoice) => {
+      const amount = parseFloat(invoice.amount.replace(/[₹,]/g, ''));
+      return sum + amount;
+    }, 0);
+
+  const pendingAmount = allInvoices
+    .filter(invoice => invoice.status === 'Pending')
+    .reduce((sum, invoice) => {
+      const amount = parseFloat(invoice.amount.replace(/[₹,]/g, ''));
+      return sum + amount;
+    }, 0);
+
+  const overdueAmount = allInvoices
+    .filter(invoice => invoice.status === 'Overdue')
+    .reduce((sum, invoice) => {
+      const amount = parseFloat(invoice.amount.replace(/[₹,]/g, ''));
+      return sum + amount;
+    }, 0);
+
+  return [
+    {
+      title: 'Total Invoices',
+      value: `₹${totalAmount.toLocaleString('en-IN')}`,
+      icon: <FileText size={20} className="text-blue-600" />,
+      bgColor: 'bg-blue-50'
+    },
+    {
+      title: 'Paid Invoices',
+      value: `₹${paidAmount.toLocaleString('en-IN')}`,
+      icon: <DollarSign size={20} className="text-green-600" />,
+      bgColor: 'bg-green-50'
+    },
+    {
+      title: 'Pending Invoices',
+      value: `₹${pendingAmount.toLocaleString('en-IN')}`,
+      icon: <Clock size={20} className="text-yellow-600" />,
+      bgColor: 'bg-yellow-50'
+    },
+    {
+      title: 'Overdue Invoices',
+      value: `₹${overdueAmount.toLocaleString('en-IN')}`,
+      icon: <Calendar size={20} className="text-red-600" />,
+      bgColor: 'bg-red-50'
+    }
+  ];
+};
+
 // Summary cards data
-const summaryData = [
-  {
-    title: 'Total Invoices',
-    value: '₹2.58 Cr',
-    icon: <FileText size={20} className="text-blue-600" />,
-    bgColor: 'bg-blue-50'
-  },
-  {
-    title: 'Paid Invoices',
-    value: '₹1.65 Cr',
-    icon: <DollarSign size={20} className="text-green-600" />,
-    bgColor: 'bg-green-50'
-  },
-  {
-    title: 'Pending Invoices',
-    value: '₹85 Lakhs',
-    icon: <Clock size={20} className="text-yellow-600" />,
-    bgColor: 'bg-yellow-50'
-  },
-  {
-    title: 'Overdue Invoices',
-    value: '₹10.3 Lakhs',
-    icon: <Calendar size={20} className="text-red-600" />,
-    bgColor: 'bg-red-50'
-  }
-];
+const summaryData = calculateSummaryData();
 
 export default function InvoicesPage() {
   const router = useRouter();
@@ -289,6 +600,9 @@ export default function InvoicesPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const invoicesPerPage = 5;
+
+  // Get updated summary data
+  const currentSummaryData = calculateSummaryData();
 
   // Filter invoices based on search term and filters
   const filteredInvoices = mockInvoices.filter(invoice => {
@@ -389,7 +703,7 @@ export default function InvoicesPage() {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {summaryData.map((item, index) => (
+              {currentSummaryData.map((item, index) => (
                 <div key={index} className={`p-4 rounded-lg border border-gray-200 ${item.bgColor}`}>
                   <div className="flex justify-between items-center">
                     <div>

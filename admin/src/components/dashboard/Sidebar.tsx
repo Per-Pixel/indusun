@@ -22,7 +22,8 @@ import {
   FileInput,
   Users,
   UserPlus,
-  UserCog
+  UserCog,
+  Settings
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -385,6 +386,20 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
               </button>
             </div>
           )}
+        </div>
+
+        <div className="mb-2">
+          <button
+            onClick={() => handleNavigation('/settings')}
+            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
+              pathname === '/settings'
+                ? 'bg-white text-black'
+                : 'text-black hover:bg-gray-600 hover:text-white'
+            }`}
+          >
+            <Settings className="w-5 h-5 mr-3 stroke-[2.5px]" />
+            <span>Settings</span>
+          </button>
         </div>
 
         <div className="mb-2">
