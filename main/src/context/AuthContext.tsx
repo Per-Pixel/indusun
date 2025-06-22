@@ -2,90 +2,154 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'react-hot-toast';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role?: 'customer' | 'broker' | 'admin';
-}
+import {
+  CustomerUser,
+  authenticateCustomer,
+  getCustomerById,
+  updateCustomerLastActive,
+  logoutCustomer,
+  getCustomerDashboardData,
+  CustomerDashboardData
+} from '../lib/mock-auth-data';
 
 interface AuthContextType {
-  user: User | null;
+  user: CustomerUser | null;
   isLoading: boolean;
-  login: (userData: User) => void;
-  logout: () => void;
+  dashboardData: CustomerDashboardData | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  refreshDashboardData: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // TEMPORARY: Create a mock user for development
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const mockUser: User = {
-    id: '1',
-    name: 'Development User',
-    email: 'dev@example.com',
-    role: 'broker', // Set to broker for testing broker dashboard
-  };
-
-  const [user, setUser] = useState<User | null>(isDevelopment ? mockUser : null);
-  const [isLoading, setIsLoading] = useState(!isDevelopment);
+  const [user, setUser] = useState<CustomerUser | null>(null);
+  const [dashboardData, setDashboardData] = useState<CustomerDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isDevelopment) {
-      checkAuth();
-    }
+    checkAuth();
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
-    toast.success('Login successful');
-  };
-
-  const logout = () => {
-    if (isDevelopment) {
-      toast.success('Logout disabled in development mode');
-      return;
-    }
-    setUser(null);
-  };
-
-  const checkAuth = async () => {
-    // In development mode, always return the mock user
-    if (isDevelopment) {
-      console.log('🔧 Development mode: Using mock user');
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/me', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      setIsLoading(true);
+      const response = await authenticateCustomer({ email, password });
 
-      const data = await response.json();
+      if (response.success && response.user) {
+        setUser(response.user);
+        updateCustomerLastActive(response.user.id);
 
-      if (response.ok && data.authenticated) {
-        setUser(data.user);
+        // Store token in localStorage for persistence (in production, use secure storage)
+        if (response.token) {
+          localStorage.setItem('customer_token', response.token);
+          localStorage.setItem('customer_user', JSON.stringify(response.user));
+        }
+
+        // Load dashboard data
+        refreshDashboardData(response.user.id);
+
+        toast.success('Login successful');
+        return true;
       } else {
-        setUser(null);
+        toast.error(response.message || 'Login failed');
+        return false;
       }
     } catch (error) {
-      console.error('Authentication check error:', error);
-      setUser(null);
+      console.error('Login error:', error);
+      toast.error('Login failed');
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('customer_token');
+
+      if (token) {
+        await logoutCustomer(token);
+      }
+
+      // Clear stored data
+      localStorage.removeItem('customer_token');
+      localStorage.removeItem('customer_user');
+
+      setUser(null);
+      setDashboardData(null);
+      toast.success('Logged out successfully');
+
+      // Redirect to login page
+      window.location.href = '/auth/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Logout failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const checkAuth = async () => {
+    setIsLoading(true);
+    try {
+      // Check for stored token and user data
+      const token = localStorage.getItem('customer_token');
+      const storedUser = localStorage.getItem('customer_user');
+
+      if (token && storedUser) {
+        const userData = JSON.parse(storedUser) as CustomerUser;
+
+        // Verify user still exists and is active
+        const currentUser = getCustomerById(userData.id);
+        if (currentUser && currentUser.status === 'active') {
+          setUser(currentUser);
+          updateCustomerLastActive(currentUser.id);
+          refreshDashboardData(currentUser.id);
+        } else {
+          // User no longer exists or is inactive, clear storage
+          localStorage.removeItem('customer_token');
+          localStorage.removeItem('customer_user');
+          setUser(null);
+          setDashboardData(null);
+        }
+      } else {
+        setUser(null);
+        setDashboardData(null);
+      }
+    } catch (error) {
+      console.error('Authentication check error:', error);
+      setUser(null);
+      setDashboardData(null);
+      // Clear potentially corrupted storage
+      localStorage.removeItem('customer_token');
+      localStorage.removeItem('customer_user');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshDashboardData = (userId?: string) => {
+    const customerId = userId || user?.id;
+    if (customerId) {
+      const data = getCustomerDashboardData(customerId);
+      setDashboardData(data);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      dashboardData,
+      login,
+      logout,
+      checkAuth,
+      refreshDashboardData
+    }}>
       {children}
     </AuthContext.Provider>
   );

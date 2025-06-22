@@ -1,10 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import pool from '@/lib/db';
 import { z as zod } from "zod";
-import { hasTooManyAttempts, recordFailedAttempt } from "@/lib/auth-utils";
 import { generateToken } from "@/lib/jwt-utils";
+import { authenticateCustomer } from '@/lib/mock-auth-data';
 
 // schema validation with zod
 const loginSchema = zod.object({
@@ -25,28 +23,16 @@ export async function POST(request: NextRequest) {
 
         const { email, password } = parsedBody.data;
 
-        // Prevent brute-force attacks
-        if (hasTooManyAttempts(email)) {
-            return NextResponse.json(
-                { error: "Too many failed attempts. Try again later." },
-                { status: 429 }
-            );
+        // Use mock authentication
+        const authResponse = await authenticateCustomer({ email, password });
+
+        if (!authResponse.success || !authResponse.user) {
+            return NextResponse.json({
+                error: authResponse.message || "Invalid credentials"
+            }, { status: 401 });
         }
 
-        // check if the user exists
-        const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (existingUser.rows.length === 0) {
-            return NextResponse.json({ error: "User does not exist" }, { status: 400 });
-        }
-
-        const user = existingUser.rows[0];
-
-        // Compare password
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) {
-            recordFailedAttempt(email);
-            return NextResponse.json({ error: "Invalid password" }, { status: 401 });
-        }
+        const user = authResponse.user;
 
         // Generate JWT tokens
         if (!process.env.JWT_SECRET) {
@@ -76,7 +62,9 @@ export async function POST(request: NextRequest) {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role || 'customer' // Default to customer if role is not set
+                role: user.role,
+                phone: user.phone,
+                customer_data: user.customer_data
             }
         });
 

@@ -52,27 +52,12 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Prepare the request body based on login method
-      const requestBody = loginMethod === 'email'
-        ? { email: formData.email, password: formData.password }
-        : { phone: formData.phone, password: formData.password };
+      // Use email for login (phone login not implemented in mock data yet)
+      const email = loginMethod === 'email' ? formData.email : formData.phone;
+      const success = await login(email, formData.password);
 
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Update auth context with user data
-        login(data.user);
+      if (success) {
         router.push('/dashboard'); // Redirect to dashboard or home
-      } else {
-        toast.error(data.error || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);

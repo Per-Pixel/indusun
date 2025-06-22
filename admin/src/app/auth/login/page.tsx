@@ -18,21 +18,9 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        login(data.user);
+      const success = await login(email, password);
+      if (success) {
         router.push('/dashboard');
-      } else {
-        toast.error(data.error || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
