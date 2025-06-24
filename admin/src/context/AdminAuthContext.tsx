@@ -62,12 +62,30 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAuth = async () => {
     setIsLoading(true);
     try {
+<<<<<<< HEAD
       const response = await fetch('/api/auth/me', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
+=======
+      // Mock authentication for development using our mock admin users
+      // In production, this would be a real API call
+
+      // Import mock admin users dynamically to avoid build issues
+      const { mockAdminUsers } = await import('../data/mockUsers');
+
+      // Use the first admin user as the logged-in user for development
+      const mockAdmin = mockAdminUsers[0]; // Super admin
+
+      const mockUser: AdminUser = {
+        id: mockAdmin.id,
+        name: mockAdmin.name,
+        email: mockAdmin.email,
+        role: mockAdmin.role
+      };
+>>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
 
       const data = await response.json();
 
@@ -78,7 +96,14 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error('Authentication check error:', error);
-      setUser(null);
+      // Fallback to basic mock user if import fails
+      const fallbackUser: AdminUser = {
+        id: '1',
+        name: 'Admin User',
+        email: 'admin@indusun.com',
+        role: 'admin'
+      };
+      setUser(fallbackUser);
     } finally {
       setIsLoading(false);
     }

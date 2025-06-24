@@ -246,8 +246,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                   <ArrowLeft size={16} className="mr-1" />
                   <span>Back to Properties</span>
                 </button>
-                <h1 className="text-2xl font-bold text-gray-900">{property.title}</h1>
-                <div className="flex items-center text-gray-500 mt-1">
+                <h1 className="text-2xl font-bold text-[#333]">{property.title}</h1>
+                <div className="flex items-center text-[#333] mt-1">
                   <MapPin size={16} className="mr-1" />
                   <span>{property.address}</span>
                 </div>
@@ -310,29 +310,29 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                     <div className="p-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-1">Property Type</h3>
-                          <p className="text-base font-medium">{property.type}</p>
+                          <h3 className="text-sm font-medium text-[#333] mb-1">Property Type</h3>
+                          <p className="text-base font-medium text-[#333]">{property.type}</p>
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-1">Area</h3>
-                          <p className="text-base font-medium">{property.area || 'N/A'}</p>
+                          <h3 className="text-sm font-medium text-[#333] mb-1">Area</h3>
+                          <p className="text-base font-medium text-[#333]">{property.area || 'N/A'}</p>
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-1">Sale Price</h3>
-                          <p className="text-base font-medium">{property.price}</p>
+                          <h3 className="text-sm font-medium text-[#333] mb-1">Sale Price</h3>
+                          <p className="text-base font-medium text-[#333]">{property.price}</p>
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-1">Sale Date</h3>
-                          <p className="text-base font-medium">{new Date(property.date).toLocaleDateString()}</p>
+                          <h3 className="text-sm font-medium text-[#333] mb-1">Sale Date</h3>
+                          <p className="text-base font-medium text-[#333]">{new Date(property.date).toLocaleDateString()}</p>
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-1">Profit</h3>
-                          <p className="text-base font-medium text-green-600">{property.profit}</p>
+                          <h3 className="text-sm font-medium text-[#333] mb-1">Profit</h3>
+                          <p className="text-base font-medium text-green-700">{property.profit}</p>
                         </div>
                         {property.broker && (
                           <div>
-                            <h3 className="text-sm font-medium text-gray-500 mb-1">Broker Commission</h3>
-                            <p className="text-base font-medium">{property.broker.commission}</p>
+                            <h3 className="text-sm font-medium text-[#333] mb-1">Broker Commission</h3>
+                            <p className="text-base font-medium text-[#333]">{property.broker.commission}</p>
                           </div>
                         )}
                       </div>
@@ -363,8 +363,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 <div className="md:col-span-1">
                   {/* Client Card */}
                   <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-                    <div className="p-4 border-b border-gray-200 bg-gray-50">
-                      <h3 className="font-medium">Client Information</h3>
+                    <div className="p-4 border-b border-gray-200 bg-white">
+                      <h3 className="font-medium text-[#333]">Client Information</h3>
                     </div>
                     <div className="p-4">
                       <div className="flex items-center mb-4">
@@ -372,22 +372,22 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                           <User size={20} className="text-purple-600" />
                         </div>
                         <div>
-                          <h4 className="font-medium">{property.client.name}</h4>
-                          <p className="text-sm text-gray-500">Client</p>
+                          <h4 className="font-medium text-[#333]">{property.client.name}</h4>
+                          <p className="text-sm text-[#333]">Client</p>
                         </div>
                       </div>
 
                       {property.client.phone && (
                         <div className="flex items-center text-sm mb-2">
                           <Phone size={16} className="mr-2 text-gray-400" />
-                          <span>{property.client.phone}</span>
+                          <span className="text-[#333]">{property.client.phone}</span>
                         </div>
                       )}
 
                       {property.client.email && (
                         <div className="flex items-center text-sm">
                           <Mail size={16} className="mr-2 text-gray-400" />
-                          <span>{property.client.email}</span>
+                          <span className="text-[#333]">{property.client.email}</span>
                         </div>
                       )}
                     </div>
@@ -396,8 +396,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                   {/* Broker Card (if exists) */}
                   {property.broker && (
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                      <div className="p-4 border-b border-gray-200 bg-gray-50">
-                        <h3 className="font-medium">Broker Information</h3>
+                      <div className="p-4 border-b border-gray-200 bg-white">
+                        <h3 className="font-medium text-[#333]">Broker Information</h3>
                       </div>
                       <div className="p-4">
                         <div className="flex items-center mb-4">
@@ -405,22 +405,22 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                             <Users size={20} className="text-blue-600" />
                           </div>
                           <div>
-                            <h4 className="font-medium">{property.broker.name}</h4>
-                            <p className="text-sm text-gray-500">Broker</p>
+                            <h4 className="font-medium text-[#333]">{property.broker.name}</h4>
+                            <p className="text-sm text-[#333]">Broker</p>
                           </div>
                         </div>
 
                         {property.broker.phone && (
                           <div className="flex items-center text-sm mb-2">
                             <Phone size={16} className="mr-2 text-gray-400" />
-                            <span>{property.broker.phone}</span>
+                            <span className="text-[#333]">{property.broker.phone}</span>
                           </div>
                         )}
 
                         {property.broker.email && (
                           <div className="flex items-center text-sm mb-4">
                             <Mail size={16} className="mr-2 text-gray-400" />
-                            <span>{property.broker.email}</span>
+                            <span className="text-[#333]">{property.broker.email}</span>
                           </div>
                         )}
 

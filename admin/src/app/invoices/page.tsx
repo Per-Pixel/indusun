@@ -335,14 +335,14 @@ export default function InvoicesPage() {
     }
   };
 
-  const getGeneratorIcon = (generator: Invoice['generatedBy']) => {
+  const getGeneratorIcon = (generator: Invoice['generatedBy'], extraClasses = '') => {
     switch (generator) {
       case 'System':
-        return <Building size={16} className="mr-1" />;
+        return <Building size={16} className={`mr-1 ${extraClasses}`} />;
       case 'Admin':
-        return <User size={16} className="mr-1" />;
+        return <User size={16} className={`mr-1 ${extraClasses}`} />;
       case 'Broker':
-        return <Users size={16} className="mr-1" />;
+        return <Users size={16} className={`mr-1 ${extraClasses}`} />;
       default:
         return null;
     }
@@ -422,14 +422,14 @@ export default function InvoicesPage() {
               <div className="flex gap-4">
                 <div className="relative">
                   <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8 text-[#333]"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
-                    <option value="All">All Status</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Overdue">Overdue</option>
+                    <option value="All" className="text-[#333]">All Status</option>
+                    <option value="Paid" className="text-[#333]">Paid</option>
+                    <option value="Pending" className="text-[#333]">Pending</option>
+                    <option value="Overdue" className="text-[#333]">Overdue</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                     <ChevronDown size={16} />
@@ -438,14 +438,14 @@ export default function InvoicesPage() {
 
                 <div className="relative">
                   <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8 text-[#333]"
                     value={filterGenerator}
                     onChange={(e) => setFilterGenerator(e.target.value)}
                   >
-                    <option value="All">All Generators</option>
-                    <option value="System">System</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Broker">Broker</option>
+                    <option value="All" className="text-[#333]">All Generators</option>
+                    <option value="System" className="text-[#333]">System</option>
+                    <option value="Admin" className="text-[#333]">Admin</option>
+                    <option value="Broker" className="text-[#333]">Broker</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                     <ChevronDown size={16} />
@@ -491,16 +491,14 @@ export default function InvoicesPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {invoice.amount}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className="inline-flex items-center">
-                            {getGeneratorIcon(invoice.generatedBy)}
-                            {invoice.generatedBy}
-                            {invoice.generatorName && (
-                              <span className="ml-1 text-xs text-gray-400">
-                                ({invoice.generatorName})
-                              </span>
-                            )}
-                          </span>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center">
+                          {getGeneratorIcon(invoice.generatedBy, 'text-gray-700')}
+                          <span className="ml-1 text-gray-800">{invoice.generatedBy}</span>
+                          {invoice.generatorName && (
+                            <span className="ml-1 text-xs text-gray-700">
+                              ({invoice.generatorName})
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>

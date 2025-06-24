@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+<<<<<<< HEAD
 import { z as zod } from 'zod';
 import pool from '@/lib/db';
 import { generateOTP, storeOTP, hasTooManyAttempts } from '@/lib/auth-utils';
@@ -27,10 +28,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Too many OTP requests. Try again later." },
         { status: 429 }
+=======
+import { sendOTP, isValidPhoneNumber, formatPhoneNumber } from '@/data/mockOTP';
+import { getUserByPhone } from '@/data/mockUsers';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { phone } = await request.json();
+
+    // Validate input
+    if (!phone) {
+      return NextResponse.json(
+        { error: "Phone number is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate phone number format
+    if (!isValidPhoneNumber(phone)) {
+      return NextResponse.json(
+        { error: "Invalid phone number format" },
+        { status: 400 }
+>>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
       );
     }
 
     // Check if user exists with this phone number
+<<<<<<< HEAD
     console.log('🔍 Checking database for phone:', phone);
     const existingUser = await pool.query(
       'SELECT * FROM users WHERE phone = $1 AND role = $2',
@@ -79,5 +103,47 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Send OTP error:', error);
     return NextResponse.json({ error: "Failed to send OTP" }, { status: 500 });
+=======
+    const user = getUserByPhone(phone);
+    if (!user) {
+      return NextResponse.json(
+        { error: "No account found with this phone number" },
+        { status: 404 }
+      );
+    }
+
+    // Send OTP
+    const result = await sendOTP(phone);
+
+    if (result.success) {
+      // In development, include the OTP in response for testing
+      const responseData: any = {
+        message: result.message,
+        phone: formatPhoneNumber(phone)
+      };
+
+      if (process.env.NODE_ENV === 'development') {
+        // Get the OTP for development purposes
+        const { getOTPForDevelopment } = await import('@/data/mockOTP');
+        const otp = getOTPForDevelopment(phone);
+        if (otp) {
+          responseData.otp = otp;
+        }
+      }
+
+      return NextResponse.json(responseData, { status: 200 });
+    } else {
+      return NextResponse.json(
+        { error: result.message },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error('Send OTP API error:', error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+>>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
   }
 }

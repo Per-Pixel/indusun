@@ -10,7 +10,8 @@ import {
   Settings,
   LogOut,
   ChevronDown,
-  X
+  X,
+  Info
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 
@@ -194,19 +195,24 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
           )}
         </div>
 
-        {/* Profile dropdown */}
-        <div className="relative ml-3" ref={profileMenuRef}>
+        {/* Profile icon always visible and links to profile page */}
+        <div className="relative ml-3 flex items-center">
+          <button
+            onClick={() => router.push('/profile')}
+            className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center hover:ring-2 hover:ring-blue-500 focus:outline-none"
+            title="Profile"
+            aria-label="Profile"
+          >
+            <User size={20} className="text-[#333]" />
+          </button>
+          {/* Keep dropdown for other actions */}
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="ml-2 flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-              <User size={16} className="text-gray-600" />
-            </div>
-            <span className="ml-2 text-gray-700 hidden md:block">{user?.name || 'Admin User'}</span>
+            <span className="ml-2 text-[#333] hidden md:block">{user?.name || 'Admin User'}</span>
             <ChevronDown size={16} className="ml-1 text-gray-500 hidden md:block" />
           </button>
-
           {showProfileMenu && (
             <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
               <div className="py-1">

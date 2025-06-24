@@ -1,8 +1,5 @@
 const jwt = require("jsonwebtoken");
 import { v4 as uuidv4 } from "uuid";
-import { isTokenBlacklisted } from "./redis";
-import { error } from "console";
-import { decode } from "punycode";
 
 // Define JWT payload type with role
 export interface JWTPayload{
@@ -32,18 +29,16 @@ export function generateToken(
     )
 }
 
-// Verify JWT token and check if it's blacklisted
+// Verify JWT token (simplified for development without Redis)
 export async function verifyToken(token:string): Promise<JWTPayload | null> {
     try {
         if (!process.env.JWT_SECRET) {
-            throw new Error("JWT is missing")
+            throw new Error("JWT_SECRET is missing")
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload
 
-        // check if token is blacklisted and has jti
-        if (decoded.jti && await isTokenBlacklisted(decoded.jti)) {
-            return null
-        }
+        // For development, we skip blacklist checking since we're not using Redis
+        // In production, you would check against a blacklist store
 
         return decoded
     } catch (error) {

@@ -31,7 +31,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
+/* Dark mode disabled for admin interface to maintain consistent light theme
+   This ensures proper contrast and readability as per user preferences */
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
@@ -45,7 +47,7 @@
     --gray-medium: #9ca3af;
     --gray-dark: #d1d5db;
   }
-}
+} */
 
 body {
   background: var(--background);

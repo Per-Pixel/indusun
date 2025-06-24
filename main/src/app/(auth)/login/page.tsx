@@ -251,6 +251,7 @@ const Login = () => {
                 ) : (
                   <div>
                     <label htmlFor="phone" className="block text-xl font-medium text-gray-700 mb-3">Phone Number</label>
+<<<<<<< HEAD
                     <div className="flex space-x-2">
                       <input
                         id="phone"
@@ -290,6 +291,29 @@ const Login = () => {
                         />
                       </div>
                     )}
+=======
+                    <input
+                      id="phone"
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="+91 9876543210"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
+                      required
+                    />
+                    {/* OTP Option */}
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/otp-login?phone=${encodeURIComponent(formData.phone)}`)}
+                        className="text-blue-800 hover:text-blue-700 font-medium transition-colors text-lg underline"
+                        disabled={!formData.phone}
+                      >
+                        Get OTP to login instead
+                      </button>
+                    </div>
+>>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
                   </div>
                 )}
 

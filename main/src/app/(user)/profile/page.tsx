@@ -1,19 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/context/AuthContext';
+import { getUserById } from '@/data/mockUsers';
+import { toast } from 'react-hot-toast';
 
 const Profile = () => {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: 'Chotu Kumar',
-    email: 'chotu.kumar@example.com',
-    phone: '+91 9876543210',
-    address: '123 Main Street, Mumbai, India',
-    bio: 'I am a customer looking for real estate opportunities.'
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    bio: ''
   });
+
+  // Load user data when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      const userData = getUserById(user.id);
+      if (userData) {
+        setFormData({
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
+          address: userData.address,
+          bio: userData.bio
+        });
+      }
+    }
+  }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -23,11 +44,40 @@ const Profile = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Save profile data
-    setIsEditing(false);
+    setIsLoading(true);
+
+    try {
+      // In a real app, this would make an API call to update the user profile
+      // For now, we'll just simulate a successful update
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+
+      toast.success('Profile updated successfully!');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Show loading state if user is not loaded yet
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-800 mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading profile...</p>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -128,14 +178,24 @@ const Profile = () => {
                   />
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end space-x-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-400 transition-colors"
+                  >
+                    Cancel
+                  </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     type="submit"
-                    className="px-4 py-2 bg-green-800 text-white rounded-md font-medium hover:bg-green-900 transition-colors"
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-green-800 text-white rounded-md font-medium hover:bg-green-900 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    Save Changes
+                    {isLoading ? 'Saving...' : 'Save Changes'}
                   </motion.button>
                 </div>
               </form>
