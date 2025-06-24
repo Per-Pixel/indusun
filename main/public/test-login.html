@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login API Testing Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        button {
+            background-color: #1e40af;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background-color: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .credentials {
+            background-color: #f9fafb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Login API Testing Tool</h1>
+        <p>Test all authentication methods for the Indusun project.</p>
+        
+        <div class="credentials">
+            <h3>📋 Test Credentials</h3>
+            <strong>Customer Accounts:</strong><br>
+            • Email: hritik@example.com | Password: Customer@123 | Phone: +91 98765 12345<br>
+            • Email: romit@example.com | Password: Customer@123 | Phone: +91 87654 32109<br><br>
+            <strong>Admin Accounts:</strong><br>
+            • Email: super.admin@indusun.com | Password: SuperAdmin@123 (Super Admin)<br>
+            • Email: sarika.singh@indusun.com | Password: Admin@123 (Regular Admin)
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>👤 Customer Login Tests (Port 3000)</h2>
+        
+        <div class="test-section">
+            <h3>Email/Password Login</h3>
+            <input type="email" id="customerEmail" placeholder="Email" value="hritik@example.com">
+            <input type="password" id="customerPassword" placeholder="Password" value="Customer@123">
+            <button onclick="testCustomerEmailLogin()">Test Email Login</button>
+            <div id="customerEmailResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Phone/Password Login</h3>
+            <input type="tel" id="customerPhone" placeholder="Phone" value="+91 98765 12345">
+            <input type="password" id="customerPhonePassword" placeholder="Password" value="Customer@123">
+            <button onclick="testCustomerPhoneLogin()">Test Phone Login</button>
+            <div id="customerPhoneResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Phone/OTP Login</h3>
+            <input type="tel" id="otpPhone" placeholder="Phone" value="+91 87654 32109">
+            <input type="text" id="otpCode" placeholder="OTP Code" maxlength="6">
+            <button onclick="sendOTP()">Send OTP</button>
+            <button onclick="verifyOTP()">Verify OTP</button>
+            <div id="otpResult"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>👨‍💼 Admin Login Tests (Port 3001)</h2>
+        
+        <div class="test-section">
+            <h3>Super Admin Login</h3>
+            <input type="email" id="superAdminEmail" placeholder="Email" value="super.admin@indusun.com">
+            <input type="password" id="superAdminPassword" placeholder="Password" value="SuperAdmin@123">
+            <button onclick="testSuperAdminLogin()">Test Super Admin Login</button>
+            <div id="superAdminResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Regular Admin Login</h3>
+            <input type="email" id="adminEmail" placeholder="Email" value="sarika.singh@indusun.com">
+            <input type="password" id="adminPassword" placeholder="Password" value="Admin@123">
+            <button onclick="testAdminLogin()">Test Admin Login</button>
+            <div id="adminResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // Customer Email/Password Login
+        async function testCustomerEmailLogin() {
+            const email = document.getElementById('customerEmail').value;
+            const password = document.getElementById('customerPassword').value;
+            
+            showResult('customerEmailResult', '🔄 Testing customer email login...', 'info');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('customerEmailResult', '✅ Customer email login successful!\n\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('customerEmailResult', '❌ Customer email login failed!\n\n' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                showResult('customerEmailResult', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Customer Phone/Password Login
+        async function testCustomerPhoneLogin() {
+            const phone = document.getElementById('customerPhone').value;
+            const password = document.getElementById('customerPhonePassword').value;
+            
+            showResult('customerPhoneResult', '🔄 Testing customer phone login...', 'info');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phone, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('customerPhoneResult', '✅ Customer phone login successful!\n\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('customerPhoneResult', '❌ Customer phone login failed!\n\n' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                showResult('customerPhoneResult', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Send OTP
+        async function sendOTP() {
+            const phone = document.getElementById('otpPhone').value;
+            
+            showResult('otpResult', '🔄 Sending OTP...', 'info');
+            
+            try {
+                const response = await fetch('/api/auth/send-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phone })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('otpResult', '✅ OTP sent successfully!\n\n' + JSON.stringify(data, null, 2), 'success');
+                    if (data.otp) {
+                        document.getElementById('otpCode').value = data.otp;
+                    }
+                } else {
+                    showResult('otpResult', '❌ OTP sending failed!\n\n' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                showResult('otpResult', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Verify OTP
+        async function verifyOTP() {
+            const phone = document.getElementById('otpPhone').value;
+            const otp = document.getElementById('otpCode').value;
+            
+            showResult('otpResult', '🔄 Verifying OTP...', 'info');
+            
+            try {
+                const response = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phone, otp })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('otpResult', '✅ OTP verification successful!\n\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('otpResult', '❌ OTP verification failed!\n\n' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                showResult('otpResult', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Super Admin Login
+        async function testSuperAdminLogin() {
+            const email = document.getElementById('superAdminEmail').value;
+            const password = document.getElementById('superAdminPassword').value;
+            
+            showResult('superAdminResult', '🔄 Testing super admin login...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('superAdminResult', '✅ Super admin login successful!\n\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('superAdminResult', '❌ Super admin login failed!\n\n' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                showResult('superAdminResult', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Regular Admin Login
+        async function testAdminLogin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            showResult('adminResult', '🔄 Testing admin login...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('adminResult', '✅ Admin login successful!\n\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('adminResult', '❌ Admin login failed!\n\n' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                showResult('adminResult', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+    </script>
+</body>
+</html>

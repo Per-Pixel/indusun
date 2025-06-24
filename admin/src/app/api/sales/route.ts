@@ -199,13 +199,60 @@ export async function GET(request: NextRequest) {
       `);
       const propertiesSold = parseInt(propertiesSoldResult.rows[0]?.count || '0');
 
+      // Get dynamic filtered transaction statistics
+      let dynamicStatsQuery = `
+        SELECT 
+          COUNT(i.id) as transaction_count,
+          SUM(i.amount) as total_revenue
+        FROM 
+          installments i
+        LEFT JOIN
+          plots p ON i.plot_id = p.id
+        LEFT JOIN
+          clients c ON p.client_id = c.id
+        WHERE 
+          i.payment_date IS NOT NULL
+      `;
+      
+      const dynamicQueryParams: any[] = [];
+      
+      // Add the same filters as the main query
+      if (filters.startDate) {
+        dynamicStatsQuery += ` AND i.payment_date >= $${dynamicQueryParams.length + 1}`;
+        dynamicQueryParams.push(filters.startDate);
+      }
+      
+      if (filters.endDate) {
+        dynamicStatsQuery += ` AND i.payment_date <= $${dynamicQueryParams.length + 1}`;
+        dynamicQueryParams.push(filters.endDate);
+      }
+      
+      if (filters.brokerId) {
+        dynamicStatsQuery += ` AND i.broker_id = $${dynamicQueryParams.length + 1}`;
+        dynamicQueryParams.push(filters.brokerId);
+      }
+      
+      if (filters.clientId) {
+        dynamicStatsQuery += ` AND p.client_id = $${dynamicQueryParams.length + 1}`;
+        dynamicQueryParams.push(filters.clientId);
+      }
+      
+      const dynamicStatsResult = await db.query(dynamicStatsQuery, dynamicQueryParams);
+      const totalTransactions = parseInt(dynamicStatsResult.rows[0]?.transaction_count || '0');
+      const totalRevenue = parseFloat(dynamicStatsResult.rows[0]?.total_revenue || '0');
+
       summaryStats = {
+        // Static lifetime stats
         totalClients,
         activeClients,
         totalBrokers,
         activeBrokers,
         totalProperties,
-        propertiesSold
+        propertiesSold,
+        
+        // Dynamic filtered stats
+        totalTransactions,
+        totalRevenue
       };
 
       console.log('Sales summary statistics:', summaryStats);
@@ -218,7 +265,9 @@ export async function GET(request: NextRequest) {
         totalBrokers: 0,
         activeBrokers: 0,
         totalProperties: 0,
-        propertiesSold: 0
+        propertiesSold: 0,
+        totalTransactions: 0,
+        totalRevenue: 0
       };
     }
 

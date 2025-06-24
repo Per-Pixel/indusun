@@ -76,6 +76,7 @@ export default function AdminLogin() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                  style={{ color: '#374151' }}
                   required
                   placeholder="example@mail.com"
                 />
@@ -100,6 +101,7 @@ export default function AdminLogin() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                  style={{ color: '#374151' }}
                   required
                   placeholder="••••••••"
                 />

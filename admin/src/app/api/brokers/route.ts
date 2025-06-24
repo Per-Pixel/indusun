@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { executeQuery } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
@@ -52,16 +52,24 @@ export async function GET(req: NextRequest) {
     
     // Execute the queries
     const [brokersResult, countResult] = await Promise.all([
-      pool.query(query, queryParams),
-      pool.query(countQuery, search ? [queryParams[0]] : [])
+      executeQuery(query, queryParams),
+      executeQuery(countQuery, search ? [queryParams[0]] : [])
     ]);
     
     // Calculate total pages
     const totalBrokers = parseInt(countResult.rows[0].count);
     const totalPages = Math.ceil(totalBrokers / limit);
     
+    // Define broker type
+    interface BrokerRow {
+      id: number;
+      name: string;
+      phone?: string;
+      createdAt: string;
+    }
+    
     // Map database results to expected format
-    const brokers = brokersResult.rows.map(broker => {
+    const brokers = brokersResult.rows.map((broker: BrokerRow) => {
       // Generate a simplified email from the name (which is now normalized_name)
       const nameParts = broker.name.split(' ');
       const firstName = nameParts[0].toLowerCase();
@@ -119,7 +127,7 @@ export async function POST(req: NextRequest) {
       .join(' ');
     
     // Insert broker into database
-    const result = await pool.query(`
+    const result = await executeQuery(`
       INSERT INTO brokers (
         full_name,
         normalized_name,

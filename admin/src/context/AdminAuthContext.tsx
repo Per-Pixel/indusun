@@ -2,12 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'react-hot-toast';
+import { AdminPermissions } from '@/lib/mock-auth-data';
 
 interface AdminUser {
   id: string;
   name: string;
   email: string;
   role: string;
+  permissions?: AdminPermissions;
 }
 
 interface AdminAuthContextType {
@@ -16,6 +18,7 @@ interface AdminAuthContextType {
   login: (userData: AdminUser) => void;
   logout: () => void;
   checkAuth: () => Promise<void>;
+  hasPermission: (permission: keyof AdminPermissions) => boolean;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -35,37 +38,44 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      // Mock logout for development
-      // In production, this would be a real API call
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Call logout API to clear cookies
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       setUser(null);
       toast.success('Logged out successfully');
 
-      // Redirect to login page with updated path
+      // Redirect to login page
       window.location.href = '/auth/login';
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error('Logout failed');
+      // Even if API call fails, clear local state and redirect
+      setUser(null);
+      window.location.href = '/auth/login';
     }
   };
 
   const checkAuth = async () => {
     setIsLoading(true);
     try {
-      // Mock authentication for development
-      // In production, this would be a real API call
-      const mockUser: AdminUser = {
-        id: '1',
-        name: 'Admin User',
-        email: 'admin@indusun.com',
-        role: 'admin'
-      };
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const data = await response.json();
 
-      setUser(mockUser);
+      if (response.ok && data.authenticated) {
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
     } catch (error) {
       console.error('Authentication check error:', error);
       setUser(null);
@@ -74,8 +84,37 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Permission checking function
+  const hasPermission = (permission: keyof AdminPermissions): boolean => {
+    if (!user) return false;
+
+    // If user has permissions object, check it
+    if (user.permissions) {
+      return user.permissions[permission] === true;
+    }
+
+    // Fallback: Grant permissions based on role
+    // Super admin gets all permissions
+    if (user.role === 'super_admin') {
+      return true;
+    }
+
+    // Regular admin gets most permissions except sensitive ones
+    if (user.role === 'admin') {
+      const restrictedPermissions: (keyof AdminPermissions)[] = [
+        'can_delete_users',
+        'can_delete_admins',
+        'can_view_admin_details',
+        'can_export_data'
+      ];
+      return !restrictedPermissions.includes(permission);
+    }
+
+    return false;
+  };
+
   return (
-    <AdminAuthContext.Provider value={{ user, isLoading, login, logout, checkAuth }}>
+    <AdminAuthContext.Provider value={{ user, isLoading, login, logout, checkAuth, hasPermission }}>
       {children}
     </AdminAuthContext.Provider>
   );

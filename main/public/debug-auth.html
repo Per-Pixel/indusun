@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Debug Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #1e40af;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background-color: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Authentication Debug Tool</h1>
+        <p>Debug the OTP and Admin Login issues with detailed logging.</p>
+    </div>
+
+    <div class="container">
+        <h2>🔍 Issue 1: OTP System Debug</h2>
+        <p><strong>Problem:</strong> "Invalid or expired OTP" error during verification</p>
+        
+        <button onclick="debugOTPFlow()">🧪 Debug Complete OTP Flow</button>
+        <div id="otpDebugResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>🔍 Issue 2: Admin Login Debug</h2>
+        <p><strong>Problem:</strong> HTTP 500 Internal Server Error on admin login</p>
+        
+        <button onclick="debugAdminLogin()">🧪 Debug Admin Login</button>
+        <div id="adminDebugResult"></div>
+    </div>
+
+    <script>
+        async function debugOTPFlow() {
+            showResult('otpDebugResult', '🚀 Starting OTP Debug Flow...\n', 'info');
+            
+            try {
+                // Step 1: Send OTP
+                appendResult('otpDebugResult', '📱 Step 1: Sending OTP to +91 98765 12345...\n');
+                
+                const sendResponse = await fetch('/api/auth/send-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phone: '+91 98765 12345' })
+                });
+                
+                const sendData = await sendResponse.json();
+                appendResult('otpDebugResult', `📊 Send OTP Response (${sendResponse.status}):\n${JSON.stringify(sendData, null, 2)}\n\n`);
+                
+                if (sendResponse.ok && sendData.otp) {
+                    // Step 2: Verify OTP immediately
+                    appendResult('otpDebugResult', `🔐 Step 2: Verifying OTP ${sendData.otp}...\n`);
+                    
+                    const verifyResponse = await fetch('/api/auth/verify-otp', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            phone: '+91 98765 12345',
+                            otp: sendData.otp
+                        })
+                    });
+                    
+                    const verifyData = await verifyResponse.json();
+                    appendResult('otpDebugResult', `📊 Verify OTP Response (${verifyResponse.status}):\n${JSON.stringify(verifyData, null, 2)}\n\n`);
+                    
+                    if (verifyResponse.ok) {
+                        appendResult('otpDebugResult', '✅ OTP FLOW SUCCESSFUL!\n', 'success');
+                    } else {
+                        appendResult('otpDebugResult', '❌ OTP VERIFICATION FAILED!\n🔍 Check server logs for detailed debugging info.\n', 'error');
+                    }
+                } else {
+                    appendResult('otpDebugResult', '❌ OTP SENDING FAILED!\n', 'error');
+                }
+                
+            } catch (error) {
+                appendResult('otpDebugResult', `❌ Error: ${error.message}\n`, 'error');
+            }
+        }
+        
+        async function debugAdminLogin() {
+            showResult('adminDebugResult', '🚀 Starting Admin Login Debug...\n', 'info');
+            
+            try {
+                appendResult('adminDebugResult', '👨‍💼 Testing admin login with super.admin@indusun.com...\n');
+                
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email: 'super.admin@indusun.com',
+                        password: 'SuperAdmin@123'
+                    })
+                });
+                
+                const data = await response.json();
+                appendResult('adminDebugResult', `📊 Admin Login Response (${response.status}):\n${JSON.stringify(data, null, 2)}\n\n`);
+                
+                if (response.ok) {
+                    appendResult('adminDebugResult', '✅ ADMIN LOGIN SUCCESSFUL!\n', 'success');
+                } else {
+                    appendResult('adminDebugResult', '❌ ADMIN LOGIN FAILED!\n🔍 Check admin server logs for detailed error info.\n', 'error');
+                }
+                
+            } catch (error) {
+                appendResult('adminDebugResult', `❌ Network Error: ${error.message}\n🔍 Make sure admin server is running on port 3001.\n`, 'error');
+            }
+        }
+        
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+        
+        function appendResult(elementId, message, type = '') {
+            const element = document.getElementById(elementId);
+            const currentDiv = element.querySelector('.result');
+            if (currentDiv) {
+                currentDiv.textContent += message;
+                if (type) {
+                    currentDiv.className = `result ${type}`;
+                }
+            } else {
+                showResult(elementId, message, type || 'info');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -34,18 +34,18 @@ export async function GET(request: NextRequest) {
         role: string;
       };
       
-      // Verify the user is an admin
-      if (decoded.role !== 'admin') {
+      // Verify the user is an admin or super_admin
+      if (decoded.role !== 'admin' && decoded.role !== 'super_admin') {
         return NextResponse.json(
           { authenticated: false, message: "Unauthorized" },
           { status: 403 }
         );
       }
-      
+
       // Get user from database to ensure they still exist and get latest data
       const userResult = await pool.query(
-        'SELECT id, name, email, role FROM users WHERE id = $1 AND role = $2', 
-        [decoded.id, 'admin']
+        'SELECT id, name, email, role FROM users WHERE id = $1 AND (role = $2 OR role = $3)',
+        [decoded.id, 'admin', 'super_admin']
       );
       
       if (userResult.rows.length === 0) {

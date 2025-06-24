@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+const jwt = require("jsonwebtoken");
 import { v4 as uuidv4 } from "uuid";
 import { isTokenBlacklisted } from "./redis";
 import { error } from "console";

@@ -17,10 +17,14 @@ const Login = () => {
   const error = searchParams.get('error');
   const [isLoading, setIsLoading] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
+  const [authMethod, setAuthMethod] = useState<'password' | 'otp'>('password');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(0);
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
-    password: ''
+    password: '',
+    otp: ''
   });
   const { login } = useAuth();
 
@@ -40,11 +44,92 @@ const Login = () => {
     }
   }, [message, error]);
 
+  // OTP countdown effect
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (otpCountdown > 0) {
+      interval = setInterval(() => {
+        setOtpCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [otpCountdown]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleSendOTP = async () => {
+    if (!formData.phone) {
+      toast.error('Please enter your phone number');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone: formData.phone }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOtpSent(true);
+        setOtpCountdown(60); // 60 seconds countdown
+        toast.success('OTP sent successfully!');
+
+        // In development, show the OTP
+        if (data.debug && data.otp) {
+          toast.success(`Development OTP: ${data.otp}`, { duration: 10000 });
+        }
+      } else {
+        toast.error(data.error || 'Failed to send OTP');
+      }
+    } catch (error) {
+      console.error('Send OTP error:', error);
+      toast.error('Failed to send OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: formData.phone,
+          otp: formData.otp
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        login(data.user);
+        router.push('/dashboard');
+      } else {
+        toast.error(data.error || 'OTP verification failed');
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -147,7 +232,7 @@ const Login = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-8">
+              <form onSubmit={loginMethod === 'phone' && otpSent ? handleVerifyOTP : handleLogin} className="space-y-8">
                 {loginMethod === 'email' ? (
                   <div>
                     <label htmlFor="email" className="block text-xl font-medium text-gray-700 mb-3">Email</label>
@@ -159,38 +244,72 @@ const Login = () => {
                       onChange={handleChange}
                       placeholder="example@email.com"
                       className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
+                      style={{ color: '#374151' }}
                       required
                     />
                   </div>
                 ) : (
                   <div>
                     <label htmlFor="phone" className="block text-xl font-medium text-gray-700 mb-3">Phone Number</label>
-                    <input
-                      id="phone"
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="+1 (123) 456-7890"
-                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
-                      required
-                    />
+                    <div className="flex space-x-2">
+                      <input
+                        id="phone"
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="+91 98765 12345"
+                        className="flex-1 p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
+                        style={{ color: '#374151' }}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendOTP}
+                        disabled={isLoading || otpCountdown > 0 || !formData.phone}
+                        className="px-6 py-4 bg-blue-800 text-white rounded-md hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-lg font-medium h-14"
+                      >
+                        {otpCountdown > 0 ? `${otpCountdown}s` : 'Get OTP'}
+                      </button>
+                    </div>
+
+                    {otpSent && (
+                      <div className="mt-4">
+                        <label htmlFor="otp" className="block text-xl font-medium text-gray-700 mb-3">Enter OTP</label>
+                        <input
+                          id="otp"
+                          type="text"
+                          name="otp"
+                          value={formData.otp}
+                          onChange={handleChange}
+                          placeholder="123456"
+                          maxLength={6}
+                          className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
+                          style={{ color: '#374151' }}
+                          required
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
-                <div>
-                  <label htmlFor="password" className="block text-xl font-medium text-gray-700 mb-3">Password</label>
-                  <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
-                    required
-                  />
-                </div>
+                {/* Show password field only if not using OTP or if using email login */}
+                {(loginMethod === 'email' || !otpSent) && (
+                  <div>
+                    <label htmlFor="password" className="block text-xl font-medium text-gray-700 mb-3">Password</label>
+                    <input
+                      id="password"
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
+                      style={{ color: '#374151' }}
+                      required={loginMethod === 'email' || !otpSent}
+                    />
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
@@ -213,10 +332,13 @@ const Login = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || (loginMethod === 'phone' && !otpSent && !formData.password) || (loginMethod === 'phone' && otpSent && !formData.otp)}
                   className="w-full bg-blue-800 p-4 rounded-md font-medium text-white text-xl hover:bg-blue-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed h-14"
                 >
-                  {isLoading ? 'Logging in...' : 'Log in'}
+                  {isLoading
+                    ? (loginMethod === 'phone' && otpSent ? 'Verifying OTP...' : 'Logging in...')
+                    : (loginMethod === 'phone' && otpSent ? 'Verify OTP' : 'Log in')
+                  }
                 </motion.button>
               </form>
             </div>

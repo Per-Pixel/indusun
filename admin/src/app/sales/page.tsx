@@ -10,9 +10,11 @@ import {
 import {
   Search, Info, ChevronDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Bell, DollarSign, User,
   Calendar, Filter, SortAsc, SortDesc, Loader, RefreshCw, Users, UserCheck, Building2,
-  Briefcase, Home, CheckCircle
+  Briefcase, Home, CheckCircle, Plus
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
+import RecentTransactions from '@/components/sales/RecentTransactions';
+import TransactionForm from '@/components/sales/TransactionForm';
 
 // Types for sales data
 interface SaleData {
@@ -41,54 +43,93 @@ interface SalesSummary {
   activeBrokers: number;
   totalProperties: number;
   propertiesSold: number;
+  totalTransactions: number;
+  totalRevenue: number;
 }
+
+// Format amount as Indian currency
+const formatAmount = (amount: number) => {
+  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
+  if (amount >= 100000) return `₹${(amount / 100000).toFixed(2)} L`;
+  if (amount >= 1000) return `₹${(amount / 1000).toFixed(2)} K`;
+  return `₹${amount.toLocaleString()}`;
+};
 
 // Statistics cards with real data and professional icons
 const getStatsCards = (summary: SalesSummary | null) => [
+  // Dynamic statistics that update with filters
   {
     id: 1,
-    title: 'Total Clients',
-    value: summary?.totalClients || 0,
-    description: 'All registered clients',
-    icon: <Users className="h-6 w-6 text-blue-600" />,
-    bgColor: 'bg-blue-50'
+    title: 'Total Revenue',
+    value: summary?.totalRevenue || 0,
+    formattedValue: formatAmount(summary?.totalRevenue || 0),
+    description: 'Based on current filters',
+    icon: <DollarSign className="h-6 w-6 text-green-600" />,
+    bgColor: 'bg-green-50',
+    isMonetary: true,
+    isDynamic: true
   },
   {
     id: 2,
-    title: 'Active Clients',
-    value: summary?.activeClients || 0,
-    description: 'Clients with recent activity',
-    icon: <UserCheck className="h-6 w-6 text-green-600" />,
-    bgColor: 'bg-green-50'
+    title: 'Total Transactions',
+    value: summary?.totalTransactions || 0,
+    formattedValue: (summary?.totalTransactions || 0).toLocaleString(),
+    description: 'Based on current filters',
+    icon: <Calendar className="h-6 w-6 text-blue-600" />,
+    bgColor: 'bg-blue-50',
+    isDynamic: true
   },
+  // Static lifetime statistics
   {
     id: 3,
-    title: 'Total Brokers',
-    value: summary?.totalBrokers || 0,
-    description: 'All registered brokers',
-    icon: <Building2 className="h-6 w-6 text-purple-600" />,
-    bgColor: 'bg-purple-50'
-  },
-  {
-    id: 4,
-    title: 'Active Brokers',
-    value: summary?.activeBrokers || 0,
-    description: 'Brokers with active deals',
-    icon: <Briefcase className="h-6 w-6 text-orange-600" />,
-    bgColor: 'bg-orange-50'
-  },
-  {
-    id: 5,
-    title: 'Total Properties',
-    value: summary?.totalProperties || 0,
-    description: 'All properties in system',
-    icon: <Home className="h-6 w-6 text-indigo-600" />,
+    title: 'Total Clients',
+    value: summary?.totalClients || 0,
+    formattedValue: (summary?.totalClients || 0).toLocaleString(),
+    description: 'All registered clients',
+    icon: <Users className="h-6 w-6 text-indigo-600" />,
     bgColor: 'bg-indigo-50'
   },
   {
+    id: 4,
+    title: 'Active Clients',
+    value: summary?.activeClients || 0,
+    formattedValue: (summary?.activeClients || 0).toLocaleString(),
+    description: 'Clients with recent activity',
+    icon: <UserCheck className="h-6 w-6 text-purple-600" />,
+    bgColor: 'bg-purple-50'
+  },
+  {
+    id: 5,
+    title: 'Total Brokers',
+    value: summary?.totalBrokers || 0,
+    formattedValue: (summary?.totalBrokers || 0).toLocaleString(),
+    description: 'All registered brokers',
+    icon: <Building2 className="h-6 w-6 text-orange-600" />,
+    bgColor: 'bg-orange-50'
+  },
+  {
     id: 6,
+    title: 'Active Brokers',
+    value: summary?.activeBrokers || 0,
+    formattedValue: (summary?.activeBrokers || 0).toLocaleString(),
+    description: 'Brokers with active deals',
+    icon: <Briefcase className="h-6 w-6 text-yellow-600" />,
+    bgColor: 'bg-yellow-50'
+  },
+  {
+    id: 7,
+    title: 'Total Properties',
+    value: summary?.totalProperties || 0,
+    formattedValue: (summary?.totalProperties || 0).toLocaleString(),
+    description: 'All properties in system',
+    icon: <Home className="h-6 w-6 text-cyan-600" />,
+    bgColor: 'bg-cyan-50'
+  },
+  {
+    id: 8,
     title: 'Properties Sold',
     value: summary?.propertiesSold || 0,
+    formattedValue: (summary?.propertiesSold || 0).toLocaleString(),
     description: 'Fully completed sales',
     icon: <CheckCircle className="h-6 w-6 text-emerald-600" />,
     bgColor: 'bg-emerald-50'
@@ -97,6 +138,7 @@ const getStatsCards = (summary: SalesSummary | null) => [
 
 const SalesPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState('Metric');
   const [selectedPeriod, setSelectedPeriod] = useState('All Time');
   const [showMetricDropdown, setShowMetricDropdown] = useState(false);
@@ -397,6 +439,29 @@ const SalesPage = () => {
         <div className="p-4 lg:p-6 max-w-full overflow-hidden">
           {/* Sales Header with Filters */}
           <div className="flex flex-col mb-6 space-y-4">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Sales Dashboard</h1>
+              <div className="flex items-center space-x-2 mt-2 lg:mt-0">
+                <button 
+                  onClick={() => setIsTransactionFormOpen(true)}
+                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white border border-blue-700 rounded hover:bg-blue-700"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="text-sm">Add Transaction</span>
+                </button>
+                <button 
+                  onClick={refreshData}
+                  className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  <RefreshCw className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm">Refresh</span>
+                </button>
+                <button className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50">
+                  <Bell className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm">Notifications</span>
+                </button>
+              </div>
+            </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center">
                 <h1 className="text-xl lg:text-2xl font-bold text-black">Sales Overview</h1>
@@ -417,7 +482,7 @@ const SalesPage = () => {
                 <button
                   onClick={refreshData}
                   disabled={isLoading}
-                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                  className="px-3 py-1.5 text-sm bg-blue-600 text-white border border-blue-700 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                 >
                   <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
@@ -459,8 +524,8 @@ const SalesPage = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <div className="flex items-center space-x-2">
                     <div className="flex items-center">
-                      <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-700 whitespace-nowrap">From:</span>
+                      <Calendar className="h-4 w-4 text-gray-600 mr-2" />
+                      <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#374151' }}>From:</span>
                     </div>
                     <input
                       type="date"
@@ -470,11 +535,12 @@ const SalesPage = () => {
                         setSelectedPeriod('Custom');
                       }}
                       className="px-2 py-1.5 text-sm border border-gray-300 rounded w-full sm:w-auto"
+                      style={{ color: '#374151' }}
                     />
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-700 whitespace-nowrap">To:</span>
+                    <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#374151' }}>To:</span>
                     <input
                       type="date"
                       value={dateRange.endDate || ''}
@@ -483,6 +549,7 @@ const SalesPage = () => {
                         setSelectedPeriod('Custom');
                       }}
                       className="px-2 py-1.5 text-sm border border-gray-300 rounded w-full sm:w-auto"
+                      style={{ color: '#374151' }}
                     />
                   </div>
                 </div>
@@ -528,32 +595,6 @@ const SalesPage = () => {
                   )}
                 </div>
               </div>
-
-              {/* Sort controls */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 lg:ml-auto">
-                <span className="text-sm text-gray-700 whitespace-nowrap">Sort by:</span>
-                <div className="flex items-center space-x-2">
-                  <button
-                    className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm"
-                    onClick={() => handleSortChange('date')}
-                  >
-                    <span>Date</span>
-                    {sortBy === 'date' && (
-                      sortOrder === 'asc' ? <SortAsc className="h-4 w-4 text-blue-500" /> : <SortDesc className="h-4 w-4 text-blue-500" />
-                    )}
-                  </button>
-
-                  <button
-                    className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm"
-                    onClick={() => handleSortChange('total_amount')}
-                  >
-                    <span>Amount</span>
-                    {sortBy === 'total_amount' && (
-                      sortOrder === 'asc' ? <SortAsc className="h-4 w-4 text-blue-500" /> : <SortDesc className="h-4 w-4 text-blue-500" />
-                    )}
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -589,7 +630,7 @@ const SalesPage = () => {
                       dataKey="name"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: '#6b7280', fontSize: 11 }}
+                      tick={{ fill: '#374151', fontSize: 11 }}
                       angle={-45}
                       textAnchor="end"
                       height={60}
@@ -598,7 +639,7 @@ const SalesPage = () => {
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: '#6b7280', fontSize: 11 }}
+                      tick={{ fill: '#374151', fontSize: 11 }}
                       tickFormatter={(value) => {
                         if (value >= 10000000) return `₹${(value / 10000000).toFixed(1)}Cr`;
                         if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
@@ -623,25 +664,11 @@ const SalesPage = () => {
               )}
             </div>
             
-            {/* Sales summary */}
-            {!isLoading && !error && formattedSalesData.length > 0 && (
-              <div className="mt-4 border-t border-gray-100 pt-4 flex justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total Records</p>
-                  <p className="text-xl font-semibold">{formattedSalesData.length}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Amount</p>
-                  <p className="text-xl font-semibold text-green-600">
-                    ₹{formattedSalesData.reduce((sum, item) => sum + (item.value || 0), 0).toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Transactions</p>
-                  <p className="text-xl font-semibold">
-                    {formattedSalesData.reduce((sum, item) => sum + (item.transactions || 0), 0).toLocaleString()}
-                  </p>
-                </div>
+            {/* Chart information */}
+            {!isLoading && !error && formattedSalesData.length === 0 && (
+              <div className="mt-4 border-t border-gray-100 pt-4 text-center">
+                <p className="text-gray-500">No data available for the selected filters.</p>
+                <p className="text-sm text-gray-400 mt-2">Try adjusting your date range or other filters.</p>
               </div>
             )}
           </div>
@@ -676,12 +703,20 @@ const SalesPage = () => {
                     <div className={`p-3 rounded-lg ${card.bgColor}`}>
                       {card.icon}
                     </div>
-                    <div className="text-gray-400">
-                      <Info className="h-4 w-4" />
-                    </div>
+                    {card.isDynamic ? (
+                      <div className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                        Filtered
+                      </div>
+                    ) : (
+                      <div className="text-gray-400">
+                        <Info className="h-4 w-4" />
+                      </div>
+                    )}
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">{card.title}</h3>
-                  <p className="text-3xl font-bold text-gray-900 mb-2">{card.value.toLocaleString()}</p>
+                  <p className={`text-3xl font-bold mb-2 ${card.isMonetary ? 'text-green-600' : 'text-gray-900'}`}>
+                    {card.formattedValue}
+                  </p>
                   <p className="text-sm text-gray-500">{card.description}</p>
                 </div>
               ))
@@ -705,8 +740,16 @@ const SalesPage = () => {
             </div>
           </div>
 
-          {/* Future Enhancement: Detailed Transactions Table */}
-          {/* This section can be implemented later to show individual transaction records */}
+          {/* Recent Transactions */}
+          <div className="mt-6">
+            <RecentTransactions className="mb-6" />
+          </div>
+          
+          {/* Transaction Form Modal */}
+          <TransactionForm 
+            isOpen={isTransactionFormOpen} 
+            onClose={() => setIsTransactionFormOpen(false)} 
+          />
         </div>
       </div>
     </div>

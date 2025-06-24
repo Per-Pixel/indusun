@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { executeQuery } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
@@ -48,8 +48,8 @@ export async function GET(req: NextRequest) {
     
     // Execute the queries
     const [clientsResult, countResult] = await Promise.all([
-      pool.query(query, queryParams),
-      pool.query(countQuery, search ? [`%${search}%`] : [])
+      executeQuery(query, queryParams),
+      executeQuery(countQuery, search ? [`%${search}%`] : [])
     ]).catch((err: Error) => {
       console.error('Database query error:', err.message);
       throw new Error(`Database query failed: ${err.message}`);
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
       .join(' ');
 
     // Insert client into database
-    const result = await pool.query(`
+    const result = await executeQuery(`
       INSERT INTO clients (
         full_name,
         normalized_name,

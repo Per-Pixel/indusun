@@ -5,6 +5,31 @@ export async function GET() {
   try {
     console.log('Setting up database tables...');
 
+    // Create users table if it doesn't exist (shared with main app)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255),
+        email_verified BOOLEAN DEFAULT false,
+        google_id VARCHAR(255),
+        profile_picture VARCHAR(500),
+        phone VARCHAR(50),
+        role VARCHAR(50) DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create blacklisted_tokens table if it doesn't exist (shared with main app)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS blacklisted_tokens (
+        token_id VARCHAR(255) PRIMARY KEY,
+        expiry TIMESTAMP NOT NULL
+      )
+    `);
+
     // Create clients table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS clients (

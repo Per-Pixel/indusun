@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import SummaryCard from '@/components/dashboard/SummaryCard';
 import PaymentHistory from '@/components/dashboard/PaymentHistory';
 import RemainingAmount from '@/components/dashboard/RemainingAmount';
 import TransactionList from '@/components/dashboard/TransactionList';
-import { FileText, CreditCard } from 'lucide-react';
+import { FileText, CreditCard, Loader2 } from 'lucide-react';
 
 // Mock data
 const mockPayments = [
@@ -54,18 +55,107 @@ const mockTransactions = [
 
 const Dashboard = () => {
   const router = useRouter();
+  const { user } = useAuth();
   const [showNotification, setShowNotification] = useState(true);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch user-specific dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user) return;
+
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/customer/dashboard');
+
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData(data);
+        } else {
+          console.error('Failed to fetch dashboard data');
+          // Fallback to mock data for now
+          setDashboardData({
+            user: user,
+            summary: {
+              totalProperties: 1,
+              totalPaid: 250000,
+              totalOutstanding: 150000,
+              overdueAmount: 75000,
+              overdueCount: 2,
+              nextPaymentDue: {
+                amount: 75000,
+                dueDate: '2024-04-15',
+                propertyName: 'Sample Property'
+              }
+            },
+            recentTransactions: mockTransactions,
+            properties: [{
+              id: 'prop_1',
+              name: 'Sample Property',
+              type: 'apartment',
+              location: 'Sample Location',
+              completionPercentage: 65
+            }],
+            broker: {
+              name: 'Arshir Patel',
+              phone: '+91 98765 43210',
+              email: 'arshir.p@indusun.com'
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user]);
 
   const handlePayNow = () => {
     // Handle payment logic
     console.log('Pay now clicked');
+    router.push('/payments');
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <span className="ml-2 text-gray-600">Loading dashboard...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show login prompt if no user
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-12">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Please log in to view your dashboard</h2>
+          <button
+            onClick={() => router.push('/login')}
+            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+          >
+            Go to Login
+          </button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       {/* Welcome Section */}
       <div className="mb-4 w-full">
-        <h1 className="text-2xl font-semibold mb-1 text-black">Hello, Chotu</h1>
+        <h1 className="text-2xl font-semibold mb-1 text-black">
+          Hello, {dashboardData?.user?.name || user?.name || 'User'}
+        </h1>
         <p className="text-gray-500 text-sm">Your current summary and activity.</p>
       </div>
 
@@ -73,14 +163,16 @@ const Dashboard = () => {
       <div className="hidden md:grid grid-cols-3 gap-4 mb-6">
         <SummaryCard
           title="Overdue Invoices"
-          amount="INR 6,947.00"
+          amount={`INR ${dashboardData?.summary?.overdueAmount?.toLocaleString() || '0'}.00`}
+          badge={dashboardData?.summary?.overdueCount ? `${dashboardData.summary.overdueCount} overdue` : undefined}
           icon={<FileText size={20} />}
           onClick={() => router.push('/invoices')}
         />
 
         <SummaryCard
-          title="Upcoming Payments"
-          amount="INR 6,947.00"
+          title="Next Payment Due"
+          amount={`INR ${dashboardData?.summary?.nextPaymentDue?.amount?.toLocaleString() || '0'}.00`}
+          badge={dashboardData?.summary?.nextPaymentDue?.dueDate ? `Due ${new Date(dashboardData.summary.nextPaymentDue.dueDate).toLocaleDateString()}` : undefined}
           icon={<CreditCard size={20} />}
           onClick={() => router.push('/payments')}
         />
@@ -89,7 +181,7 @@ const Dashboard = () => {
           title="Your Agent"
           image={
             <div className="flex items-center">
-              <span className="mr-2 text-black">Arshir Patel</span>
+              <span className="mr-2 text-black">{dashboardData?.broker?.name || 'Arshir Patel'}</span>
               <div className="h-10 w-10 rounded-full overflow-hidden">
                 <Image
                   src="/auth/Agents/agent-03.jpg"
@@ -108,19 +200,19 @@ const Dashboard = () => {
       {/* Mobile Summary Cards */}
       <div className="grid md:hidden grid-cols-2 gap-4 mb-6">
         <SummaryCard
-          title="Upcoming Payments"
-          amount="INR 6,947.00"
-          badge="9 New"
+          title="Next Payment"
+          amount={`INR ${dashboardData?.summary?.nextPaymentDue?.amount?.toLocaleString() || '0'}.00`}
+          badge={dashboardData?.summary?.overdueCount ? `${dashboardData.summary.overdueCount} overdue` : undefined}
           onClick={() => router.push('/payments')}
           viewAlign="left"
         />
 
         <SummaryCard
           title="Your Agent"
-          badge="9 New"
+          badge={dashboardData?.properties?.length ? `${dashboardData.properties.length} property` : undefined}
           customContent={
             <div className="flex items-center justify-between mt-3 mb-1">
-              <div className="text-sm font-medium text-black">Arshir Patel</div>
+              <div className="text-sm font-medium text-black">{dashboardData?.broker?.name || 'Arshir Patel'}</div>
               <div className="h-7 w-7 rounded-full overflow-hidden">
                 <Image
                   src="/auth/Agents/agent-03.jpg"
@@ -140,7 +232,10 @@ const Dashboard = () => {
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-3 gap-4 mt-6">
         <div>
-          <RemainingAmount amount="6,071.00" onPayNow={handlePayNow} />
+          <RemainingAmount
+            amount={dashboardData?.summary?.totalOutstanding?.toLocaleString() || '0'}
+            onPayNow={handlePayNow}
+          />
         </div>
 
         <div className="md:col-span-2">
@@ -155,8 +250,12 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 relative overflow-hidden">
             <div className="relative z-10">
               <h3 className="text-sm font-medium text-gray-500">Remaining Amount</h3>
-              <p className="text-lg font-semibold mt-1 text-black">INR 6,071.00</p>
-              <p className="text-xs text-gray-500 mt-1">Lorem ipsum dolor amet, consectetur adipiscing elit.</p>
+              <p className="text-lg font-semibold mt-1 text-black">
+                INR {dashboardData?.summary?.totalOutstanding?.toLocaleString() || '0'}.00
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {dashboardData?.summary?.nextPaymentDue?.propertyName || 'Your property investment'} - Outstanding balance
+              </p>
             </div>
             <div className="absolute right-0 top-0 w-20 h-20 rounded-bl-3xl overflow-hidden bg-black">
               <div className="w-full h-full flex items-center justify-center">

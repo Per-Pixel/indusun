@@ -21,22 +21,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // TEMPORARY: Create a mock user for development
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const mockUser: User = {
-    id: '1',
-    name: 'Development User',
-    email: 'dev@example.com',
-    role: 'broker', // Set to broker for testing broker dashboard
-  };
-
-  const [user, setUser] = useState<User | null>(isDevelopment ? mockUser : null);
-  const [isLoading, setIsLoading] = useState(!isDevelopment);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isDevelopment) {
-      checkAuth();
-    }
+    checkAuth();
   }, []);
 
   const login = (userData: User) => {
@@ -44,22 +33,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     toast.success('Login successful');
   };
 
-  const logout = () => {
-    if (isDevelopment) {
-      toast.success('Logout disabled in development mode');
-      return;
+  const logout = async () => {
+    try {
+      // Call logout API to clear cookies
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      setUser(null);
+      toast.success('Logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if API call fails, clear local state
+      setUser(null);
+      toast.success('Logged out successfully');
     }
-    setUser(null);
   };
 
   const checkAuth = async () => {
-    // In development mode, always return the mock user
-    if (isDevelopment) {
-      console.log('🔧 Development mode: Using mock user');
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await fetch('/api/auth/me', {
