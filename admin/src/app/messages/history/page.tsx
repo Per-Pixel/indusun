@@ -25,7 +25,7 @@ interface MessageHistory {
   content: string;
   sentAt: string;
   status: 'delivered' | 'pending' | 'failed';
-  type: 'sms' | 'email';
+  type: 'sms' | 'email' | 'whatsapp';
   recipients: {
     total: number;
     delivered: number;
@@ -163,6 +163,24 @@ const mockMessageHistory: MessageHistory[] = [
       id: 'broker-2',
       name: 'Michael Chen',
       image: '/auth/Agents/agent-02.jpg'
+    }
+  },
+  {
+    id: 'msg-008',
+    subject: 'Property Update via WhatsApp',
+    content: 'Hi! We have exciting updates about your property inquiry. The property you were interested in is now available for viewing. Would you like to schedule a visit?',
+    sentAt: '2023-12-18T09:15:00',
+    status: 'delivered',
+    type: 'whatsapp',
+    recipients: {
+      total: 25,
+      delivered: 24,
+      failed: 1
+    },
+    sender: {
+      id: 'admin-1',
+      name: 'Sarah Johnson',
+      image: '/auth/Agents/agent-01.jpg'
     }
   }
 ];
@@ -326,6 +344,7 @@ export default function MessageHistoryPage() {
                     <option value="All" className="text-gray-900">All Types</option>
                     <option value="email" className="text-gray-900">Email</option>
                     <option value="sms" className="text-gray-900">SMS</option>
+                    <option value="whatsapp" className="text-gray-900">WhatsApp</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                     <ChevronDown size={16} />
@@ -383,9 +402,13 @@ export default function MessageHistoryPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            message.type === 'email' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                            message.type === 'email'
+                              ? 'bg-blue-100 text-blue-800'
+                              : message.type === 'sms'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-green-100 text-green-800'
                           }`}>
-                            {message.type === 'email' ? 'Email' : 'SMS'}
+                            {message.type === 'email' ? 'Email' : message.type === 'sms' ? 'SMS' : 'WhatsApp'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

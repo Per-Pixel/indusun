@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Phone,
   Mail,
+  MessageCircle,
   Download,
   X
 } from 'lucide-react';
@@ -100,7 +101,7 @@ export default function MessagesPage() {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [messageText, setMessageText] = useState('');
-  const [messageType, setMessageType] = useState<'sms' | 'email'>('sms');
+  const [messageType, setMessageType] = useState<'sms' | 'email' | 'whatsapp'>('sms');
   const [isSending, setIsSending] = useState(false);
   const [messageStats, setMessageStats] = useState<MessageStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -700,14 +701,17 @@ export default function MessagesPage() {
 
                   {/* Message Options */}
                   <div className="p-4 border-b border-gray-200">
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 flex-wrap">
                       <button
                         onClick={() => setMessageType('sms')}
                         className={`flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
                           messageType === 'sms'
                             ? 'bg-blue-600 text-white border-blue-600'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                            : 'border-gray-300 hover:bg-gray-50'
                         }`}
+                        style={{
+                          color: messageType === 'sms' ? 'white' : '#374151'
+                        }}
                       >
                         <Phone size={16} className="mr-2" />
                         <span>Send SMS</span>
@@ -717,11 +721,28 @@ export default function MessagesPage() {
                         className={`flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
                           messageType === 'email'
                             ? 'bg-blue-600 text-white border-blue-600'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                            : 'border-gray-300 hover:bg-gray-50'
                         }`}
+                        style={{
+                          color: messageType === 'email' ? 'white' : '#374151'
+                        }}
                       >
                         <Mail size={16} className="mr-2" />
                         <span>Send Email</span>
+                      </button>
+                      <button
+                        onClick={() => setMessageType('whatsapp')}
+                        className={`flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                          messageType === 'whatsapp'
+                            ? 'bg-green-600 text-white border-green-600'
+                            : 'border-gray-300 hover:bg-gray-50'
+                        }`}
+                        style={{
+                          color: messageType === 'whatsapp' ? 'white' : '#374151'
+                        }}
+                      >
+                        <MessageCircle size={16} className="mr-2" />
+                        <span>Send to WhatsApp</span>
                       </button>
                     </div>
                   </div>
