@@ -19,13 +19,13 @@ console.log("Environment variables check:", {
   hasJwtSecret: !!process.env.JWT_SECRET
 });
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<Response> {
   // Create a URL object from the request URL
   const url = new URL(request.url);
   console.log("Facebook callback URL:", url.toString());
-  
+
   // Create a custom handler for the passport authenticate
-  return new Promise((resolve) => {
+  return new Promise<Response>((resolve) => {
     const authenticate = passport.authenticate('facebook', { 
       clientID: process.env.FACEBOOK_CLIENT_ID,
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET,

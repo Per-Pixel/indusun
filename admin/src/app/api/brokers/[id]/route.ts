@@ -4,10 +4,10 @@ import pool from '@/lib/db';
 // Get a specific broker by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const result = await pool.query(`
       SELECT 
@@ -61,10 +61,10 @@ export async function GET(
 // Update a broker by ID
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     console.log('PUT request for broker ID:', id, 'Type:', typeof id);
     
     const data = await req.json();
@@ -149,10 +149,10 @@ export async function PUT(
 // Delete a broker by ID
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Check if broker exists
     const checkResult = await pool.query(

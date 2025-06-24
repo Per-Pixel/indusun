@@ -10,7 +10,6 @@ interface LoginCredentials {
     user: User | undefined;
   };
 }
-}
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import pool from "@/lib/db";
+import { getUserById } from "@/data/mockUsers";
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,17 +29,15 @@ export async function GET(request: NextRequest) {
       // Decode and verify the token
       const decoded = jwt.verify(accessToken, jwtSecret) as { id: string; email: string; name: string };
 
-      // Get user from database to ensure they still exist and get latest data
-      const userResult = await pool.query('SELECT id, name, email, role FROM users WHERE id = $1', [decoded.id]);
+      // Get user from mock data to ensure they still exist and get latest data
+      const user = getUserById(decoded.id);
 
-      if (userResult.rows.length === 0) {
+      if (!user) {
         return NextResponse.json(
           { authenticated: false, message: "User not found" },
           { status: 401 }
         );
       }
-
-      const user = userResult.rows[0];
 
       // Return user data
       return NextResponse.json({
@@ -63,17 +61,15 @@ export async function GET(request: NextRequest) {
             // Verify refresh token
             const decoded = jwt.verify(refreshToken, jwtSecret) as { id: string };
 
-            // Get user from database
-            const userResult = await pool.query('SELECT id, name, email, role FROM users WHERE id = $1', [decoded.id]);
+            // Get user from mock data
+            const user = getUserById(decoded.id);
 
-            if (userResult.rows.length === 0) {
+            if (!user) {
               return NextResponse.json(
                 { authenticated: false, message: "User not found" },
                 { status: 401 }
               );
             }
-
-            const user = userResult.rows[0];
 
             // Generate new access token
             const newAccessToken = jwt.sign(

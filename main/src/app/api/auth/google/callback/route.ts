@@ -19,14 +19,14 @@ console.log("Environment variables check:", {
   hasJwtSecret: !!process.env.JWT_SECRET
 });
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<Response> {
   // Create a URL object from the request URL
   const url = new URL(request.url);
   console.log("Google callback URL:", url.toString());
   console.log("Google callback query params:", Object.fromEntries(url.searchParams));
-  
+
   // Create a custom handler for the passport authenticate
-  return new Promise((resolve) => {
+  return new Promise<Response>((resolve) => {
     console.log("Creating passport authenticate handler in callback");
     const authenticate = passport.authenticate('google', { 
       session: false,

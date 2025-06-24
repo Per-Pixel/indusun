@@ -90,14 +90,14 @@ const initializePassport = () => {
     };
 };
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<Response> {
     console.log("Google auth GET request received");
     // Create a URL object from the request URL
     const url = new URL(request.url);
     console.log("Request URL:", url.toString());
-    
+
     // Create a custom handler for the passport authenticate
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
         console.log("Creating passport authenticate handler");
         const authenticate = passport.authenticate('google', { 
             scope: ['profile', 'email'],

@@ -4,8 +4,9 @@ import { getCustomerData } from '@/lib/mock-customer-data';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Get access token from cookies
     const accessToken = request.cookies.get('access_token')?.value;
@@ -55,7 +56,7 @@ export async function GET(
       }
 
       // Find the specific invoice
-      const invoice = customerData.invoices.find(inv => inv.id === params.id);
+      const invoice = customerData.invoices.find(inv => inv.id === id);
       
       if (!invoice) {
         return NextResponse.json(

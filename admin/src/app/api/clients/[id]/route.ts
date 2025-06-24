@@ -4,10 +4,10 @@ import pool from '@/lib/db';
 // Get a specific client by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const result = await pool.query(`
       SELECT 
@@ -61,10 +61,10 @@ export async function GET(
 // Update a client by ID
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await req.json();
     const { name, phone } = data;
 
@@ -146,10 +146,10 @@ export async function PUT(
 // Delete a client by ID
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Check if client exists
     const checkResult = await pool.query(

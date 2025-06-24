@@ -251,47 +251,6 @@ const Login = () => {
                 ) : (
                   <div>
                     <label htmlFor="phone" className="block text-xl font-medium text-gray-700 mb-3">Phone Number</label>
-<<<<<<< HEAD
-                    <div className="flex space-x-2">
-                      <input
-                        id="phone"
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        placeholder="+91 98765 12345"
-                        className="flex-1 p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
-                        style={{ color: '#374151' }}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSendOTP}
-                        disabled={isLoading || otpCountdown > 0 || !formData.phone}
-                        className="px-6 py-4 bg-blue-800 text-white rounded-md hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-lg font-medium h-14"
-                      >
-                        {otpCountdown > 0 ? `${otpCountdown}s` : 'Get OTP'}
-                      </button>
-                    </div>
-
-                    {otpSent && (
-                      <div className="mt-4">
-                        <label htmlFor="otp" className="block text-xl font-medium text-gray-700 mb-3">Enter OTP</label>
-                        <input
-                          id="otp"
-                          type="text"
-                          name="otp"
-                          value={formData.otp}
-                          onChange={handleChange}
-                          placeholder="123456"
-                          maxLength={6}
-                          className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
-                          style={{ color: '#374151' }}
-                          required
-                        />
-                      </div>
-                    )}
-=======
                     <input
                       id="phone"
                       type="tel"
@@ -300,6 +259,7 @@ const Login = () => {
                       onChange={handleChange}
                       placeholder="+91 9876543210"
                       className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
+                      style={{ color: '#374151' }}
                       required
                     />
                     {/* OTP Option */}
@@ -313,7 +273,6 @@ const Login = () => {
                         Get OTP to login instead
                       </button>
                     </div>
->>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
                   </div>
                 )}
 
