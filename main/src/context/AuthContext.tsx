@@ -21,10 +21,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-<<<<<<< HEAD
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-=======
   // TEMPORARY: Create a mock user for development using our actual mock data
   const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -38,7 +34,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [user, setUser] = useState<User | null>(isDevelopment ? mockUser : null);
   const [isLoading, setIsLoading] = useState(!isDevelopment);
->>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
 
   useEffect(() => {
     checkAuth();
@@ -49,7 +44,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     toast.success('Login successful');
   };
 
-<<<<<<< HEAD
   const logout = async () => {
     try {
       // Call logout API to clear cookies
@@ -61,21 +55,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       setUser(null);
+      // Clear any stored tokens
+      document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if API call fails, clear local state
       setUser(null);
+      // Clear any stored tokens
+      document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       toast.success('Logged out successfully');
     }
-=======
-  const logout = () => {
-    setUser(null);
-    // Clear any stored tokens
-    document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    toast.success('Logged out successfully');
->>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
   };
 
   const checkAuth = async () => {

@@ -62,48 +62,58 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAuth = async () => {
     setIsLoading(true);
     try {
-<<<<<<< HEAD
-      const response = await fetch('/api/auth/me', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-=======
-      // Mock authentication for development using our mock admin users
-      // In production, this would be a real API call
+      // Check if we're in development mode
+      const isDevelopment = process.env.NODE_ENV === 'development';
 
-      // Import mock admin users dynamically to avoid build issues
-      const { mockAdminUsers } = await import('../data/mockUsers');
+      if (isDevelopment) {
+        // Mock authentication for development using our mock admin users
+        try {
+          // Import mock admin users dynamically to avoid build issues
+          const { mockAdminUsers } = await import('../data/mockUsers');
 
-      // Use the first admin user as the logged-in user for development
-      const mockAdmin = mockAdminUsers[0]; // Super admin
+          // Use the first admin user as the logged-in user for development
+          const mockAdmin = mockAdminUsers[0]; // Super admin
 
-      const mockUser: AdminUser = {
-        id: mockAdmin.id,
-        name: mockAdmin.name,
-        email: mockAdmin.email,
-        role: mockAdmin.role
-      };
->>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
+          const mockUser: AdminUser = {
+            id: mockAdmin.id,
+            name: mockAdmin.name,
+            email: mockAdmin.email,
+            role: mockAdmin.role,
+            permissions: mockAdmin.permissions
+          };
 
-      const data = await response.json();
-
-      if (response.ok && data.authenticated) {
-        setUser(data.user);
+          setUser(mockUser);
+        } catch (importError) {
+          console.error('Failed to import mock users:', importError);
+          // Fallback to basic mock user if import fails
+          const fallbackUser: AdminUser = {
+            id: '1',
+            name: 'Admin User',
+            email: 'admin@indusun.com',
+            role: 'super_admin'
+          };
+          setUser(fallbackUser);
+        }
       } else {
-        setUser(null);
+        // Production: Real API call
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.authenticated) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('Authentication check error:', error);
-      // Fallback to basic mock user if import fails
-      const fallbackUser: AdminUser = {
-        id: '1',
-        name: 'Admin User',
-        email: 'admin@indusun.com',
-        role: 'admin'
-      };
-      setUser(fallbackUser);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }

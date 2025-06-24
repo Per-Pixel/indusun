@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import RecentTransactions from '@/components/sales/RecentTransactions';
-import TransactionForm from '@/components/sales/TransactionForm';
 
 // Types for sales data
 interface SaleData {
@@ -137,14 +136,11 @@ const getStatsCards = (summary: SalesSummary | null) => [
 ];
 
 const SalesPage = () => {
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
-  const [selectedMetric, setSelectedMetric] = useState('Metric');
   const [selectedPeriod, setSelectedPeriod] = useState('All Time');
-  const [showMetricDropdown, setShowMetricDropdown] = useState(false);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
-  const [showAllTransactions, setShowAllTransactions] = useState(false);
   
   // Sales data state
   const [salesData, setSalesData] = useState<SaleData[]>([]);
@@ -160,7 +156,6 @@ const SalesPage = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
-  const metricDropdownRef = useRef<HTMLDivElement>(null);
   const periodDropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const brokerDropdownRef = useRef<HTMLDivElement>(null);
@@ -169,9 +164,6 @@ const SalesPage = () => {
   // Handle clicks outside of dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (metricDropdownRef.current && !metricDropdownRef.current.contains(event.target as HTMLElement)) {
-        setShowMetricDropdown(false);
-      }
       if (periodDropdownRef.current && !periodDropdownRef.current.contains(event.target as HTMLElement)) {
         setShowPeriodDropdown(false);
       }
@@ -442,8 +434,8 @@ const SalesPage = () => {
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Sales Dashboard</h1>
               <div className="flex items-center space-x-2 mt-2 lg:mt-0">
-                <button 
-                  onClick={() => setIsTransactionFormOpen(true)}
+                <button
+                  onClick={() => router.push('/transactions/add')}
                   className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white border border-blue-700 rounded hover:bg-blue-700"
                 >
                   <Plus className="h-4 w-4" />
@@ -524,13 +516,8 @@ const SalesPage = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <div className="flex items-center space-x-2">
                     <div className="flex items-center">
-<<<<<<< HEAD
                       <Calendar className="h-4 w-4 text-gray-600 mr-2" />
                       <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#374151' }}>From:</span>
-=======
-                      <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-800 whitespace-nowrap">From:</span>
->>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
                     </div>
                     <input
                       type="date"
@@ -545,11 +532,7 @@ const SalesPage = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
-<<<<<<< HEAD
                     <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#374151' }}>To:</span>
-=======
-                    <span className="text-sm text-gray-800 whitespace-nowrap">To:</span>
->>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
                     <input
                       type="date"
                       value={dateRange.endDate || ''}
@@ -604,8 +587,6 @@ const SalesPage = () => {
                   )}
                 </div>
               </div>
-<<<<<<< HEAD
-=======
 
               {/* Sort controls */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 lg:ml-auto">
@@ -632,7 +613,6 @@ const SalesPage = () => {
                   </button>
                 </div>
               </div>
->>>>>>> 64f2abca7c485ee82b9820a9f5ac64ee8aeedafd
             </div>
           </div>
 
@@ -782,12 +762,6 @@ const SalesPage = () => {
           <div className="mt-6">
             <RecentTransactions className="mb-6" />
           </div>
-          
-          {/* Transaction Form Modal */}
-          <TransactionForm 
-            isOpen={isTransactionFormOpen} 
-            onClose={() => setIsTransactionFormOpen(false)} 
-          />
         </div>
       </div>
     </div>
