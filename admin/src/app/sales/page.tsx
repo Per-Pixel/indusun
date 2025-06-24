@@ -399,9 +399,9 @@ const SalesPage = () => {
           <div className="flex flex-col mb-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center">
-                <h1 className="text-xl lg:text-2xl font-bold text-black">Sales Overview</h1>
-                <button className="ml-2 p-1 rounded-full hover:bg-gray-100">
-                  <Info className="h-4 w-4 text-gray-400" />
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Sales Overview</h1>
+                <button className="ml-2 p-1 rounded-full hover:bg-gray-100 text-gray-800">
+                  <Info className="h-4 w-4" />
                 </button>
               </div>
 
@@ -409,7 +409,7 @@ const SalesPage = () => {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={resetFilters}
-                  className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 flex items-center space-x-1"
+                  className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded hover:bg-gray-50 flex items-center space-x-1 text-gray-800"
                 >
                   <Filter className="h-4 w-4 text-gray-500" />
                   <span>Reset Filters</span>
@@ -460,7 +460,7 @@ const SalesPage = () => {
                   <div className="flex items-center space-x-2">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-700 whitespace-nowrap">From:</span>
+                      <span className="text-sm text-gray-800 whitespace-nowrap">From:</span>
                     </div>
                     <input
                       type="date"
@@ -474,7 +474,7 @@ const SalesPage = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-700 whitespace-nowrap">To:</span>
+                    <span className="text-sm text-gray-800 whitespace-nowrap">To:</span>
                     <input
                       type="date"
                       value={dateRange.endDate || ''}
@@ -493,7 +493,7 @@ const SalesPage = () => {
                     className="flex items-center space-x-1 bg-white border border-gray-300 rounded px-3 py-1.5 text-sm min-w-[140px] justify-between"
                     onClick={() => setShowBrokerDropdown(!showBrokerDropdown)}
                   >
-                    <span className="truncate">{selectedBrokerId ? filterOptions.brokers.find(b => b.id === selectedBrokerId)?.name || 'Select Broker' : 'All Brokers'}</span>
+                    <span className="truncate text-gray-900">{selectedBrokerId ? filterOptions.brokers.find(b => b.id === selectedBrokerId)?.name || 'Select Broker' : 'All Brokers'}</span>
                     <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
                   </button>
                   {showBrokerDropdown && (
@@ -531,10 +531,10 @@ const SalesPage = () => {
 
               {/* Sort controls */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 lg:ml-auto">
-                <span className="text-sm text-gray-700 whitespace-nowrap">Sort by:</span>
+                <span className="text-sm text-gray-900 whitespace-nowrap">Sort by:</span>
                 <div className="flex items-center space-x-2">
                   <button
-                    className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm"
+                    className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm text-gray-900"
                     onClick={() => handleSortChange('date')}
                   >
                     <span>Date</span>
@@ -544,7 +544,7 @@ const SalesPage = () => {
                   </button>
 
                   <button
-                    className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm"
+                    className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm text-gray-900"
                     onClick={() => handleSortChange('total_amount')}
                   >
                     <span>Amount</span>
