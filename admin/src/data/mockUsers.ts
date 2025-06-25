@@ -64,9 +64,9 @@ export const mockAdminUsers: User[] = [
 export const mockCustomerUsers: User[] = [
   {
     id: 'customer_1',
-    name: 'Rajesh Kumar',
-    email: 'rajesh.kumar@email.com',
-    phone: '+91 9876543210',
+    name: 'Per Pixel',
+    email: 'perpixel@email.com',
+    phone: '+91 8849180795',
     address: '123 MG Road, Bangalore, Karnataka 560001',
     bio: 'Looking for premium residential properties in Bangalore. Interested in 2-3 BHK apartments with modern amenities.',
     role: 'customer',
@@ -79,9 +79,9 @@ export const mockCustomerUsers: User[] = [
   },
   {
     id: 'customer_2',
-    name: 'Priya Sharma',
-    email: 'priya.sharma@email.com',
-    phone: '+91 8765432109',
+    name: 'Romit Singh',
+    email: 'romitsignh749@email.com',
+    phone: '+91 7490825290',
     address: '456 Sector 18, Noida, Uttar Pradesh 201301',
     bio: 'First-time home buyer seeking affordable housing options in NCR region. Preference for ready-to-move properties.',
     role: 'customer',
@@ -113,11 +113,11 @@ export const getUserByPhone = (phone: string): User | undefined => {
 // Login credentials for testing
 export const mockLoginCredentials = {
   // Customer credentials
-  'rajesh.kumar@email.com': { password: 'customer123', user: mockCustomerUsers[0] },
-  '+91 9876543210': { password: 'customer123', user: mockCustomerUsers[0] },
-  'priya.sharma@email.com': { password: 'customer123', user: mockCustomerUsers[1] },
-  '+91 8765432109': { password: 'customer123', user: mockCustomerUsers[1] },
-  
+  'perpixel@email.com': { password: 'customer123', user: mockCustomerUsers[0] },
+  '+91 8849180795': { password: 'customer123', user: mockCustomerUsers[0] },
+  'romitsignh749@email.com': { password: 'customer123', user: mockCustomerUsers[1] },
+  '+91 7490825290': { password: 'customer123', user: mockCustomerUsers[1] },
+
   // Admin credentials
   'amit.verma@indusun.com': { password: 'admin123', user: mockAdminUsers[0] },
   '+91 9123456789': { password: 'admin123', user: mockAdminUsers[0] },

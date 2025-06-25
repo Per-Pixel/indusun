@@ -32,17 +32,17 @@ This guide provides comprehensive testing instructions for the authentication an
 
 ### Customer Users
 
-#### User 1: Rajesh Kumar
-- **Email**: `rajesh.kumar@email.com`
-- **Phone**: `+91 9876543210`
+#### User 1: Per Pixel
+- **Email**: `perpixel@email.com`
+- **Phone**: `+91 8849180795`
 - **Password**: `customer123`
 - **Profile**: Premium property seeker in Bangalore
 - **Agent**: Arshir Patel
 - **Outstanding**: INR 12,340.00
 
-#### User 2: Priya Sharma
-- **Email**: `priya.sharma@email.com`
-- **Phone**: `+91 8765432109`
+#### User 2: Romit Singh
+- **Email**: `romitsignh749@email.com`
+- **Phone**: `+91 7490825290`
 - **Password**: `customer123`
 - **Profile**: First-time home buyer in NCR
 - **Agent**: Vikram Singh
@@ -71,21 +71,21 @@ This guide provides comprehensive testing instructions for the authentication an
 #### Email/Password Login
 1. Go to `http://localhost:3000/login`
 2. Select "Email" tab
-3. Enter: `rajesh.kumar@email.com` / `customer123`
+3. Enter: `perpixel@email.com` / `customer123`
 4. Click "Log in"
 5. **Expected**: Redirect to dashboard with personalized data
 
 #### Phone/Password Login
 1. Go to `http://localhost:3000/login`
 2. Select "Phone" tab
-3. Enter: `+91 9876543210` / `customer123`
+3. Enter: `+91 8849180795` / `customer123`
 4. Click "Log in"
 5. **Expected**: Redirect to dashboard with personalized data
 
 #### OTP Login Flow
 1. Go to `http://localhost:3000/login`
 2. Select "Phone" tab
-3. Enter: `+91 9876543210`
+3. Enter: `+91 8849180795`
 4. Click "Get OTP to login instead"
 5. **Expected**: Redirect to OTP page
 6. **Development Mode**: OTP will be displayed in:

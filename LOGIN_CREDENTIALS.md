@@ -2,10 +2,10 @@
 
 ## 🏠 Customer Users (Main App - localhost:3000)
 
-### 👤 Rajesh Kumar
+### 👤 Per Pixel
 ```
-Email: rajesh.kumar@email.com
-Phone: +91 9876543210
+Email: perpixel@email.com
+Phone: +91 8849180795
 Password: customer123
 ```
 **Profile**: Premium property seeker in Bangalore  
@@ -13,10 +13,10 @@ Password: customer123
 **Outstanding**: INR 12,340.00  
 **Dashboard**: Full transaction history (120+ transactions)
 
-### 👤 Priya Sharma
+### 👤 Romit Singh
 ```
-Email: priya.sharma@email.com
-Phone: +91 8765432109
+Email: romitsignh749@email.com
+Phone: +91 7490825290
 Password: customer123
 ```
 **Profile**: First-time home buyer in NCR  
@@ -83,15 +83,15 @@ npm run dev
 ### Customer Login Test
 ```bash
 # Email Login
-Email: rajesh.kumar@email.com
+Email: perpixel@email.com
 Password: customer123
 
 # Phone Login
-Phone: +91 9876543210
+Phone: +91 8849180795
 Password: customer123
 
 # OTP Login
-Phone: +91 9876543210
+Phone: +91 8849180795
 # Click "Get OTP to login instead"
 # Check console for OTP in development mode
 ```
@@ -122,7 +122,7 @@ When testing OTP login:
 
 **Example OTP Flow**:
 ```
-Phone: +91 9876543210
+Phone: +91 8849180795
 → OTP Page
 → Check console: "🔐 Development OTP: 123456"
 → Enter: 123456

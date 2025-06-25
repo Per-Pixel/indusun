@@ -27,8 +27,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Use the first customer user as default for development
   const mockUser: User = {
     id: 'customer_1',
-    name: 'Rajesh Kumar',
-    email: 'rajesh.kumar@email.com',
+    name: 'Per Pixel',
+    email: 'perpixel@email.com',
     role: 'customer',
   };
 

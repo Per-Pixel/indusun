@@ -21,21 +21,6 @@ const OTPLogin = () => {
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [otpSent, setOtpSent] = useState(false);
 
-  // Timer effect
-  useEffect(() => {
-    if (timeLeft > 0 && otpSent) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [timeLeft, otpSent]);
-
-  // Auto-send OTP if phone is provided
-  useEffect(() => {
-    if (phone && !otpSent) {
-      handleSendOTP();
-    }
-  }, [phone, otpSent, handleSendOTP]);
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -64,7 +49,7 @@ const OTPLogin = () => {
         setOtpSent(true);
         setTimeLeft(300); // Reset timer
         toast.success('OTP sent successfully!');
-        
+
         // In development, show the OTP in console
         if (process.env.NODE_ENV === 'development') {
           console.log('🔐 Development OTP:', data.otp);
@@ -80,6 +65,21 @@ const OTPLogin = () => {
       setIsLoading(false);
     }
   }, [phone]);
+
+  // Timer effect
+  useEffect(() => {
+    if (timeLeft > 0 && otpSent) {
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [timeLeft, otpSent]);
+
+  // Auto-send OTP if phone is provided
+  useEffect(() => {
+    if (phone && !otpSent) {
+      handleSendOTP();
+    }
+  }, [phone, otpSent, handleSendOTP]);
 
   const handleResendOTP = async () => {
     setIsResending(true);

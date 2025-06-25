@@ -68,15 +68,15 @@
 #### Test 1: Email/Password Login
 ```bash
 URL: http://localhost:3000/login
-Email: rajesh.kumar@email.com
+Email: perpixel@email.com
 Password: customer123
 Expected: ✅ Successful login → Dashboard with personalized data
 ```
 
-#### Test 2: Phone/Password Login  
+#### Test 2: Phone/Password Login
 ```bash
 URL: http://localhost:3000/login
-Phone: +91 9876543210
+Phone: +91 8849180795
 Password: customer123
 Expected: ✅ Successful login → Dashboard with personalized data
 ```
@@ -84,7 +84,7 @@ Expected: ✅ Successful login → Dashboard with personalized data
 #### Test 3: OTP Login Flow
 ```bash
 URL: http://localhost:3000/login
-1. Enter Phone: +91 9876543210
+1. Enter Phone: +91 8849180795
 2. Click "Get OTP to login instead"
 3. Check browser console for OTP (Development mode)
 4. Enter 6-digit OTP
@@ -94,9 +94,9 @@ Expected: ✅ Successful login → Dashboard
 
 #### Test 4: Alternative Customer
 ```bash
-Email: priya.sharma@email.com
+Email: romitsignh749@email.com
 Password: customer123
-Expected: ✅ Login → Different user data (Priya Sharma)
+Expected: ✅ Login → Different user data (Romit Singh)
 ```
 
 ### Admin Authentication Testing
@@ -163,7 +163,7 @@ Admin login successful
 
 #### OTP Flow:
 ```
-📱 Mock OTP sent to +91 9876543210: 123456
+📱 Mock OTP sent to +91 8849180795: 123456
 🔐 Development OTP: 123456
 OTP verified successfully
 ```
@@ -193,10 +193,10 @@ console.log('Customer users loaded:', mockCustomerUsers.length);
 
 | Test | URL | Credentials | Expected Result |
 |------|-----|-------------|-----------------|
-| Customer Email | localhost:3000/login | rajesh.kumar@email.com / customer123 | ✅ Dashboard |
-| Customer Phone | localhost:3000/login | +91 9876543210 / customer123 | ✅ Dashboard |
-| Customer OTP | localhost:3000/login | +91 9876543210 → OTP | ✅ Dashboard |
-| Alt Customer | localhost:3000/login | priya.sharma@email.com / customer123 | ✅ Dashboard |
+| Customer Email | localhost:3000/login | perpixel@email.com / customer123 | ✅ Dashboard |
+| Customer Phone | localhost:3000/login | +91 8849180795 / customer123 | ✅ Dashboard |
+| Customer OTP | localhost:3000/login | +91 8849180795 → OTP | ✅ Dashboard |
+| Alt Customer | localhost:3000/login | romitsignh749@email.com / customer123 | ✅ Dashboard |
 | Super Admin | localhost:3001/auth/login | amit.verma@indusun.com / admin123 | ✅ Admin Panel |
 | Limited Admin | localhost:3001/auth/login | sneha.patel@indusun.com / admin123 | ✅ Admin Panel |
 | Customer Profile | localhost:3000/profile | After login | ✅ Profile Page |

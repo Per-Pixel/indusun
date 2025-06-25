@@ -256,7 +256,7 @@ const Login = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder="+91 9876543210"
+                      placeholder="+91 8849180795"
                       className="w-full p-4 bg-gray-50 rounded-md border border-gray-300 focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition-all text-xl h-14"
                       style={{ color: '#374151' }}
                       required
