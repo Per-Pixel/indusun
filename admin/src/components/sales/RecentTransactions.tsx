@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Search,
   Filter,
@@ -64,6 +65,8 @@ interface RecentTransactionsProps {
 }
 
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) => {
+  const router = useRouter();
+
   // State for transactions data
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({ brokers: [] });
@@ -538,11 +541,11 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
       <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
         <h2 className="font-medium">Recent Transactions</h2>
         <button
-          onClick={openAddModal}
-          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+          onClick={() => router.push('/transactions/add')}
+          className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white border border-blue-700 rounded hover:bg-blue-700"
         >
-          <Plus size={16} />
-          <span>Add Transaction</span>
+          <Plus className="h-4 w-4" />
+          <span className="text-sm">Add Transaction</span>
         </button>
       </div>
       
