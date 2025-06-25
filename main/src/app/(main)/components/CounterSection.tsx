@@ -14,7 +14,7 @@ interface CounterProps {
 const Counter = ({ end, label, duration = 2, delay = 0 }: CounterProps) => {
   const [count, setCount] = useState(0);
   const [isSmallMobile, setIsSmallMobile] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [, setIsDesktop] = useState(false);
   
   // Check if device is small mobile (375px or less) or desktop
   useEffect(() => {
@@ -238,7 +238,7 @@ export function CounterSection() {
                 className="mb-8"
               >
                 <p className="text-lg text-gray-700 w-[80%] h-22">
-                  We're here to help you find the best options for your financial and brokerage needs. Explore our services or reach out to our team for personalized assistance.
+                  We&apos;re here to help you find the best options for your financial and brokerage needs. Explore our services or reach out to our team for personalized assistance.
                 </p>
               </motion.div>
               

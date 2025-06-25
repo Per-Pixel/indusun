@@ -166,7 +166,7 @@ export default function SearchResultsPage() {
               <Loader2 className="h-12 w-12 text-blue-500 animate-spin mb-4" />
               <h2 className="text-xl font-semibold text-gray-700 mb-2">Searching properties...</h2>
               <p className="text-gray-500 text-center">
-                Finding the best matches for "{searchQuery}"
+                Finding the best matches for &quot;{searchQuery}&quot;
               </p>
             </div>
           ) : properties.length === 0 ? (

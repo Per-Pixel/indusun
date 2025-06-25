@@ -23,7 +23,7 @@ export function DesktopSearchForm({
   const [propertyType, setPropertyType] = useState(initialPropertyType);
   const [isFocused, setIsFocused] = useState(false);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
-  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+
 
   const searchSuggestions = [
     "2 BHK property near me",
@@ -156,9 +156,7 @@ export function DesktopSearchForm({
                 animate="visible"
                 exit="hidden"
                 variants={dropdownVariants}
-                className={`absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm
-                  transition-all duration-1000 ease-in-out
-                  ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
+                className="absolute left-10 top-1/2 pointer-events-none text-gray-400 text-sm transition-all duration-1000 ease-in-out -translate-y-1/2 opacity-100"
               >
                 {searchSuggestions[currentSuggestionIndex]}
               </motion.div>

@@ -17,7 +17,7 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
   const [activeTab, setActiveTab] = useState('Buy');
   const [isFocused, setIsFocused] = useState(false);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
-  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+
 
   const searchSuggestions = [
     "2 BHK property near me",
@@ -157,9 +157,7 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
                   animate="visible"
                   exit="hidden"
                   variants={dropdownVariants}
-                  className={`absolute left-6 top-1/2 pointer-events-none text-gray-400 text-xs
-                    transition-all duration-1000 ease-in-out
-                    ${isAnimatingOut ? 'translate-y-[200%] opacity-0' : '-translate-y-1/2 opacity-100'}`}
+                  className="absolute left-6 top-1/2 pointer-events-none text-gray-400 text-xs transition-all duration-1000 ease-in-out -translate-y-1/2 opacity-100"
                 >
                   {searchSuggestions[currentSuggestionIndex]}
                 </motion.div>

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowRight, MapPin, Building } from 'lucide-react';
+import { ArrowRight, MapPin } from 'lucide-react';
 
 interface Project {
   id: string;

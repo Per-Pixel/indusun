@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Heart, Trash2, Share2, Filter, ChevronDown, X } from 'lucide-react';
+import { Heart, Trash2, Filter, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { mockProperties } from '../properties/mockData';
 import { Property } from '../properties/types';
@@ -146,7 +146,7 @@ export default function FavoritesPage() {
                     <label className="block text-sm font-medium text-black mb-1">Sort By</label>
                     <select
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
+                      onChange={(e) => setSortBy(e.target.value as 'price-asc' | 'price-desc' | 'newest')}
                       className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     >
                       <option value="newest" className="text-black">Newest</option>

@@ -159,7 +159,7 @@ const FAQPage = () => {
               <span className="text-gray-800">Questions</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-700 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Find answers to common questions about our exclusive services, property listings, and the real estate process. We're here to provide clarity and assist you every step of the way.
+              Find answers to common questions about our exclusive services, property listings, and the real estate process. We&apos;re here to provide clarity and assist you every step of the way.
             </p>
 
             {/* Search Bar */}
@@ -325,7 +325,7 @@ const FAQPage = () => {
                   support@indusun.com
                 </a>
                 <p className="text-gray-500 text-sm mt-3">
-                  We'll respond within 24 hours
+                  We&apos;ll respond within 24 hours
                 </p>
               </div>
 

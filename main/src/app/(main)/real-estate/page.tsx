@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+
 import Link from 'next/link';
 import PlaceholderImage from '@/components/ui/PlaceholderImage';
-import { Search, MapPin, Building, Home, Building2, Filter, ChevronDown, ChevronRight, Star, Heart, ArrowRight, Clock, Users, Calendar, Phone, Mail, CheckCircle2, Menu } from 'lucide-react';
+import { Search, MapPin, Building, Home, Building2, ChevronDown, ChevronRight, Star, Heart, ArrowRight, Clock, Users, Phone, Mail, CheckCircle2 } from 'lucide-react';
 
 const RealEstatePage = () => {
   const [searchType, setSearchType] = useState<'buy' | 'rent'>('buy');
-  const [propertyType, setPropertyType] = useState<string>('all');
+
 
   // Sample data
   const featuredProperties = [
@@ -137,7 +137,7 @@ const RealEstatePage = () => {
             <div className="md:w-1/2 md:pl-12">
               <h2 className="text-3xl font-bold mb-4">Find Better Places to Live, Work and Wonder...</h2>
               <p className="text-gray-600 mb-6">
-                Discover a place you'll love to call home. We have the most comprehensive property listings to help you find the perfect place.
+                Discover a place you&apos;ll love to call home. We have the most comprehensive property listings to help you find the perfect place.
               </p>
               <Link href="/properties" className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                 Explore More
@@ -337,7 +337,7 @@ const RealEstatePage = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Property Valuation</h3>
                     <p className="text-gray-600 text-sm">
-                      Get an accurate estimate of your property's market value.
+                      Get an accurate estimate of your property&apos;s market value.
                     </p>
                   </div>
                 </div>

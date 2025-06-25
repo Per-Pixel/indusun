@@ -15,7 +15,7 @@ const SignUp = () => {
   const { login } = useAuth();
   const [step, setStep] = useState(1); // Step 1: Signup, Step 2: Verification
   const [isLoading, setIsLoading] = useState(false);
-  const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email');
+  const [signupMethod] = useState<'email' | 'phone'>('email');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -24,7 +24,7 @@ const SignUp = () => {
     confirmPassword: '',
     verificationCode: ''
   });
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendCooldown] = useState(0);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -88,7 +88,7 @@ const SignUp = () => {
     }
   };
 
-  const successfulVerify = async (data: any) => {
+  const successfulVerify = async (data: { user: unknown }) => {
     try {
       // Update auth context with user data
       login(data.user);
@@ -311,7 +311,7 @@ const SignUp = () => {
                 <form onSubmit={handleVerification} className="space-y-5">
                   <div>
                     <p className="text-gray-700 mb-6 text-center text-xl">
-                      We've sent a verification code to <span className="text-blue-600 font-medium">{formData.email}</span>.
+                      We&apos;ve sent a verification code to <span className="text-blue-600 font-medium">{formData.email}</span>.
                       Please enter the code below to verify your email address.
                     </p>
                     <label htmlFor="verificationCode" className="block text-xl font-medium text-gray-700 mb-3">Verification Code</label>

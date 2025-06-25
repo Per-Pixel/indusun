@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -13,7 +13,6 @@ export default function BrokerLogin() {
   const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
 
   const handleClose = () => {
     router.back(); // This will take user back to previous page
@@ -28,15 +27,7 @@ export default function BrokerLogin() {
     tap: { scale: 0.95 }
   };
 
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+
 
   // Email validation function
   const isValidEmail = (email: string) => {
@@ -82,7 +73,7 @@ export default function BrokerLogin() {
         setEmailError(data.error || 'Failed to send verification code');
         toast.error(data.error || 'Failed to send verification code');
       }
-    } catch (error) {
+    } catch {
       setEmailError('Something went wrong');
       toast.error('Something went wrong');
     } finally {
@@ -118,7 +109,7 @@ export default function BrokerLogin() {
       } else {
         toast.error(data.error || 'Invalid verification code');
       }
-    } catch (error) {
+    } catch {
       toast.error('Something went wrong');
     } finally {
       setIsLoading(false);

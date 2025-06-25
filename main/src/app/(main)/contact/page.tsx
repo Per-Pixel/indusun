@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+
 import { MapPin, Phone, Mail, Send, Building, Clock, CheckCircle, Sparkles } from 'lucide-react';
 import PlaceholderImage from '@/components/ui/PlaceholderImage';
 import toast, { Toaster } from 'react-hot-toast';
@@ -137,7 +137,7 @@ const ContactPage = () => {
           <div className="container px-4">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Contact Us</h1>
             <p className="text-xl text-white/90 max-w-3xl mx-auto">
-              We're here to help with all your real estate needs
+              We&apos;re here to help with all your real estate needs
             </p>
           </div>
         </div>
@@ -173,7 +173,7 @@ const ContactPage = () => {
                 </a>
               </p>
               <p className="text-[#191D23] text-sm mt-2">
-                We'll respond as soon as possible
+                We&apos;ll respond as soon as possible
               </p>
             </div>
 
@@ -206,7 +206,7 @@ const ContactPage = () => {
                 </div>
                 <h3 className="text-2xl font-semibold mb-2">Thank You!</h3>
                 <p className="text-[#191D23] mb-4">
-                  Your message has been sent successfully. We'll get back to you shortly.
+                  Your message has been sent successfully. We&apos;ll get back to you shortly.
                 </p>
               </div>
             ) : (

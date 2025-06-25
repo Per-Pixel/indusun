@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, Phone, Mail, Award, Users, Building, CheckCircle, Star, Calendar, Trophy, Heart, Sparkles } from 'lucide-react';
+import { Phone, Mail, Users, Calendar, Trophy, Heart, Sparkles } from 'lucide-react';
 import PlaceholderImage from '@/components/ui/PlaceholderImage';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -27,9 +26,9 @@ const AboutPage = () => {
     }));
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [, setIsSubmitting] = useState(false);
+  const [, setSubmitError] = useState('');
+  const [, setFormSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +56,7 @@ const AboutPage = () => {
 
       if (result.success) {
         // Show success toast
-        toast.success('Message sent successfully! We\'ll get back to you shortly.', {
+        toast.success('Message sent successfully! We&apos;ll get back to you shortly.', {
           duration: 5000,
           position: 'top-center',
           style: {
@@ -192,13 +191,13 @@ const AboutPage = () => {
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-[#191D23] mb-6">Our Journey</h2>
               <p className="text-lg text-[#191D23] mb-6 leading-relaxed">
-                Launched in 2020, Indusun is a premier real estate portal that deals with every aspect of consumers' needs in the real estate industry. We provide an online forum where buyers, sellers, and brokers/agents can exchange information about real estate properties quickly, effectively, and inexpensively.
+                Launched in 2020, Indusun is a premier real estate portal that deals with every aspect of consumers&apos; needs in the real estate industry. We provide an online forum where buyers, sellers, and brokers/agents can exchange information about real estate properties quickly, effectively, and inexpensively.
               </p>
               <p className="text-lg text-[#191D23] mb-6 leading-relaxed">
                 At Indusun, you can advertise a property, search for a property, browse through properties, build your own property microsite, and keep yourself updated with the latest news and trends making headlines in the realty sector.
               </p>
               <p className="text-lg text-[#191D23] leading-relaxed">
-                Our mission is to simplify the property search process and help you make informed decisions about one of life's most significant investments.
+                Our mission is to simplify the property search process and help you make informed decisions about one of life&apos;s most significant investments.
               </p>
             </div>
             {/* Desktop Image */}
@@ -256,11 +255,11 @@ const AboutPage = () => {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Sparkles className="h-6 w-6 text-[#191D23]" />
-            <h2 className="text-4xl font-bold text-[#191D23]">Let's make it happen!</h2>
+            <h2 className="text-4xl font-bold text-[#191D23]">Let&apos;s make it happen!</h2>
             <Sparkles className="h-6 w-6 text-[#191D23]" />
           </div>
           <p className="text-[#191D23] mb-12 text-center">
-            Ready to take the first step toward your dream property? Fill out the form below, and our real estate wizards will work their magic to find your perfect match. Don't wait; let's embark on this exciting journey together.
+            Ready to take the first step toward your dream property? Fill out the form below, and our real estate wizards will work their magic to find your perfect match. Don&apos;t wait; let&apos;s embark on this exciting journey together.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -442,7 +441,7 @@ const AboutPage = () => {
               </div>
               <h3 className="text-xl font-semibold text-[#191D23] mb-2">Rajesh Kumar</h3>
               <p className="text-blue-600 font-medium mb-2">CEO & Founder</p>
-              <p className="text-[#191D23] text-sm leading-relaxed">Leading the vision and strategy for Indusun's growth</p>
+              <p className="text-[#191D23] text-sm leading-relaxed">Leading the vision and strategy for Indusun&apos;s growth</p>
             </div>
 
             <div className="bg-blue-50 p-8 rounded-lg text-center hover:shadow-lg transition-shadow">

@@ -13,7 +13,7 @@ import { WhyChooseUs } from './components/WhyChooseUs';
 import { DesktopSearchForm } from './components/DesktopSearchForm';
 import { MobileSearchForm } from './components/MobileSearchForm';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+
 
 export default function Home() {
   const router = useRouter();
@@ -66,7 +66,7 @@ export default function Home() {
       {isMobile && (
         <div className="md:hidden relative z-20">
           <MobileSearchForm 
-            onSearch={(query, type, tab) => {
+            onSearch={(query, type) => {
               handleSearch(query, type);
             }}
             className="mt-[-120px]"

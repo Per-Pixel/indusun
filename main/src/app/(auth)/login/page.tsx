@@ -17,8 +17,7 @@ const Login = () => {
   const error = searchParams.get('error');
   const [isLoading, setIsLoading] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
-  const [authMethod, setAuthMethod] = useState<'password' | 'otp'>('password');
-  const [otpSent, setOtpSent] = useState(false);
+  const [otpSent] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [formData, setFormData] = useState({
     email: '',
@@ -62,43 +61,43 @@ const Login = () => {
     });
   };
 
-  const handleSendOTP = async () => {
-    if (!formData.phone) {
-      toast.error('Please enter your phone number');
-      return;
-    }
+  // const handleSendOTP = async () => {
+  //   if (!formData.phone) {
+  //     toast.error('Please enter your phone number');
+  //     return;
+  //   }
 
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone: formData.phone }),
-      });
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await fetch('/api/auth/send-otp', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({ phone: formData.phone }),
+  //     });
 
-      const data = await response.json();
+  //     const data = await response.json();
 
-      if (response.ok) {
-        setOtpSent(true);
-        setOtpCountdown(60); // 60 seconds countdown
-        toast.success('OTP sent successfully!');
+  //     if (response.ok) {
+  //       setOtpSent(true);
+  //       setOtpCountdown(60); // 60 seconds countdown
+  //       toast.success('OTP sent successfully!');
 
-        // In development, show the OTP
-        if (data.debug && data.otp) {
-          toast.success(`Development OTP: ${data.otp}`, { duration: 10000 });
-        }
-      } else {
-        toast.error(data.error || 'Failed to send OTP');
-      }
-    } catch (error) {
-      console.error('Send OTP error:', error);
-      toast.error('Failed to send OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //       // In development, show the OTP
+  //       if (data.debug && data.otp) {
+  //         toast.success(`Development OTP: ${data.otp}`, { duration: 10000 });
+  //       }
+  //     } else {
+  //       toast.error(data.error || 'Failed to send OTP');
+  //     }
+  //   } catch (error) {
+  //     console.error('Send OTP error:', error);
+  //     toast.error('Failed to send OTP. Please try again.');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -328,7 +327,7 @@ const Login = () => {
 
             <div className="mt-6 text-center">
               <p className="text-gray-600">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link href="/sign-up" className="text-blue-800 hover:text-blue-700 font-medium transition-colors">
                   Sign up
                 </Link>

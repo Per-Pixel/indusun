@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PageWrapper from '@/components/PageWrapper';
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
@@ -15,7 +14,7 @@ const OTPLogin = () => {
   const searchParams = useSearchParams();
   const { login } = useAuth();
   
-  const [phone, setPhone] = useState(searchParams.get('phone') || '');
+  const [phone] = useState(searchParams.get('phone') || '');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -35,7 +34,7 @@ const OTPLogin = () => {
     if (phone && !otpSent) {
       handleSendOTP();
     }
-  }, [phone]);
+  }, [phone, otpSent, handleSendOTP]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -43,7 +42,7 @@ const OTPLogin = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleSendOTP = async () => {
+  const handleSendOTP = useCallback(async () => {
     if (!phone) {
       toast.error('Please enter a phone number');
       return;
@@ -80,7 +79,7 @@ const OTPLogin = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [phone]);
 
   const handleResendOTP = async () => {
     setIsResending(true);
@@ -203,7 +202,7 @@ const OTPLogin = () => {
                 Enter OTP <span className="text-blue-500">🔐</span>
               </h1>
               <p className="text-gray-500 text-xl mb-8">
-                We've sent a 6-digit code to<br />
+                We&apos;ve sent a 6-digit code to<br />
                 <span className="font-medium text-gray-700">{phone}</span>
               </p>
             </motion.div>
@@ -263,7 +262,7 @@ const OTPLogin = () => {
 
             {/* Resend OTP */}
             <div className="mt-6 text-center">
-              <p className="text-gray-600 mb-2">Didn't receive the code?</p>
+              <p className="text-gray-600 mb-2">Didn&apos;t receive the code?</p>
               <button
                 onClick={handleResendOTP}
                 disabled={isResending || timeLeft > 240} // Allow resend after 1 minute

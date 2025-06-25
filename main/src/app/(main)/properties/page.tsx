@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronDown, Search, Bed, Bath, Square, MapPin, Phone, Mail, Sparkles } from 'lucide-react';
+import { ChevronDown, Search, Phone, Mail, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FilterDropdown } from '@/components/properties/FilterDropdown';
+
 import { PropertyCard } from './components/PropertyCard';
 import { PropertyCardDesktop } from './components/PropertyCardDesktop';
 import { MobileSearchForm } from '@/app/(main)/components/MobileSearchForm';
@@ -60,16 +60,16 @@ const PropertiesPage = () => {
   // State for filters
   const [searchTerm, setSearchTerm] = useState('');
   const [propertyType, setPropertyType] = useState<string>('all');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000000]); // 0 to 5 Cr
-  const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'area-asc' | 'area-desc' | 'newest'>('newest');
-  const [showFilters, setShowFilters] = useState(false);
+  const [priceRange] = useState<[number, number]>([0, 50000000]); // 0 to 5 Cr
+  const [sortBy] = useState<'price-asc' | 'price-desc' | 'area-asc' | 'area-desc' | 'newest'>('newest');
+  const [showFilters] = useState(false);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>(mockProperties);
 
   // New states
-  const [isSearchView, setIsSearchView] = useState(false);
+  const [, setIsSearchView] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
@@ -136,7 +136,7 @@ const PropertiesPage = () => {
   // Add these state variables at the top of your component
   const [visibleProperties, setVisibleProperties] = useState(6);
   const [visibleLandProperties, setVisibleLandProperties] = useState(6);
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const [, setFavorites] = useState<number[]>([]);
 
   // Add this function to handle favorite toggling
   const handleFavoriteToggle = (propertyId: number) => {
@@ -213,10 +213,6 @@ const PropertiesPage = () => {
   // Get current properties for pagination
   const indexOfLastProperty = currentPage * propertiesPerPage;
   const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
-  const currentProperties = filteredProperties.slice(indexOfFirstProperty, indexOfLastProperty);
-
-  // Change page
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   // Format price range for display
   const formatPrice = (price: number) => {
@@ -336,7 +332,7 @@ const PropertiesPage = () => {
       {/* Mobile Search Form */}
       <div className="md:hidden">
         <MobileSearchForm 
-          onSearch={(query, type, tab) => {
+          onSearch={(query, type) => {
             setSearchTerm(query);
             setPropertyType(type);
             // Handle the search with the existing function
@@ -584,11 +580,11 @@ const PropertiesPage = () => {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="h-6 w-6 text-gray-800" />
-            <h2 className="text-4xl font-bold text-black">Let's make it happen!</h2>
+            <h2 className="text-4xl font-bold text-black">Let&apos;s make it happen!</h2>
             <Sparkles className="h-6 w-6 text-gray-800" />
           </div>
           <p className="text-gray-600 mb-12">
-            Ready to take the first step toward your dream property? Fill out the form below, and our real estate wizards will work their magic to find your perfect match. Don't wait; let's embark on this exciting journey together.
+            Ready to take the first step toward your dream property? Fill out the form below, and our real estate wizards will work their magic to find your perfect match. Don&apos;t wait; let&apos;s embark on this exciting journey together.
           </p>
 
           <form className="space-y-6">

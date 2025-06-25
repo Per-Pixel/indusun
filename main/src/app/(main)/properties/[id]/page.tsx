@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+
 import {
   MapPin,
   Building2,
@@ -13,8 +13,7 @@ import {
   CheckCircle2,
   Phone,
   Mail,
-  Calendar,
-  Clock,
+
   HelpCircle,
   MessageCircle
 } from 'lucide-react';
