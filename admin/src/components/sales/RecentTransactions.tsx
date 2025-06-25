@@ -11,7 +11,6 @@ import {
   Plus,
   Edit,
   Trash2,
-  X,
   Calendar,
   DollarSign,
   Building,
@@ -86,22 +85,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
   const [selectedBrokerId, setSelectedBrokerId] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<{ startDate: string | null, endDate: string | null }>({ startDate: null, endDate: null });
   
-  // State for modal
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [currentTransaction, setCurrentTransaction] = useState<Transaction | null>(null);
-  
-  // Form state for adding/editing transactions
-  const [formData, setFormData] = useState<Partial<Transaction>>({
-    date: new Date().toISOString().split('T')[0],
-    description: '',
-    amount: 0,
-    status: 'Pending',
-    source: 'Property Sale',
-    reference: '',
-    clientId: undefined,
-    brokerId: undefined
-  });
+
 
   // Fetch transactions data
   const fetchTransactions = async () => {
@@ -255,102 +239,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
     );
   };
 
-  // Open modal for adding a new transaction
-  const openAddModal = () => {
-    setModalMode('add');
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      description: '',
-      amount: 0,
-      status: 'Pending',
-      source: 'Property Sale',
-      reference: '',
-      clientId: undefined,
-      brokerId: undefined
-    });
-    setIsModalOpen(true);
-  };
-  
-  // Open modal for editing an existing transaction
-  const openEditModal = (transaction: Transaction) => {
-    setModalMode('edit');
-    setCurrentTransaction(transaction);
-    setFormData({
-      date: transaction.date,
-      description: transaction.description,
-      amount: transaction.amount,
-      status: transaction.status,
-      source: transaction.source,
-      reference: transaction.reference,
-      clientId: transaction.clientId,
-      brokerId: transaction.brokerId
-    });
-    setIsModalOpen(true);
-  };
-  
-  // Close modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setCurrentTransaction(null);
-  };
-  
-  // Handle form input changes
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    // Handle numeric fields
-    if (name === 'amount') {
-      setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
-    } else if (name === 'clientId' || name === 'brokerId') {
-      setFormData(prev => ({ ...prev, [name]: value ? parseInt(value) : undefined }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-  
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      if (modalMode === 'add') {
-        // Create new transaction
-        const response = await fetch('/api/transactions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        
-      } else if (modalMode === 'edit' && currentTransaction) {
-        // Update existing transaction
-        const response = await fetch(`/api/transactions/${currentTransaction.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-      }
-      
-      // Close modal and refresh data
-      closeModal();
-      fetchTransactions();
-      
-    } catch (err: any) {
-      console.error('Error saving transaction:', err);
-      alert(`Failed to save transaction: ${err.message}`);
-    }
-  };
+
   
   // Handle transaction deletion
   const handleDelete = async (id: number) => {
@@ -380,160 +269,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
   const indexOfFirstTransaction = (currentPage - 1) * itemsPerPage + 1;
   const indexOfLastTransaction = Math.min(currentPage * itemsPerPage, totalItems);
   
-  // These functions are already defined above, so we're removing the duplicates
-  
-  // Modal for adding/editing transactions
-  const renderModal = () => {
-    if (!isModalOpen) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl">
-          <div className="flex justify-between items-center p-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium">
-              {modalMode === 'add' ? 'Add New Transaction' : 'Edit Transaction'}
-            </h3>
-            <button
-              onClick={closeModal}
-              className="text-gray-400 hover:text-gray-500"
-            >
-              <X size={20} />
-            </button>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  name="date"
-                  value={formData.date || ''}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  name="amount"
-                  value={formData.amount || 0}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status || 'Pending'}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="Completed">Completed</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Failed">Failed</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Source
-                </label>
-                <select
-                  name="source"
-                  value={formData.source || 'Property Sale'}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="Property Sale">Property Sale</option>
-                  <option value="Broker Commission">Broker Commission</option>
-                  <option value="Service Fee">Service Fee</option>
-                  <option value="Rental Income">Rental Income</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Reference
-                </label>
-                <input
-                  type="text"
-                  name="reference"
-                  value={formData.reference || ''}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Broker
-                </label>
-                <select
-                  name="brokerId"
-                  value={formData.brokerId?.toString() || ''}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Select Broker</option>
-                  {filterOptions.brokers.map((broker) => (
-                    <option key={broker.id} value={broker.id.toString()}>
-                      {broker.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description || ''}
-                onChange={handleFormChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700"
-              >
-                {modalMode === 'add' ? 'Add Transaction' : 'Update Transaction'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
+
 
   return (
     <div className={`bg-white rounded-lg shadow-sm overflow-hidden ${className}`}>
@@ -716,7 +452,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
                       <button
-                        onClick={() => openEditModal(transaction)}
+                        onClick={() => router.push(`/transactions/edit/${transaction.id}`)}
                         className="text-blue-600 hover:text-blue-900"
                         title="Edit"
                       >
