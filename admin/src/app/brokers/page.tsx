@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Filter, Plus, Edit, Trash2, Users, TrendingUp, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2, Users, TrendingUp, MoreVertical, ChevronLeft, ChevronRight, Upload, Download } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 import toast from 'react-hot-toast';
@@ -65,6 +65,20 @@ const BrokersPage = (): React.ReactElement => {
   const [selectedBroker, setSelectedBroker] = useState<Broker | null>(null);
   const [formData, setFormData] = useState<BrokerFormData>({ name: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
+
+  // Import states
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState<{
+    success?: boolean;
+    message?: string;
+    stats?: {
+      imported: number;
+      skipped: number;
+      withCodes: number;
+      withoutCodes: number;
+    };
+  } | null>(null);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   
@@ -232,6 +246,54 @@ const BrokersPage = (): React.ReactElement => {
     setShowDeleteModal(true);
   }, []);
 
+  // Import handlers
+  const openImportModal = useCallback(() => {
+    setImportStatus(null);
+    setShowImportModal(true);
+  }, []);
+
+  const handleImport = useCallback(async () => {
+    try {
+      setImporting(true);
+      setImportStatus(null);
+
+      const response = await fetch('/api/brokers/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setImportStatus({
+          success: true,
+          message: result.message,
+          stats: result.stats
+        });
+        toast.success('Broker import completed successfully!');
+        // Refresh the brokers list
+        fetchBrokers(currentPage, searchTerm);
+      } else {
+        setImportStatus({
+          success: false,
+          message: result.error || 'Import failed'
+        });
+        toast.error(result.error || 'Import failed');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Import failed';
+      setImportStatus({
+        success: false,
+        message: errorMessage
+      });
+      toast.error(errorMessage);
+    } finally {
+      setImporting(false);
+    }
+  }, [currentPage, searchTerm, fetchBrokers]);
+
   // Fetch brokers on component mount
   useEffect(() => {
     fetchBrokers();
@@ -328,13 +390,22 @@ const BrokersPage = (): React.ReactElement => {
                     Filter
                   </button>
                 </div>
-                <button
-                  onClick={openCreateModal}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Broker
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={openImportModal}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Import Brokers
+                  </button>
+                  <button
+                    onClick={openCreateModal}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Broker
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -616,6 +687,111 @@ const BrokersPage = (): React.ReactElement => {
                 {submitting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Import Brokers</h2>
+
+            {!importStatus ? (
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Download className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h3 className="font-medium text-blue-900">Import from Excel</h3>
+                      <p className="text-sm text-blue-700 mt-1">
+                        This will import broker data from the Excel file located at:
+                        <br />
+                        <code className="text-xs bg-blue-100 px-1 rounded">scripts/data/ALL BROKERS NAME.xlsx</code>
+                      </p>
+                      <p className="text-sm text-blue-700 mt-2">
+                        The system will automatically handle duplicates and preserve brokers with alphanumeric codes as separate entries.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowImportModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    disabled={importing}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleImport}
+                    disabled={importing}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {importing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4" />
+                        Start Import
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className={`border rounded-lg p-4 ${
+                  importStatus.success
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-red-50 border-red-200'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    {importStatus.success ? (
+                      <div className="h-5 w-5 text-green-600 mt-0.5">✓</div>
+                    ) : (
+                      <div className="h-5 w-5 text-red-600 mt-0.5">✗</div>
+                    )}
+                    <div>
+                      <h3 className={`font-medium ${
+                        importStatus.success ? 'text-green-900' : 'text-red-900'
+                      }`}>
+                        {importStatus.success ? 'Import Successful' : 'Import Failed'}
+                      </h3>
+                      <p className={`text-sm mt-1 ${
+                        importStatus.success ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        {importStatus.message}
+                      </p>
+
+                      {importStatus.success && importStatus.stats && (
+                        <div className="mt-3 text-sm text-green-700">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>Imported: <strong>{importStatus.stats.imported}</strong></div>
+                            <div>Skipped: <strong>{importStatus.stats.skipped}</strong></div>
+                            <div>With codes: <strong>{importStatus.stats.withCodes}</strong></div>
+                            <div>Without codes: <strong>{importStatus.stats.withoutCodes}</strong></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setShowImportModal(false)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

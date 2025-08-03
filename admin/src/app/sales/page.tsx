@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -160,6 +160,29 @@ const SalesPage = () => {
   const notificationRef = useRef<HTMLDivElement>(null);
   const brokerDropdownRef = useRef<HTMLDivElement>(null);
   const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
+  const [brokerSearchTerm, setBrokerSearchTerm] = useState('');
+
+  // Filter brokers based on search term and separate selected broker
+  const { selectedBroker, otherBrokers } = useMemo(() => {
+    const allBrokers = filterOptions.brokers;
+    const selectedBroker = selectedBrokerId ? allBrokers.find(b => b.id === selectedBrokerId) : null;
+
+    // Filter brokers based on search term
+    let filteredBrokers = allBrokers;
+    if (brokerSearchTerm.trim()) {
+      filteredBrokers = allBrokers.filter(broker =>
+        broker.name.toLowerCase().includes(brokerSearchTerm.toLowerCase())
+      );
+    }
+
+    // Separate selected broker from others
+    const otherBrokers = filteredBrokers.filter(broker => broker.id !== selectedBrokerId);
+
+    return {
+      selectedBroker,
+      otherBrokers
+    };
+  }, [filterOptions.brokers, brokerSearchTerm, selectedBrokerId]);
 
   // Handle clicks outside of dropdowns
   useEffect(() => {
@@ -180,6 +203,40 @@ const SalesPage = () => {
       document.removeEventListener('mousedown', handleClickOutside as any);
     };
   }, []);
+
+  // Prevent scroll propagation on broker dropdown
+  useEffect(() => {
+    const handleTouchMove = (event: TouchEvent) => {
+      // Prevent touch scroll from propagating to the viewport when scrolling inside the dropdown
+      if (showBrokerDropdown && brokerDropdownRef.current?.contains(event.target as Node)) {
+        event.stopPropagation();
+      }
+    };
+
+    const handleWheel = (event: WheelEvent) => {
+      // Prevent wheel scroll from propagating to the viewport when scrolling inside the dropdown
+      if (showBrokerDropdown && brokerDropdownRef.current?.contains(event.target as Node)) {
+        event.stopPropagation();
+      }
+    };
+
+    if (showBrokerDropdown) {
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('wheel', handleWheel, { passive: false });
+    }
+
+    return () => {
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('wheel', handleWheel);
+    };
+  }, [showBrokerDropdown]);
+
+  // Clear search term when dropdown closes
+  useEffect(() => {
+    if (!showBrokerDropdown) {
+      setBrokerSearchTerm('');
+    }
+  }, [showBrokerDropdown]);
 
   // Fetch sales data with filters
   useEffect(() => {
@@ -557,31 +614,103 @@ const SalesPage = () => {
                   </button>
                   {showBrokerDropdown && (
                     <div className="absolute z-10 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200">
-                      <div className="py-1">
-                        <button
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between"
-                          onClick={() => {
-                            setSelectedBrokerId(null);
-                            setShowBrokerDropdown(false);
-                          }}
-                        >
-                          <span>All Brokers</span>
-                          {selectedBrokerId === null && <span className="text-blue-500">✓</span>}
-                        </button>
+                      {/* Search input for filtering brokers */}
+                      <div className="p-2 border-b border-gray-200 bg-gray-50">
+                        <input
+                          type="text"
+                          placeholder={`Search ${filterOptions.brokers.length} brokers...`}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          value={brokerSearchTerm}
+                          onChange={(e) => setBrokerSearchTerm(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {brokerSearchTerm && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {otherBrokers.length} broker{otherBrokers.length !== 1 ? 's' : ''} found
+                            {selectedBroker && selectedBroker.name.toLowerCase().includes(brokerSearchTerm.toLowerCase()) && ' (+ selected)'}
+                          </div>
+                        )}
+                      </div>
 
-                        {filterOptions.brokers.map((broker) => (
+                      {/* Sticky selected items and scrollable broker list */}
+                      <div className="max-h-60 overflow-hidden">
+                        {/* Sticky "All Brokers" option - always visible */}
+                        <div className="broker-sticky-header">
                           <button
-                            key={broker.id}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between"
+                            className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between broker-dropdown-item ${
+                              selectedBrokerId === null
+                                ? 'broker-selected-item text-blue-700 font-medium'
+                                : 'hover:bg-gray-100 text-gray-900'
+                            }`}
                             onClick={() => {
-                              setSelectedBrokerId(broker.id);
+                              setSelectedBrokerId(null);
                               setShowBrokerDropdown(false);
+                              setBrokerSearchTerm('');
                             }}
                           >
-                            <span className="truncate">{broker.name}</span>
-                            {selectedBrokerId === broker.id && <span className="text-blue-500">✓</span>}
+                            <span>All Brokers</span>
+                            {selectedBrokerId === null && (
+                              <span className="text-blue-600 font-bold text-base">✓</span>
+                            )}
                           </button>
-                        ))}
+                        </div>
+
+                        {/* Sticky selected broker - only visible when a specific broker is selected */}
+                        {selectedBroker && (
+                          <div className="broker-sticky-header">
+                            <button
+                              className="w-full text-left px-4 py-2 text-sm broker-selected-item text-blue-700 font-medium flex items-center justify-between"
+                              onClick={() => {
+                                setShowBrokerDropdown(false);
+                                setBrokerSearchTerm('');
+                              }}
+                            >
+                              <div className="flex items-center space-x-2">
+                                <span className="text-blue-600 font-bold text-base">✓</span>
+                                <span className="truncate">Selected: {selectedBroker.name}</span>
+                              </div>
+                              <span className="text-xs text-blue-700 bg-blue-200 px-2 py-1 rounded font-medium">Current</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Scrollable broker list */}
+                        <div
+                          className="py-1 overflow-y-auto broker-dropdown-scroll scroll-container"
+                          style={{ maxHeight: selectedBroker ? '180px' : '220px' }}
+                          onTouchMove={(e) => e.stopPropagation()}
+                          onWheel={(e) => e.stopPropagation()}
+                        >
+                          {otherBrokers.map((broker) => (
+                            <button
+                              key={broker.id}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between broker-dropdown-item"
+                              onClick={() => {
+                                setSelectedBrokerId(broker.id);
+                                setShowBrokerDropdown(false);
+                                setBrokerSearchTerm('');
+                              }}
+                            >
+                              <span className="truncate">{broker.name}</span>
+                              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
+                            </button>
+                          ))}
+
+                          {otherBrokers.length === 0 && brokerSearchTerm && (
+                            <div className="px-4 py-2 text-sm text-gray-500 text-center">
+                              {selectedBroker && selectedBroker.name.toLowerCase().includes(brokerSearchTerm.toLowerCase())
+                                ? 'Only the selected broker matches your search'
+                                : 'No brokers found'
+                              }
+                            </div>
+                          )}
+
+                          {otherBrokers.length === 0 && !brokerSearchTerm && selectedBroker && (
+                            <div className="px-4 py-2 text-sm text-gray-500 text-center">
+                              All other brokers are listed here
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

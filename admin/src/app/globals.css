@@ -152,3 +152,61 @@ body {
   color: #4b5563 !important; /* Using gray-600 color */
   opacity: 1;
 }
+
+/* Custom scrollbar styles for broker dropdown */
+.broker-dropdown-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E0 #F7FAFC;
+}
+
+.broker-dropdown-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.broker-dropdown-scroll::-webkit-scrollbar-track {
+  background: #F7FAFC;
+  border-radius: 3px;
+}
+
+.broker-dropdown-scroll::-webkit-scrollbar-thumb {
+  background: #CBD5E0;
+  border-radius: 3px;
+}
+
+.broker-dropdown-scroll::-webkit-scrollbar-thumb:hover {
+  background: #A0AEC0;
+}
+
+/* Prevent scroll chaining and improve touch behavior */
+.scroll-container {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Enhanced sticky elements for broker dropdown */
+.broker-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.broker-selected-item {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-left: 3px solid #3b82f6;
+}
+
+.broker-selected-item:hover {
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+}
+
+/* Smooth transitions for dropdown interactions */
+.broker-dropdown-item {
+  transition: all 0.15s ease-in-out;
+}
+
+.broker-dropdown-item:hover {
+  transform: translateX(2px);
+  box-shadow: inset 3px 0 0 #3b82f6;
+}
