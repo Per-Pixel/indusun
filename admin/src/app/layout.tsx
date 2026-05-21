@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 import { AdminAuthProvider } from '@/context/AdminAuthContext';
+import RouteTransitionToaster from '@/components/common/RouteTransitionToaster';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({
       >
         <AdminAuthProvider>
           <Toaster position="top-right" />
+          <RouteTransitionToaster />
           {children}
         </AdminAuthProvider>
       </body>

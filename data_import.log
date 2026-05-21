@@ -1,0 +1,446 @@
+2026-05-21 15:07:06,537 - INFO - Loading data from: D:\Dev Domain\~Projects\indusun\scripts\data\indusun_data.xlsx
+2026-05-21 15:07:41,548 - INFO - Found sheets: ['RECEIPT', 'MAIN SHEET', 'Sheet1', 'BROKER CASH MEMO', 'AGREEMENT', 'Sheet2']
+2026-05-21 15:07:41,554 - INFO - Main sheet columns: ['r_no', 'soc_name', 'client_name', 'contact_no', 'plot_no', 'plot_size', 'emi_paid_date', 'plot_amt', 'emi_amt', 'paid_amt', 'amt_in_word', 'emi_time', 'brokers_name', 'cheque_cash', 'remarks', 'emi_no', 'month_yer', 'yes', 'policy_number', 'date', 'cansal_date', 'unnamed_21', 'unnamed_22', 'unnamed_23']
+2026-05-21 15:07:41,557 - INFO - Sheet2 columns: ['client_name', 'contact_no', 'emi_amt', 'brokers_name', '06_05_2025_ritesh_call_90', 'unnamed_5', 'unnamed_6']
+2026-05-21 15:07:41,560 - INFO - Agreement sheet columns: ['agreement', 'unnamed_1', 'unnamed_2', 'unnamed_3', 'unnamed_4']
+2026-05-21 15:07:41,917 - INFO - Recreating database schema with normalized name indexes...
+2026-05-21 15:07:42,034 - INFO - Importing clients...
+2026-05-21 15:07:42,035 - INFO - Collecting client data from Sheet2
+2026-05-21 15:07:42,095 - INFO - Collecting client data from main sheet
+2026-05-21 15:07:42,463 - WARNING - Truncating long phone number: 7984476252- 9553254100 -> 798447625295532
+2026-05-21 15:07:52,529 - WARNING - Truncating long phone number: 8735886241 6394567442 -> 873588624163945
+2026-05-21 15:07:52,648 - WARNING - Truncating long phone number: 8735886241 6394567442 -> 873588624163945
+2026-05-21 15:07:52,733 - INFO - Processing 78342 total client records
+2026-05-21 15:07:53,546 - INFO - Processed 100/5123 unique clients
+2026-05-21 15:07:53,580 - INFO - Processed 200/5123 unique clients
+2026-05-21 15:07:53,614 - INFO - Processed 300/5123 unique clients
+2026-05-21 15:07:53,693 - INFO - Processed 400/5123 unique clients
+2026-05-21 15:07:53,728 - INFO - Processed 500/5123 unique clients
+2026-05-21 15:07:53,763 - INFO - Processed 600/5123 unique clients
+2026-05-21 15:07:53,799 - INFO - Processed 700/5123 unique clients
+2026-05-21 15:07:53,831 - INFO - Processed 800/5123 unique clients
+2026-05-21 15:07:53,867 - INFO - Processed 900/5123 unique clients
+2026-05-21 15:07:53,908 - INFO - Processed 1000/5123 unique clients
+2026-05-21 15:07:53,944 - INFO - Processed 1100/5123 unique clients
+2026-05-21 15:07:53,979 - INFO - Processed 1200/5123 unique clients
+2026-05-21 15:07:54,013 - INFO - Processed 1300/5123 unique clients
+2026-05-21 15:07:54,047 - INFO - Processed 1400/5123 unique clients
+2026-05-21 15:07:54,081 - INFO - Processed 1500/5123 unique clients
+2026-05-21 15:07:54,116 - INFO - Processed 1600/5123 unique clients
+2026-05-21 15:07:54,151 - INFO - Processed 1700/5123 unique clients
+2026-05-21 15:07:54,187 - INFO - Processed 1800/5123 unique clients
+2026-05-21 15:07:54,222 - INFO - Processed 1900/5123 unique clients
+2026-05-21 15:07:54,259 - INFO - Processed 2000/5123 unique clients
+2026-05-21 15:07:54,294 - INFO - Processed 2100/5123 unique clients
+2026-05-21 15:07:54,331 - INFO - Processed 2200/5123 unique clients
+2026-05-21 15:07:54,361 - INFO - Processed 2300/5123 unique clients
+2026-05-21 15:07:54,391 - INFO - Processed 2400/5123 unique clients
+2026-05-21 15:07:54,423 - INFO - Processed 2500/5123 unique clients
+2026-05-21 15:07:54,456 - INFO - Processed 2600/5123 unique clients
+2026-05-21 15:07:54,488 - INFO - Processed 2700/5123 unique clients
+2026-05-21 15:07:54,520 - INFO - Processed 2800/5123 unique clients
+2026-05-21 15:07:54,552 - INFO - Processed 2900/5123 unique clients
+2026-05-21 15:07:54,586 - INFO - Processed 3000/5123 unique clients
+2026-05-21 15:07:54,617 - INFO - Processed 3100/5123 unique clients
+2026-05-21 15:07:54,651 - INFO - Processed 3200/5123 unique clients
+2026-05-21 15:07:54,683 - INFO - Processed 3300/5123 unique clients
+2026-05-21 15:07:54,719 - INFO - Processed 3400/5123 unique clients
+2026-05-21 15:07:54,797 - INFO - Processed 3500/5123 unique clients
+2026-05-21 15:07:54,834 - INFO - Processed 3600/5123 unique clients
+2026-05-21 15:07:54,870 - INFO - Processed 3700/5123 unique clients
+2026-05-21 15:07:54,903 - INFO - Processed 3800/5123 unique clients
+2026-05-21 15:07:54,936 - INFO - Processed 3900/5123 unique clients
+2026-05-21 15:07:54,972 - INFO - Processed 4000/5123 unique clients
+2026-05-21 15:07:55,006 - INFO - Processed 4100/5123 unique clients
+2026-05-21 15:07:55,038 - INFO - Processed 4200/5123 unique clients
+2026-05-21 15:07:55,073 - INFO - Processed 4300/5123 unique clients
+2026-05-21 15:07:55,108 - INFO - Processed 4400/5123 unique clients
+2026-05-21 15:07:55,144 - INFO - Processed 4500/5123 unique clients
+2026-05-21 15:07:55,178 - INFO - Processed 4600/5123 unique clients
+2026-05-21 15:07:55,212 - INFO - Processed 4700/5123 unique clients
+2026-05-21 15:07:55,251 - INFO - Processed 4800/5123 unique clients
+2026-05-21 15:07:55,288 - INFO - Processed 4900/5123 unique clients
+2026-05-21 15:07:55,324 - INFO - Processed 5000/5123 unique clients
+2026-05-21 15:07:55,361 - INFO - Processed 5100/5123 unique clients
+2026-05-21 15:07:55,374 - INFO - Imported 5123 unique clients
+2026-05-21 15:07:55,579 - INFO - Importing brokers...
+2026-05-21 15:07:55,595 - INFO - Collecting broker data from Agreement sheet
+2026-05-21 15:07:55,609 - INFO - Collecting broker data from main sheet
+2026-05-21 15:08:06,734 - INFO - Processing 78138 total broker records
+2026-05-21 15:08:07,483 - INFO - Processed 10/327 unique brokers
+2026-05-21 15:08:07,489 - INFO - Processed 20/327 unique brokers
+2026-05-21 15:08:07,493 - INFO - Processed 30/327 unique brokers
+2026-05-21 15:08:07,499 - INFO - Processed 40/327 unique brokers
+2026-05-21 15:08:07,507 - INFO - Processed 50/327 unique brokers
+2026-05-21 15:08:07,582 - INFO - Processed 60/327 unique brokers
+2026-05-21 15:08:07,588 - INFO - Processed 70/327 unique brokers
+2026-05-21 15:08:07,596 - INFO - Processed 80/327 unique brokers
+2026-05-21 15:08:07,611 - INFO - Processed 90/327 unique brokers
+2026-05-21 15:08:07,623 - INFO - Processed 100/327 unique brokers
+2026-05-21 15:08:07,630 - INFO - Processed 110/327 unique brokers
+2026-05-21 15:08:07,635 - INFO - Processed 120/327 unique brokers
+2026-05-21 15:08:07,643 - INFO - Processed 130/327 unique brokers
+2026-05-21 15:08:07,653 - INFO - Processed 140/327 unique brokers
+2026-05-21 15:08:07,658 - INFO - Processed 150/327 unique brokers
+2026-05-21 15:08:07,663 - INFO - Processed 160/327 unique brokers
+2026-05-21 15:08:07,666 - INFO - Processed 170/327 unique brokers
+2026-05-21 15:08:07,671 - INFO - Processed 180/327 unique brokers
+2026-05-21 15:08:07,676 - INFO - Processed 190/327 unique brokers
+2026-05-21 15:08:07,680 - INFO - Processed 200/327 unique brokers
+2026-05-21 15:08:07,686 - INFO - Processed 210/327 unique brokers
+2026-05-21 15:08:07,692 - INFO - Processed 220/327 unique brokers
+2026-05-21 15:08:07,697 - INFO - Processed 230/327 unique brokers
+2026-05-21 15:08:07,700 - INFO - Processed 240/327 unique brokers
+2026-05-21 15:08:07,705 - INFO - Processed 250/327 unique brokers
+2026-05-21 15:08:07,709 - INFO - Processed 260/327 unique brokers
+2026-05-21 15:08:07,714 - INFO - Processed 270/327 unique brokers
+2026-05-21 15:08:07,718 - INFO - Processed 280/327 unique brokers
+2026-05-21 15:08:07,725 - INFO - Processed 290/327 unique brokers
+2026-05-21 15:08:07,731 - INFO - Processed 300/327 unique brokers
+2026-05-21 15:08:07,736 - INFO - Processed 310/327 unique brokers
+2026-05-21 15:08:07,742 - INFO - Processed 320/327 unique brokers
+2026-05-21 15:08:07,746 - INFO - Imported 327 unique brokers
+2026-05-21 15:08:07,846 - INFO - Importing plots...
+2026-05-21 15:08:10,177 - WARNING - Could not convert amount to float: \u0950
+2026-05-21 15:08:11,193 - INFO - Processed 50/7015 plots
+2026-05-21 15:08:11,252 - INFO - Processed 100/7015 plots
+2026-05-21 15:08:11,332 - INFO - Processed 150/7015 plots
+2026-05-21 15:08:11,379 - INFO - Processed 200/7015 plots
+2026-05-21 15:08:11,467 - INFO - Processed 250/7015 plots
+2026-05-21 15:08:11,528 - INFO - Processed 300/7015 plots
+2026-05-21 15:08:11,618 - INFO - Processed 350/7015 plots
+2026-05-21 15:08:11,684 - INFO - Processed 400/7015 plots
+2026-05-21 15:08:11,739 - INFO - Processed 450/7015 plots
+2026-05-21 15:08:11,848 - INFO - Processed 500/7015 plots
+2026-05-21 15:08:11,972 - INFO - Processed 550/7015 plots
+2026-05-21 15:08:12,028 - INFO - Processed 600/7015 plots
+2026-05-21 15:08:12,107 - ERROR - Error inserting plot 16,33,34,35,36,37: numeric field overflow
+DETAIL:  A field with precision 12, scale 2 must round to an absolute value less than 10^10.
+
+2026-05-21 15:08:12,127 - INFO - Processed 650/7015 plots
+2026-05-21 15:08:12,156 - INFO - Processed 700/7015 plots
+2026-05-21 15:08:12,208 - INFO - Processed 750/7015 plots
+2026-05-21 15:08:12,257 - INFO - Processed 800/7015 plots
+2026-05-21 15:08:12,311 - INFO - Processed 850/7015 plots
+2026-05-21 15:08:12,362 - INFO - Processed 900/7015 plots
+2026-05-21 15:08:12,420 - INFO - Processed 950/7015 plots
+2026-05-21 15:08:12,466 - INFO - Processed 1000/7015 plots
+2026-05-21 15:08:12,523 - INFO - Processed 1050/7015 plots
+2026-05-21 15:08:12,567 - INFO - Processed 1100/7015 plots
+2026-05-21 15:08:12,647 - INFO - Processed 1150/7015 plots
+2026-05-21 15:08:12,775 - INFO - Processed 1200/7015 plots
+2026-05-21 15:08:12,829 - INFO - Processed 1250/7015 plots
+2026-05-21 15:08:12,878 - INFO - Processed 1300/7015 plots
+2026-05-21 15:08:12,924 - INFO - Processed 1350/7015 plots
+2026-05-21 15:08:12,987 - INFO - Processed 1400/7015 plots
+2026-05-21 15:08:13,035 - INFO - Processed 1450/7015 plots
+2026-05-21 15:08:13,083 - INFO - Processed 1500/7015 plots
+2026-05-21 15:08:13,138 - INFO - Processed 1550/7015 plots
+2026-05-21 15:08:13,196 - INFO - Processed 1600/7015 plots
+2026-05-21 15:08:13,304 - INFO - Processed 1650/7015 plots
+2026-05-21 15:08:13,414 - INFO - Processed 1700/7015 plots
+2026-05-21 15:08:13,525 - INFO - Processed 1750/7015 plots
+2026-05-21 15:08:13,586 - INFO - Processed 1800/7015 plots
+2026-05-21 15:08:13,684 - INFO - Processed 1850/7015 plots
+2026-05-21 15:08:13,737 - INFO - Processed 1900/7015 plots
+2026-05-21 15:08:13,796 - INFO - Processed 1950/7015 plots
+2026-05-21 15:08:13,900 - INFO - Processed 2000/7015 plots
+2026-05-21 15:08:13,956 - INFO - Processed 2050/7015 plots
+2026-05-21 15:08:14,004 - INFO - Processed 2100/7015 plots
+2026-05-21 15:08:14,063 - INFO - Processed 2150/7015 plots
+2026-05-21 15:08:14,119 - INFO - Processed 2200/7015 plots
+2026-05-21 15:08:14,174 - INFO - Processed 2250/7015 plots
+2026-05-21 15:08:14,250 - INFO - Processed 2300/7015 plots
+2026-05-21 15:08:14,333 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:14,334 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:14,344 - INFO - Processed 2350/7015 plots
+2026-05-21 15:08:14,443 - INFO - Processed 2400/7015 plots
+2026-05-21 15:08:14,531 - INFO - Processed 2450/7015 plots
+2026-05-21 15:08:14,696 - INFO - Processed 2500/7015 plots
+2026-05-21 15:08:14,810 - INFO - Processed 2550/7015 plots
+2026-05-21 15:08:14,866 - INFO - Processed 2600/7015 plots
+2026-05-21 15:08:14,984 - INFO - Processed 2650/7015 plots
+2026-05-21 15:08:15,083 - INFO - Processed 2700/7015 plots
+2026-05-21 15:08:15,187 - INFO - Processed 2750/7015 plots
+2026-05-21 15:08:15,247 - INFO - Processed 2800/7015 plots
+2026-05-21 15:08:15,299 - INFO - Processed 2850/7015 plots
+2026-05-21 15:08:15,351 - INFO - Processed 2900/7015 plots
+2026-05-21 15:08:15,404 - INFO - Processed 2950/7015 plots
+2026-05-21 15:08:15,511 - INFO - Processed 3000/7015 plots
+2026-05-21 15:08:15,663 - INFO - Processed 3050/7015 plots
+2026-05-21 15:08:15,764 - INFO - Processed 3100/7015 plots
+2026-05-21 15:08:15,825 - INFO - Processed 3150/7015 plots
+2026-05-21 15:08:15,880 - INFO - Processed 3200/7015 plots
+2026-05-21 15:08:15,929 - INFO - Processed 3250/7015 plots
+2026-05-21 15:08:15,971 - INFO - Processed 3300/7015 plots
+2026-05-21 15:08:16,067 - INFO - Processed 3350/7015 plots
+2026-05-21 15:08:16,123 - INFO - Processed 3400/7015 plots
+2026-05-21 15:08:16,176 - INFO - Processed 3450/7015 plots
+2026-05-21 15:08:16,323 - INFO - Processed 3500/7015 plots
+2026-05-21 15:08:16,374 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:16,375 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:16,377 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:16,378 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:16,395 - INFO - Processed 3550/7015 plots
+2026-05-21 15:08:16,451 - INFO - Processed 3600/7015 plots
+2026-05-21 15:08:16,514 - INFO - Processed 3650/7015 plots
+2026-05-21 15:08:16,572 - INFO - Processed 3700/7015 plots
+2026-05-21 15:08:16,642 - INFO - Processed 3750/7015 plots
+2026-05-21 15:08:16,699 - INFO - Processed 3800/7015 plots
+2026-05-21 15:08:16,853 - INFO - Processed 3850/7015 plots
+2026-05-21 15:08:16,930 - INFO - Processed 3900/7015 plots
+2026-05-21 15:08:16,998 - INFO - Processed 3950/7015 plots
+2026-05-21 15:08:17,198 - INFO - Processed 4000/7015 plots
+2026-05-21 15:08:17,504 - INFO - Processed 4050/7015 plots
+2026-05-21 15:08:17,670 - INFO - Processed 4100/7015 plots
+2026-05-21 15:08:17,811 - INFO - Processed 4150/7015 plots
+2026-05-21 15:08:17,934 - INFO - Processed 4200/7015 plots
+2026-05-21 15:08:18,027 - INFO - Processed 4250/7015 plots
+2026-05-21 15:08:18,090 - INFO - Processed 4300/7015 plots
+2026-05-21 15:08:18,161 - INFO - Processed 4350/7015 plots
+2026-05-21 15:08:18,206 - INFO - Processed 4400/7015 plots
+2026-05-21 15:08:18,258 - INFO - Processed 4450/7015 plots
+2026-05-21 15:08:18,307 - INFO - Processed 4500/7015 plots
+2026-05-21 15:08:18,384 - INFO - Processed 4550/7015 plots
+2026-05-21 15:08:18,472 - INFO - Processed 4600/7015 plots
+2026-05-21 15:08:18,514 - INFO - Processed 4650/7015 plots
+2026-05-21 15:08:18,627 - INFO - Processed 4700/7015 plots
+2026-05-21 15:08:18,690 - INFO - Processed 4750/7015 plots
+2026-05-21 15:08:18,747 - INFO - Processed 4800/7015 plots
+2026-05-21 15:08:18,797 - INFO - Processed 4850/7015 plots
+2026-05-21 15:08:18,836 - INFO - Processed 4900/7015 plots
+2026-05-21 15:08:18,892 - INFO - Processed 4950/7015 plots
+2026-05-21 15:08:18,941 - INFO - Processed 5000/7015 plots
+2026-05-21 15:08:18,994 - INFO - Processed 5050/7015 plots
+2026-05-21 15:08:19,060 - INFO - Processed 5100/7015 plots
+2026-05-21 15:08:19,108 - INFO - Processed 5150/7015 plots
+2026-05-21 15:08:19,190 - INFO - Processed 5200/7015 plots
+2026-05-21 15:08:19,238 - INFO - Processed 5250/7015 plots
+2026-05-21 15:08:19,325 - INFO - Processed 5300/7015 plots
+2026-05-21 15:08:19,370 - INFO - Processed 5350/7015 plots
+2026-05-21 15:08:19,414 - INFO - Processed 5400/7015 plots
+2026-05-21 15:08:19,462 - INFO - Processed 5450/7015 plots
+2026-05-21 15:08:19,556 - INFO - Processed 5500/7015 plots
+2026-05-21 15:08:19,655 - INFO - Processed 5550/7015 plots
+2026-05-21 15:08:19,699 - INFO - Processed 5600/7015 plots
+2026-05-21 15:08:19,761 - INFO - Processed 5650/7015 plots
+2026-05-21 15:08:19,881 - INFO - Processed 5700/7015 plots
+2026-05-21 15:08:20,063 - INFO - Processed 5750/7015 plots
+2026-05-21 15:08:20,163 - INFO - Processed 5800/7015 plots
+2026-05-21 15:08:20,224 - INFO - Processed 5850/7015 plots
+2026-05-21 15:08:20,311 - INFO - Processed 5900/7015 plots
+2026-05-21 15:08:20,454 - INFO - Processed 5950/7015 plots
+2026-05-21 15:08:20,555 - INFO - Processed 6000/7015 plots
+2026-05-21 15:08:20,611 - INFO - Processed 6050/7015 plots
+2026-05-21 15:08:20,662 - INFO - Processed 6100/7015 plots
+2026-05-21 15:08:20,735 - INFO - Processed 6150/7015 plots
+2026-05-21 15:08:20,819 - INFO - Processed 6200/7015 plots
+2026-05-21 15:08:20,923 - INFO - Processed 6250/7015 plots
+2026-05-21 15:08:20,998 - INFO - Processed 6300/7015 plots
+2026-05-21 15:08:21,052 - INFO - Processed 6350/7015 plots
+2026-05-21 15:08:21,095 - INFO - Processed 6400/7015 plots
+2026-05-21 15:08:21,142 - INFO - Processed 6450/7015 plots
+2026-05-21 15:08:21,185 - INFO - Processed 6500/7015 plots
+2026-05-21 15:08:21,244 - INFO - Processed 6550/7015 plots
+2026-05-21 15:08:21,296 - INFO - Processed 6600/7015 plots
+2026-05-21 15:08:21,345 - INFO - Processed 6650/7015 plots
+2026-05-21 15:08:21,386 - INFO - Processed 6700/7015 plots
+2026-05-21 15:08:21,428 - INFO - Processed 6750/7015 plots
+2026-05-21 15:08:21,467 - INFO - Processed 6800/7015 plots
+2026-05-21 15:08:21,512 - INFO - Processed 6850/7015 plots
+2026-05-21 15:08:21,554 - INFO - Processed 6900/7015 plots
+2026-05-21 15:08:21,600 - INFO - Processed 6950/7015 plots
+2026-05-21 15:08:21,646 - INFO - Processed 7000/7015 plots
+2026-05-21 15:08:21,658 - INFO - Imported 7005 unique plots
+2026-05-21 15:08:21,750 - INFO - Importing installments...
+2026-05-21 15:08:22,151 - INFO - Processed 500/77941 installments
+2026-05-21 15:08:22,154 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,157 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,158 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,161 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,170 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,171 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,199 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,230 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,231 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,232 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,232 - WARNING - Could not convert amount to float: ADJUST
+2026-05-21 15:08:22,446 - INFO - Processed 1000/77941 installments
+2026-05-21 15:08:22,722 - INFO - Processed 1500/77941 installments
+2026-05-21 15:08:22,983 - INFO - Processed 2000/77941 installments
+2026-05-21 15:08:23,383 - INFO - Processed 2500/77941 installments
+2026-05-21 15:08:23,700 - INFO - Processed 3000/77941 installments
+2026-05-21 15:08:23,982 - INFO - Processed 3500/77941 installments
+2026-05-21 15:08:24,259 - INFO - Processed 4000/77941 installments
+2026-05-21 15:08:24,567 - INFO - Processed 4500/77941 installments
+2026-05-21 15:08:24,895 - INFO - Processed 5000/77941 installments
+2026-05-21 15:08:25,212 - INFO - Processed 5500/77941 installments
+2026-05-21 15:08:25,261 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:25,589 - INFO - Processed 6000/77941 installments
+2026-05-21 15:08:25,858 - INFO - Processed 6500/77941 installments
+2026-05-21 15:08:25,873 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:25,874 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:26,126 - INFO - Processed 7000/77941 installments
+2026-05-21 15:08:26,135 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:26,493 - INFO - Processed 7500/77941 installments
+2026-05-21 15:08:26,922 - INFO - Processed 8000/77941 installments
+2026-05-21 15:08:27,261 - INFO - Processed 8500/77941 installments
+2026-05-21 15:08:27,545 - INFO - Processed 9000/77941 installments
+2026-05-21 15:08:27,823 - INFO - Processed 9500/77941 installments
+2026-05-21 15:08:28,156 - INFO - Processed 10000/77941 installments
+2026-05-21 15:08:28,448 - INFO - Processed 10500/77941 installments
+2026-05-21 15:08:28,730 - INFO - Processed 11000/77941 installments
+2026-05-21 15:08:28,972 - INFO - Processed 11500/77941 installments
+2026-05-21 15:08:29,207 - INFO - Processed 12000/77941 installments
+2026-05-21 15:08:29,457 - INFO - Processed 12500/77941 installments
+2026-05-21 15:08:29,700 - INFO - Processed 13000/77941 installments
+2026-05-21 15:08:29,937 - INFO - Processed 13500/77941 installments
+2026-05-21 15:08:30,158 - INFO - Processed 14000/77941 installments
+2026-05-21 15:08:30,393 - INFO - Processed 14500/77941 installments
+2026-05-21 15:08:30,440 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:30,442 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:30,636 - INFO - Processed 15000/77941 installments
+2026-05-21 15:08:30,879 - INFO - Processed 15500/77941 installments
+2026-05-21 15:08:31,101 - INFO - Processed 16000/77941 installments
+2026-05-21 15:08:31,332 - INFO - Processed 16500/77941 installments
+2026-05-21 15:08:31,543 - INFO - Processed 17000/77941 installments
+2026-05-21 15:08:31,764 - INFO - Processed 17500/77941 installments
+2026-05-21 15:08:31,986 - INFO - Processed 18000/77941 installments
+2026-05-21 15:08:32,204 - INFO - Processed 18500/77941 installments
+2026-05-21 15:08:32,417 - INFO - Processed 19000/77941 installments
+2026-05-21 15:08:32,631 - INFO - Processed 19500/77941 installments
+2026-05-21 15:08:32,736 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:32,777 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:32,802 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:32,811 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:33,016 - INFO - Processed 20000/77941 installments
+2026-05-21 15:08:33,262 - INFO - Processed 20500/77941 installments
+2026-05-21 15:08:33,495 - INFO - Processed 21000/77941 installments
+2026-05-21 15:08:33,501 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:33,573 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:33,734 - INFO - Processed 21500/77941 installments
+2026-05-21 15:08:33,749 - WARNING - Could not convert amount to float:  
+2026-05-21 15:08:33,970 - INFO - Processed 22000/77941 installments
+2026-05-21 15:08:34,186 - INFO - Processed 22500/77941 installments
+2026-05-21 15:08:34,414 - INFO - Processed 23000/77941 installments
+2026-05-21 15:08:34,637 - INFO - Processed 23500/77941 installments
+2026-05-21 15:08:34,867 - INFO - Processed 24000/77941 installments
+2026-05-21 15:08:35,095 - INFO - Processed 24500/77941 installments
+2026-05-21 15:08:35,319 - INFO - Processed 25000/77941 installments
+2026-05-21 15:08:35,552 - INFO - Processed 25500/77941 installments
+2026-05-21 15:08:35,785 - INFO - Processed 26000/77941 installments
+2026-05-21 15:08:36,011 - INFO - Processed 26500/77941 installments
+2026-05-21 15:08:36,227 - INFO - Processed 27000/77941 installments
+2026-05-21 15:08:36,452 - INFO - Processed 27500/77941 installments
+2026-05-21 15:08:36,678 - INFO - Processed 28000/77941 installments
+2026-05-21 15:08:36,921 - INFO - Processed 28500/77941 installments
+2026-05-21 15:08:37,159 - INFO - Processed 29000/77941 installments
+2026-05-21 15:08:37,417 - INFO - Processed 29500/77941 installments
+2026-05-21 15:08:37,677 - INFO - Processed 30000/77941 installments
+2026-05-21 15:08:37,947 - INFO - Processed 30500/77941 installments
+2026-05-21 15:08:38,211 - INFO - Processed 31000/77941 installments
+2026-05-21 15:08:38,466 - INFO - Processed 31500/77941 installments
+2026-05-21 15:08:38,719 - INFO - Processed 32000/77941 installments
+2026-05-21 15:08:38,979 - INFO - Processed 32500/77941 installments
+2026-05-21 15:08:39,233 - INFO - Processed 33000/77941 installments
+2026-05-21 15:08:39,507 - INFO - Processed 33500/77941 installments
+2026-05-21 15:08:39,751 - INFO - Processed 34000/77941 installments
+2026-05-21 15:08:40,021 - INFO - Processed 34500/77941 installments
+2026-05-21 15:08:40,367 - INFO - Processed 35000/77941 installments
+2026-05-21 15:08:40,653 - INFO - Processed 35500/77941 installments
+2026-05-21 15:08:40,893 - INFO - Processed 36000/77941 installments
+2026-05-21 15:08:41,128 - INFO - Processed 36500/77941 installments
+2026-05-21 15:08:41,353 - INFO - Processed 37000/77941 installments
+2026-05-21 15:08:41,574 - INFO - Processed 37500/77941 installments
+2026-05-21 15:08:41,806 - INFO - Processed 38000/77941 installments
+2026-05-21 15:08:42,039 - INFO - Processed 38500/77941 installments
+2026-05-21 15:08:42,283 - INFO - Processed 39000/77941 installments
+2026-05-21 15:08:42,513 - INFO - Processed 39500/77941 installments
+2026-05-21 15:08:42,748 - INFO - Processed 40000/77941 installments
+2026-05-21 15:08:42,975 - INFO - Processed 40500/77941 installments
+2026-05-21 15:08:43,298 - INFO - Processed 41000/77941 installments
+2026-05-21 15:08:43,549 - INFO - Processed 41500/77941 installments
+2026-05-21 15:08:43,802 - INFO - Processed 42000/77941 installments
+2026-05-21 15:08:44,045 - INFO - Processed 42500/77941 installments
+2026-05-21 15:08:44,293 - INFO - Processed 43000/77941 installments
+2026-05-21 15:08:44,561 - INFO - Processed 43500/77941 installments
+2026-05-21 15:08:44,827 - INFO - Processed 44000/77941 installments
+2026-05-21 15:08:45,115 - INFO - Processed 44500/77941 installments
+2026-05-21 15:08:45,361 - INFO - Processed 45000/77941 installments
+2026-05-21 15:08:45,636 - INFO - Processed 45500/77941 installments
+2026-05-21 15:08:45,919 - INFO - Processed 46000/77941 installments
+2026-05-21 15:08:46,184 - INFO - Processed 46500/77941 installments
+2026-05-21 15:08:46,401 - INFO - Processed 47000/77941 installments
+2026-05-21 15:08:46,637 - INFO - Processed 47500/77941 installments
+2026-05-21 15:08:46,857 - INFO - Processed 48000/77941 installments
+2026-05-21 15:08:47,082 - INFO - Processed 48500/77941 installments
+2026-05-21 15:08:47,308 - INFO - Processed 49000/77941 installments
+2026-05-21 15:08:47,540 - INFO - Processed 49500/77941 installments
+2026-05-21 15:08:47,778 - INFO - Processed 50000/77941 installments
+2026-05-21 15:08:47,993 - INFO - Processed 50500/77941 installments
+2026-05-21 15:08:48,221 - INFO - Processed 51000/77941 installments
+2026-05-21 15:08:48,459 - INFO - Processed 51500/77941 installments
+2026-05-21 15:08:48,811 - INFO - Processed 52000/77941 installments
+2026-05-21 15:08:49,085 - INFO - Processed 52500/77941 installments
+2026-05-21 15:08:49,313 - INFO - Processed 53000/77941 installments
+2026-05-21 15:08:49,541 - INFO - Processed 53500/77941 installments
+2026-05-21 15:08:49,765 - INFO - Processed 54000/77941 installments
+2026-05-21 15:08:50,019 - INFO - Processed 54500/77941 installments
+2026-05-21 15:08:50,280 - INFO - Processed 55000/77941 installments
+2026-05-21 15:08:50,505 - INFO - Processed 55500/77941 installments
+2026-05-21 15:08:50,735 - INFO - Processed 56000/77941 installments
+2026-05-21 15:08:50,994 - INFO - Processed 56500/77941 installments
+2026-05-21 15:08:51,233 - INFO - Processed 57000/77941 installments
+2026-05-21 15:08:51,477 - INFO - Processed 57500/77941 installments
+2026-05-21 15:08:51,691 - INFO - Processed 58000/77941 installments
+2026-05-21 15:08:51,911 - INFO - Processed 58500/77941 installments
+2026-05-21 15:08:52,139 - INFO - Processed 59000/77941 installments
+2026-05-21 15:08:52,357 - INFO - Processed 59500/77941 installments
+2026-05-21 15:08:52,590 - INFO - Processed 60000/77941 installments
+2026-05-21 15:08:52,826 - INFO - Processed 60500/77941 installments
+2026-05-21 15:08:53,047 - INFO - Processed 61000/77941 installments
+2026-05-21 15:08:53,271 - INFO - Processed 61500/77941 installments
+2026-05-21 15:08:53,573 - INFO - Processed 62000/77941 installments
+2026-05-21 15:08:53,823 - INFO - Processed 62500/77941 installments
+2026-05-21 15:08:54,059 - INFO - Processed 63000/77941 installments
+2026-05-21 15:08:54,309 - INFO - Processed 63500/77941 installments
+2026-05-21 15:08:54,541 - INFO - Processed 64000/77941 installments
+2026-05-21 15:08:54,771 - INFO - Processed 64500/77941 installments
+2026-05-21 15:08:55,011 - INFO - Processed 65000/77941 installments
+2026-05-21 15:08:55,257 - INFO - Processed 65500/77941 installments
+2026-05-21 15:08:55,493 - INFO - Processed 66000/77941 installments
+2026-05-21 15:08:55,719 - INFO - Processed 66500/77941 installments
+2026-05-21 15:08:55,954 - INFO - Processed 67000/77941 installments
+2026-05-21 15:08:56,186 - INFO - Processed 67500/77941 installments
+2026-05-21 15:08:56,550 - INFO - Processed 68000/77941 installments
+2026-05-21 15:08:56,837 - INFO - Processed 68500/77941 installments
+2026-05-21 15:08:57,075 - INFO - Processed 69000/77941 installments
+2026-05-21 15:08:57,314 - INFO - Processed 69500/77941 installments
+2026-05-21 15:08:57,540 - INFO - Processed 70000/77941 installments
+2026-05-21 15:08:57,802 - INFO - Processed 70500/77941 installments
+2026-05-21 15:08:58,062 - INFO - Processed 71000/77941 installments
+2026-05-21 15:08:58,326 - INFO - Processed 71500/77941 installments
+2026-05-21 15:08:58,924 - INFO - Processed 72000/77941 installments
+2026-05-21 15:08:59,348 - INFO - Processed 72500/77941 installments
+2026-05-21 15:08:59,638 - INFO - Processed 73000/77941 installments
+2026-05-21 15:08:59,955 - INFO - Processed 73500/77941 installments
+2026-05-21 15:09:00,230 - INFO - Processed 74000/77941 installments
+2026-05-21 15:09:00,489 - INFO - Processed 74500/77941 installments
+2026-05-21 15:09:00,761 - INFO - Processed 75000/77941 installments
+2026-05-21 15:09:01,024 - INFO - Processed 75500/77941 installments
+2026-05-21 15:09:01,289 - INFO - Processed 76000/77941 installments
+2026-05-21 15:09:01,553 - INFO - Processed 76500/77941 installments
+2026-05-21 15:09:01,778 - INFO - Processed 77000/77941 installments
+2026-05-21 15:09:02,017 - INFO - Processed 77500/77941 installments
+2026-05-21 15:09:02,232 - INFO - Processed 77941/77941 installments
+2026-05-21 15:09:02,232 - INFO - Imported 77643 installments out of 77941 processed
+2026-05-21 15:09:02,404 - INFO - 
+==================================================
+2026-05-21 15:09:02,405 - INFO - IMPORT SUMMARY
+2026-05-21 15:09:02,405 - INFO - ==================================================
+2026-05-21 15:09:02,405 - INFO - Unique Clients: 5123
+2026-05-21 15:09:02,406 - INFO - Unique Brokers: 327
+2026-05-21 15:09:02,406 - INFO - Unique Plots: 6985
+2026-05-21 15:09:02,406 - INFO - Total Installments: 77643
+2026-05-21 15:09:02,406 - INFO - ==================================================
+2026-05-21 15:09:02,407 - INFO - Data import completed successfully!

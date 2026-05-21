@@ -5,21 +5,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   FileText,
-  ShoppingBag,
   MessageSquare,
   Lock,
-  FileCode,
   Layers,
-  HelpCircle,
   ChevronDown,
   DollarSign,
   Calendar,
   CheckSquare,
   StickyNote,
-  FolderOpen,
-  Map,
-  BarChart2,
-  FileInput,
   Users,
   UserPlus,
   UserCog
@@ -33,7 +26,7 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
-  const [pagesOpen, setPagesOpen] = useState(false);
+  const [pagesOpen, setPagesOpen] = useState(pathname.startsWith('/pages'));
   const [salesOpen, setSalesOpen] = useState(pathname.startsWith('/sales'));
   const [authOpen, setAuthOpen] = useState(false);
   const [componentsOpen, setComponentsOpen] = useState(pathname.startsWith('/components'));
@@ -89,7 +82,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
         {/* Pages Section with Dropdown */}
         <div className="mb-2">
           <div
-            className="flex items-center justify-between p-3 text-black hover:bg-gray-600 hover:text-white rounded-md cursor-pointer font-bold transition-colors"
+            className={`flex items-center justify-between p-3 rounded-md cursor-pointer font-bold transition-colors ${
+              pathname.startsWith('/pages')
+                ? 'bg-white text-black'
+                : 'text-black hover:bg-gray-600 hover:text-white'
+            }`}
             onClick={togglePages}
           >
             <div className="flex items-center">
@@ -99,49 +96,26 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${pagesOpen ? 'transform rotate-180' : ''}`} />
           </div>
 
-          {/* Submenu */}
           {pagesOpen && (
             <div className="ml-4 mt-1 space-y-1">
-              <button
-                onClick={() => handleNavigation('/homepage')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/homepage'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Homepage</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/property-page')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/property-page'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Property Page</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/about-us')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/about-us'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>About Us</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/contact-us')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/contact-us'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Contact Us</span>
-              </button>
+              {[
+                { slug: 'homepage', label: 'Homepage' },
+                { slug: 'properties', label: 'Properties Page' },
+                { slug: 'about-us', label: 'About Us' },
+                { slug: 'contact-us', label: 'Contact Us' },
+              ].map((p) => (
+                <button
+                  key={p.slug}
+                  onClick={() => handleNavigation(`/pages/${p.slug}`)}
+                  className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
+                    pathname === `/pages/${p.slug}`
+                      ? 'bg-white text-black'
+                      : 'text-black hover:bg-gray-600 hover:text-white'
+                  }`}
+                >
+                  <span>{p.label}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -387,19 +361,6 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
           )}
         </div>
 
-        <div className="mb-2">
-          <button
-            onClick={() => handleNavigation('/help')}
-            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
-              pathname === '/help'
-                ? 'bg-white text-black'
-                : 'text-black hover:bg-gray-600 hover:text-white'
-            }`}
-          >
-            <HelpCircle className="w-5 h-5 mr-3 stroke-[2.5px]" />
-            <span>Help</span>
-          </button>
-        </div>
       </nav>
     </div>
   );
