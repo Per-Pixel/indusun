@@ -2,44 +2,110 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'react-hot-toast';
-import { AdminPermissions } from '@/lib/mock-auth-data';
+import { createBrowserClient } from '@supabase/ssr';
 
 interface AdminUser {
   id: string;
   name: string;
   email: string;
-  role: string;
-  permissions?: AdminPermissions;
+  role: 'admin' | 'super_admin';
+  permissions?: string[];
 }
 
 interface AdminAuthContextType {
   user: AdminUser | null;
   isLoading: boolean;
-  login: (userData: AdminUser) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
-  hasPermission: (permission: keyof AdminPermissions) => boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
 export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [supabase, setSupabase] = useState<any>(null);
 
+  // Initialize Supabase client
   useEffect(() => {
-    checkAuth();
+    if (supabaseUrl && supabaseKey) {
+      const client = createBrowserClient(supabaseUrl, supabaseKey);
+      setSupabase(client);
+    }
   }, []);
 
-  const login = (userData: AdminUser) => {
-    setUser(userData);
-    toast.success('Admin login successful');
+  useEffect(() => {
+    if (supabase) {
+      checkAuth();
+    }
+  }, [supabase]);
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!supabase) {
+        return { success: false, error: 'Supabase client not initialized' };
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return { success: false, error: error.message };
+      }
+
+      if (!data.user) {
+        return { success: false, error: 'No user returned' };
+      }
+
+      // Fetch admin profile data
+      const { data: profileData } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      const adminUser: AdminUser = {
+        id: data.user.id,
+        email: data.user.email || '',
+        name: profileData?.name || data.user.user_metadata?.name || email.split('@')[0],
+        role: profileData?.role || data.user.user_metadata?.role || 'admin',
+        permissions: profileData?.permissions || data.user.user_metadata?.permissions || [],
+      };
+
+      // Check if user is admin
+      if (adminUser.role !== 'admin' && adminUser.role !== 'super_admin') {
+        await supabase.auth.signOut();
+        toast.error('Unauthorized - Admin access only');
+        return { success: false, error: 'Unauthorized - Admin access only' };
+      }
+
+      setUser(adminUser);
+      toast.success('Admin login successful');
+      return { success: true };
+
+    } catch (err) {
+      console.error('Login error:', err);
+      toast.error('Login failed');
+      return { success: false, error: 'Login failed' };
+    }
   };
 
   const logout = async () => {
     try {
-      // Call logout API to clear cookies
-      const response = await fetch('/api/auth/logout', {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+
+      // Also call our API to ensure server-side cleanup
+      await fetch('/api/auth/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,55 +128,52 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAuth = async () => {
     setIsLoading(true);
     try {
-      // Check if we're in development mode
-      const isDevelopment = process.env.NODE_ENV === 'development';
-
-      if (isDevelopment) {
-        // Mock authentication for development using our mock admin users
-        try {
-          // Import mock admin users dynamically to avoid build issues
-          const { mockAdminUsers } = await import('../data/mockUsers');
-
-          // Use the first admin user as the logged-in user for development
-          const mockAdmin = mockAdminUsers[0]; // Super admin
-
-          const mockUser: AdminUser = {
-            id: mockAdmin.id,
-            name: mockAdmin.name,
-            email: mockAdmin.email,
-            role: mockAdmin.role,
-            permissions: mockAdmin.permissions
-          };
-
-          setUser(mockUser);
-        } catch (importError) {
-          console.error('Failed to import mock users:', importError);
-          // Fallback to basic mock user if import fails
-          const fallbackUser: AdminUser = {
-            id: '1',
-            name: 'Admin User',
-            email: 'admin@indusun.com',
-            role: 'super_admin'
-          };
-          setUser(fallbackUser);
-        }
-      } else {
-        // Production: Real API call
-        const response = await fetch('/api/auth/me', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.authenticated) {
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
+      if (!supabase) {
+        setIsLoading(false);
+        return;
       }
+
+      // Get current session from Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Get user details
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+
+      if (!authUser) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch admin profile data
+      const { data: profileData } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      const adminUser: AdminUser = {
+        id: authUser.id,
+        email: authUser.email || '',
+        name: profileData?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || '',
+        role: profileData?.role || authUser.user_metadata?.role || 'admin',
+        permissions: profileData?.permissions || authUser.user_metadata?.permissions || [],
+      };
+
+      // Check if user is admin
+      if (adminUser.role !== 'admin' && adminUser.role !== 'super_admin') {
+        setUser(null);
+        await supabase.auth.signOut();
+      } else {
+        setUser(adminUser);
+      }
+
     } catch (error) {
       console.error('Authentication check error:', error);
       setUser(null);
@@ -120,12 +183,12 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Permission checking function
-  const hasPermission = (permission: keyof AdminPermissions): boolean => {
+  const hasPermission = (permission: string): boolean => {
     if (!user) return false;
 
-    // If user has permissions object, check it
-    if (user.permissions) {
-      return user.permissions[permission] === true;
+    // If user has permissions array, check it
+    if (user.permissions && user.permissions.length > 0) {
+      return user.permissions.includes(permission);
     }
 
     // Fallback: Grant permissions based on role
@@ -134,9 +197,9 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       return true;
     }
 
-    // Regular admin gets most permissions except sensitive ones
+    // Regular admin gets basic permissions
     if (user.role === 'admin') {
-      const restrictedPermissions: (keyof AdminPermissions)[] = [
+      const restrictedPermissions = [
         'can_delete_users',
         'can_delete_admins',
         'can_view_admin_details',

@@ -1,6 +1,10 @@
 // admin/middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 import jwt from 'jsonwebtoken';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 // Simplified token verification for middleware
 async function verifyAdminToken(token: string): Promise<boolean> {
@@ -28,26 +32,45 @@ async function verifyAdminToken(token: string): Promise<boolean> {
 export async function middleware(req: NextRequest) {
   // TEMPORARY: Bypass authentication check for development
   console.log('Middleware bypassed for development');
-  return NextResponse.next();
 
-  // ORIGINAL CODE (commented out for now)
-  /*
-  // Get token from cookies or Authorization header
-  const token = req.cookies.get('admin_token')?.value
-    || req.headers.get('Authorization')?.replace('Bearer ', '');
+  // Create a response object
+  let res = NextResponse.next({
+    request: {
+      headers: req.headers,
+    },
+  });
 
-  if (!token) {
-    return NextResponse.redirect(new URL('/auth/login', req.url));
+  // Create Supabase client for session refreshing
+  // This keeps the user session alive
+  if (supabaseUrl && supabaseKey) {
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseKey,
+      {
+        cookies: {
+          getAll() {
+            return req.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              req.cookies.set(name, value)
+            })
+            res = NextResponse.next({
+              request: req,
+            })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              res.cookies.set(name, value, options)
+            )
+          },
+        },
+      }
+    );
+
+    // This will refresh the session if needed
+    await supabase.auth.getSession();
   }
 
-  // Verify the token
-  const isValidAdmin = await verifyAdminToken(token);
-  if (!isValidAdmin) {
-    return NextResponse.redirect(new URL('/auth/login', req.url));
-  }
-
-  return NextResponse.next();
-  */
+  return res;
 }
 
 export const config = {

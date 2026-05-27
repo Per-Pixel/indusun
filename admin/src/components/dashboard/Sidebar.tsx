@@ -15,7 +15,8 @@ import {
   StickyNote,
   Users,
   UserPlus,
-  UserCog
+  UserCog,
+  Database
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -76,6 +77,21 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
           >
             <LayoutDashboard className="w-5 h-5 mr-3 stroke-[2.5px]" />
             <span>Dashboard</span>
+          </button>
+        </div>
+
+        {/* Master Data - Supabase Integration */}
+        <div className="mb-4">
+          <button
+            onClick={() => handleNavigation('/master-data')}
+            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
+              pathname === '/master-data'
+                ? 'bg-white text-black'
+                : 'text-black hover:bg-gray-600 hover:text-white'
+            }`}
+          >
+            <Database className="w-5 h-5 mr-3 stroke-[2.5px]" />
+            <span>Master Data</span>
           </button>
         </div>
 
