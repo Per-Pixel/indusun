@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import { BottomNavigation } from '@/components/shared/BottomNavigation';
+import RouteTransitionToaster from '@/components/shared/RouteTransitionToaster';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <Toaster position="top-center" />
+          <RouteTransitionToaster />
           {children}
           <BottomNavigation />
         </AuthProvider>

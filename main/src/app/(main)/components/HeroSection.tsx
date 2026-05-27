@@ -6,11 +6,30 @@ import { MobileSearchForm } from './MobileSearchForm';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
-interface HeroSectionProps {
-  removeSearchBar?: boolean;
+interface HeroContent {
+  headline?: string;
+  subheadline?: string;
+  image?: string;
 }
 
-export function HeroSection({ removeSearchBar = false }: HeroSectionProps) {
+interface HeroSectionProps {
+  removeSearchBar?: boolean;
+  content?: HeroContent;
+}
+
+const HERO_DEFAULTS: Required<HeroContent> = {
+  headline: 'Modern living for everyone',
+  subheadline:
+    'We provide a complete service for the sale, purchase or rental of real estate. We have been operating in Madrid and Barcelona more than 15 years.',
+  image:
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop',
+};
+
+export function HeroSection({ removeSearchBar = false, content }: HeroSectionProps) {
+  const headline = content?.headline?.trim() || HERO_DEFAULTS.headline;
+  const subheadline = content?.subheadline?.trim() || HERO_DEFAULTS.subheadline;
+  const image = content?.image?.trim() || HERO_DEFAULTS.image;
+
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -50,8 +69,8 @@ export function HeroSection({ removeSearchBar = false }: HeroSectionProps) {
             }}
           >
             <img
-              src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop"
-              alt="Modern Home"
+              src={image}
+              alt="Hero"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/30" />
@@ -66,7 +85,7 @@ export function HeroSection({ removeSearchBar = false }: HeroSectionProps) {
                 transition={{ duration: 0.5 }}
                 className="text-4xl font-bold text-white mb-4"
               >
-                Modern living for everyone
+                {headline}
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
@@ -74,7 +93,7 @@ export function HeroSection({ removeSearchBar = false }: HeroSectionProps) {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-lg text-white/90 mb-8"
               >
-                We provide a complete service for the sale, purchase or rental of real estate. We have been operating in Madrid and Barcelona more than 15 years.
+                {subheadline}
               </motion.p>
             </div>
           </div>
@@ -99,8 +118,8 @@ export function HeroSection({ removeSearchBar = false }: HeroSectionProps) {
             }}
           >
             <img
-              src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1470&auto=format&fit=crop"
-              alt="Modern Home"
+              src={image}
+              alt="Hero"
               className="w-full h-full object-cover"
             />
             {/* Overlay */}
@@ -116,7 +135,7 @@ export function HeroSection({ removeSearchBar = false }: HeroSectionProps) {
                 transition={{ duration: 0.5 }}
                 className="text-5xl lg:text-6xl font-bold text-white mb-4"
               >
-                Modern living for everyone
+                {headline}
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
@@ -124,7 +143,7 @@ export function HeroSection({ removeSearchBar = false }: HeroSectionProps) {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-xl text-white/90 mb-8"
               >
-                We provide a complete service for the sale, purchase or rental of real estate. We have been operating in Madrid and Barcelona more than 15 years.
+                {subheadline}
               </motion.p>
             </div>
           </div>

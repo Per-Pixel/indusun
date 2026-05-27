@@ -1,7 +1,9 @@
 import { Pool } from "pg";
 
-// Create a database connection pool using the same connection string as admin
-const connectionString = "postgresql://postgres:1234@localhost:5432/indusun";
+// Read from env so the same code works in dev and prod.
+// Override by setting DATABASE_URL in main/.env.local.
+const connectionString =
+    process.env.DATABASE_URL || "postgresql://postgres:1234@localhost:5432/indusun";
 
 const pool = new Pool({
     connectionString,

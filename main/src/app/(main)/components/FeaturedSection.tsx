@@ -8,7 +8,29 @@ import { mockProperties } from '../properties/mockData';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
-export function FeaturedSection() {
+interface FeaturedContent {
+  headline?: string;
+  subheadline?: string;
+  cta?: { label?: string; url?: string };
+}
+
+interface FeaturedSectionProps {
+  content?: FeaturedContent;
+}
+
+const FEATURED_DEFAULTS = {
+  headline: 'Featured Properties',
+  subheadline: 'Discover Your Dream Home Today',
+  ctaLabel: 'View All',
+  ctaUrl: '/properties',
+};
+
+export function FeaturedSection({ content }: FeaturedSectionProps = {}) {
+  const headline = content?.headline?.trim() || FEATURED_DEFAULTS.headline;
+  const subheadline = content?.subheadline?.trim() || FEATURED_DEFAULTS.subheadline;
+  const ctaLabel = content?.cta?.label?.trim() || FEATURED_DEFAULTS.ctaLabel;
+  const ctaUrl = content?.cta?.url?.trim() || FEATURED_DEFAULTS.ctaUrl;
+
   const [isMobile, setIsMobile] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   
@@ -53,10 +75,10 @@ export function FeaturedSection() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-              Featured Properties
+              {headline}
             </h2>
             <p className="text-gray-600 mt-2">
-              Discover Your Dream Home Today
+              {subheadline}
             </p>
           </motion.div>
           
@@ -68,10 +90,10 @@ export function FeaturedSection() {
             className="mt-4 md:mt-0"
           >
             <Link 
-              href="/properties" 
+              href={ctaUrl}
               className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
             >
-              View All
+              {ctaLabel}
               <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </motion.div>
@@ -109,10 +131,10 @@ export function FeaturedSection() {
         {isMobile && (
           <div className="mt-8 text-center">
             <Link 
-              href="/properties" 
+              href={ctaUrl}
               className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
             >
-              View All Properties
+              {ctaLabel}
             </Link>
           </div>
         )}

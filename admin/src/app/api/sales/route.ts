@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN
         clients c ON p.client_id = c.id
       LEFT JOIN
-        brokers b ON i.broker_id = b.id
+        brokers b ON p.broker_id = b.id
       WHERE 
         i.payment_date IS NOT NULL
     `;
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     }
     
     if (filters.brokerId) {
-      query += ` AND i.broker_id = $${queryParams.length + 1}`;
+      query += ` AND p.broker_id = $${queryParams.length + 1}`;
       queryParams.push(filters.brokerId);
     }
     
@@ -228,7 +228,7 @@ export async function GET(request: NextRequest) {
       }
       
       if (filters.brokerId) {
-        dynamicStatsQuery += ` AND i.broker_id = $${dynamicQueryParams.length + 1}`;
+        dynamicStatsQuery += ` AND p.broker_id = $${dynamicQueryParams.length + 1}`;
         dynamicQueryParams.push(filters.brokerId);
       }
       

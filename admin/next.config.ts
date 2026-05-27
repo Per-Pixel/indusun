@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
   },
   // Use the default .next directory
   distDir: '.next',
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'source.unsplash.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'plus.unsplash.com' },
+    ],
+  },
   // Remove basePath as it's not needed for separate applications
   // basePath: '/admin'
 };
