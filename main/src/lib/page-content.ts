@@ -3,7 +3,8 @@
 // Falls back to an empty map on any error (DB down, table missing, etc.) so
 // callers can safely use defaults without crashing the page.
 
-import pool from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 
 export interface PageSection<T = Record<string, unknown>> {
   data: T;
@@ -14,13 +15,23 @@ export type PageContent = Record<string, PageSection>;
 
 export async function getPageContent(slug: string): Promise<PageContent> {
   try {
-    const result = await pool.query<{ section_key: string; data: Record<string, unknown>; visible: boolean }>(
-      `SELECT section_key, data, visible FROM page_content WHERE page_slug = $1`,
-      [slug],
-    );
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    
+    const { data, error } = await supabase
+      .from('page_content')
+      .select('section_key, data, visible')
+      .eq('page_slug', slug);
+    
+    if (error) {
+      throw error;
+    }
+
     const out: PageContent = {};
-    for (const row of result.rows) {
-      out[row.section_key] = { data: row.data, visible: row.visible };
+    if (data) {
+      for (const row of data) {
+        out[row.section_key] = { data: row.data as Record<string, unknown>, visible: row.visible };
+      }
     }
     return out;
   } catch {
