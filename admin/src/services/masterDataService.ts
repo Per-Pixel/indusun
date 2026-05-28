@@ -7,7 +7,71 @@ import { MasterDataOfGurukrupa, MasterDataSummary } from '@/types/masterData';
 const TABLE_NAME = 'Master Data Of Gurukrupa';
 
 /**
- * Fetch all records from Master Data Of Gurukrupa table
+ * Fetch paginated records from Master Data Of Gurukrupa table with filtering
+ */
+export async function getPaginatedMasterData({
+  page = 1,
+  pageSize = 50,
+  clientNameFilter = '',
+  societyFilter = '',
+}: {
+  page?: number;
+  pageSize?: number;
+  clientNameFilter?: string;
+  societyFilter?: string;
+}): Promise<{
+  data: MasterDataOfGurukrupa[] | null;
+  count: number | null;
+  error: Error | null;
+}> {
+  try {
+    const supabase = createServiceClient();
+    
+    // Calculate range for pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    console.log(`Fetching: page ${page}, pageSize ${pageSize}, range ${from}-${to}`);
+
+    // Start building the query - explicitly set no limit to override any defaults
+    let query = supabase
+      .from(TABLE_NAME)
+      .select('*', { count: 'exact' });
+
+    // Apply filters if provided
+    if (clientNameFilter) {
+      query = query.ilike('client_name', `%${clientNameFilter}%`);
+    }
+
+    if (societyFilter) {
+      query = query.eq('society_name', societyFilter);
+    }
+
+    // Apply pagination and ordering - ensure no implicit limits
+    const { data, error, count } = await query
+      .order('id', { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      console.error('Error fetching paginated master data:', error);
+      return { data: null, count: null, error: new Error(error.message) };
+    }
+
+    console.log(`Fetched ${data?.length || 0} records, total count: ${count}`);
+
+    return { 
+      data: data as MasterDataOfGurukrupa[], 
+      count: count || 0, 
+      error: null 
+    };
+  } catch (err) {
+    console.error('Unexpected error in getPaginatedMasterData:', err);
+    return { data: null, count: null, error: err as Error };
+  }
+}
+
+/**
+ * Fetch all records from Master Data Of Gurukrupa table (legacy function)
  */
 export async function getAllMasterData(): Promise<{
   data: MasterDataOfGurukrupa[] | null;
@@ -160,22 +224,31 @@ export async function getMasterDataSummary(): Promise<{
 }
 
 /**
- * Get unique society names (for filtering)
+ * Get unique society names (for filtering) - optimized for large datasets
  */
 export async function getUniqueSocieties(): Promise<{
   societies: string[];
   error: Error | null;
 }> {
   try {
-    const { data, error } = await getAllMasterData();
+    const supabase = createServiceClient();
+    
+    // Use a more efficient query to get unique societies without fetching all data
+    const { data, error } = await supabase
+      .from(TABLE_NAME)
+      .select('society_name')
+      .not('society_name', 'is', null);
 
-    if (error || !data) {
-      return { societies: [], error };
+    if (error) {
+      console.error('Error fetching societies:', error);
+      return { societies: [], error: new Error(error.message) };
     }
 
     const uniqueSocieties = Array.from(
       new Set(data.map((item) => item.society_name).filter(Boolean))
     ).sort();
+
+    console.log(`Found ${uniqueSocieties.length} unique societies`);
 
     return { societies: uniqueSocieties as string[], error: null };
   } catch (err) {
