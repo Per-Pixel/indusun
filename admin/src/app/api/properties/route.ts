@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPaginatedMasterData } from '@/services/masterDataService';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
+import { formatIndianNumber } from '@/utils/format';
 
 /**
  * Maps a single MasterDataOfGurukrupa row to the Property shape used by
@@ -34,7 +35,7 @@ function toProperty(r: MasterDataOfGurukrupa) {
       r.emi_time && `EMI Term: ${r.emi_time}`,
       r.remarks && `Remarks: ${r.remarks}`,
     ].filter(Boolean).join(' · ') || 'No description available.',
-    price: r.plot_amount ?? '—',
+    price: formatIndianNumber(r.plot_amount),
     status,
     isDraft: false,
     images: [],
@@ -58,8 +59,8 @@ function toProperty(r: MasterDataOfGurukrupa) {
     _clientName: r.client_name ?? '',
     _contactNo: r.contact_no ?? '',
     _plotNo: r.plot_no ?? '',
-    _emiAmount: r.emi_amount ?? '',
-    _paidAmount: r.paid_amount ?? '',
+    _emiAmount: formatIndianNumber(r.emi_amount),
+    _paidAmount: formatIndianNumber(r.paid_amount),
     _rNo: r.r_no ?? '',
   };
 }

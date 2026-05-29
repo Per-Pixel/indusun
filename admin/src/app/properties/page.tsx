@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -137,166 +137,6 @@ interface PropertyFormData {
   existingImages: PropertyImage[];
 }
 
-// Mock property data for management
-const mockProperties: Property[] = [
-  {
-    id: '1',
-    title: 'Luxury Villa in Whitefield',
-    description: 'Stunning 4-bedroom villa with modern amenities, spacious garden, and premium interiors. Located in a gated community with 24/7 security.',
-    price: '₹1.5 Cr',
-    status: 'Listed',
-    isDraft: false,
-    images: [
-      { id: 'img1', url: '/properties/property-01.jpg', order: 1, isPrimary: true },
-      { id: 'img2', url: '/properties/property-02.jpg', order: 2, isPrimary: false }
-    ],
-    targetedLocation: 'Whitefield Premium Sector, Near Tech Parks',
-    actualLocation: '123 Palm Avenue, Whitefield, Bangalore',
-    listedBy: {
-      id: 'admin1',
-      name: 'Admin User',
-      type: 'Admin',
-      email: 'admin@indusun.com',
-      phone: '+91 98765 43210'
-    },
-    bedrooms: 4,
-    bathrooms: 3,
-    squareFootage: '3500 sq ft',
-    propertyType: 'Villa',
-    categories: ['Featured', 'Luxury', 'Gated Community'],
-    displayPages: [
-      { page: 'homepage', enabled: true },
-      { page: 'search', enabled: true },
-      { page: 'listing', enabled: true },
-      { page: 'category', enabled: true }
-    ],
-    dateAdded: '2023-12-15',
-    dateModified: '2023-12-15',
-    // Legacy compatibility
-    address: '123 Palm Avenue, Whitefield, Bangalore',
-    profit: '₹15 Lakhs',
-    image: '/properties/property-01.jpg',
-    date: '2023-12-15',
-    type: 'Residential'
-  },
-  {
-    id: '2',
-    title: 'Commercial Space in Tech Park',
-    description: 'Premium commercial space in a prime tech park location. Ideal for IT companies, startups, or corporate offices.',
-    price: '₹2.8 Cr',
-    status: 'Listed',
-    isDraft: false,
-    images: [
-      { id: 'img3', url: '/properties/property-02.jpg', order: 1, isPrimary: true }
-    ],
-    targetedLocation: 'Electronic City Tech Hub, IT Corridor',
-    actualLocation: '456 Tech Avenue, Electronic City, Bangalore',
-    listedBy: {
-      id: 'broker1',
-      name: 'Amit Kumar',
-      type: 'Broker',
-      email: 'amit@indusun.com',
-      phone: '+91 98765 43211'
-    },
-    bedrooms: 0,
-    bathrooms: 4,
-    squareFootage: '5000 sq ft',
-    propertyType: 'Commercial',
-    categories: ['Premium', 'Investment'],
-    displayPages: [
-      { page: 'homepage', enabled: false },
-      { page: 'search', enabled: true },
-      { page: 'listing', enabled: true },
-      { page: 'category', enabled: true }
-    ],
-    dateAdded: '2023-11-20',
-    dateModified: '2023-11-25',
-    // Legacy compatibility
-    address: '456 Tech Avenue, Electronic City, Bangalore',
-    profit: '₹28 Lakhs',
-    image: '/properties/property-02.jpg',
-    date: '2023-11-20',
-    type: 'Commercial'
-  },
-  {
-    id: '3',
-    title: 'Residential Plot in Sarjapur',
-    description: 'Prime residential plot in developing area with excellent connectivity and future growth potential.',
-    price: '₹85 Lakhs',
-    status: 'Listed',
-    isDraft: false,
-    images: [
-      { id: 'img4', url: '/properties/property-03.jpg', order: 1, isPrimary: true }
-    ],
-    targetedLocation: 'Sarjapur Road Development Zone',
-    actualLocation: '789 Green Valley, Sarjapur Road, Bangalore',
-    listedBy: {
-      id: 'admin1',
-      name: 'Admin User',
-      type: 'Admin',
-      email: 'admin@indusun.com',
-      phone: '+91 98765 43210'
-    },
-    bedrooms: 0,
-    bathrooms: 0,
-    squareFootage: '2400 sq ft',
-    propertyType: 'Plot',
-    categories: ['Investment', 'Budget Friendly'],
-    displayPages: [
-      { page: 'homepage', enabled: false },
-      { page: 'search', enabled: true },
-      { page: 'listing', enabled: true },
-      { page: 'category', enabled: true }
-    ],
-    dateAdded: '2023-12-05',
-    dateModified: '2023-12-05',
-    // Legacy compatibility
-    address: '789 Green Valley, Sarjapur Road, Bangalore',
-    profit: '₹7.5 Lakhs',
-    image: '/properties/property-03.jpg',
-    date: '2023-12-05',
-    type: 'Plot'
-  },
-  {
-    id: '4',
-    title: 'Modern Apartment in Indiranagar',
-    description: 'Contemporary 2BHK apartment with premium amenities and excellent connectivity.',
-    price: '₹95 Lakhs',
-    status: 'Unlisted',
-    isDraft: true,
-    images: [
-      { id: 'img5', url: '/properties/property-04.jpg', order: 1, isPrimary: true }
-    ],
-    targetedLocation: 'Indiranagar Premium Area',
-    actualLocation: '456 Metro Heights, Indiranagar, Bangalore',
-    listedBy: {
-      id: 'admin1',
-      name: 'Admin User',
-      type: 'Admin',
-      email: 'admin@indusun.com',
-      phone: '+91 98765 43210'
-    },
-    bedrooms: 2,
-    bathrooms: 2,
-    squareFootage: '1200 sq ft',
-    propertyType: 'Apartment',
-    categories: ['New Launch', 'Near Metro'],
-    displayPages: [
-      { page: 'homepage', enabled: true },
-      { page: 'search', enabled: false },
-      { page: 'listing', enabled: false },
-      { page: 'category', enabled: false }
-    ],
-    dateAdded: '2023-12-10',
-    dateModified: '2023-12-10',
-    // Legacy compatibility
-    address: '456 Metro Heights, Indiranagar, Bangalore',
-    profit: '₹9.5 Lakhs',
-    image: '/properties/property-04.jpg',
-    date: '2023-12-10',
-    type: 'Residential'
-  }
-];
 
 // Summary data for property management
 const getSummaryData = (properties: Property[]) => [
@@ -353,37 +193,63 @@ export default function PropertiesPage() {
   const [mounted, setMounted] = useState(false);
 
   // Property management state
-  const [properties, setProperties] = useState<Property[]>(mockProperties);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 50;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
+
+  // Debounce search input before firing API call
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebouncedSearch(searchTerm), 400);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  }, [searchTerm]);
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, filterStatus]);
+
+  // Fetch properties from the API
+  const fetchProperties = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        pageSize: PAGE_SIZE.toString(),
+        search: debouncedSearch,
+        status: filterStatus === 'All' ? '' : filterStatus,
+      });
+      const res = await fetch(`/api/properties?${params}`);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      setProperties(json.data ?? []);
+      setTotalCount(json.count ?? 0);
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : 'Failed to load properties');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, debouncedSearch, filterStatus]);
+
+  useEffect(() => { fetchProperties(); }, [fetchProperties]);
 
   // Prevent hydration issues
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Enhanced filtering with better search capabilities
-  const filteredProperties = properties.filter(property => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = searchTerm === '' ||
-      property.title.toLowerCase().includes(searchLower) ||
-      property.description.toLowerCase().includes(searchLower) ||
-      property.actualLocation.toLowerCase().includes(searchLower) ||
-      property.targetedLocation.toLowerCase().includes(searchLower) ||
-      property.listedBy.name.toLowerCase().includes(searchLower) ||
-      property.listedBy.type.toLowerCase().includes(searchLower) ||
-      property.price.toLowerCase().includes(searchLower) ||
-      property.propertyType.toLowerCase().includes(searchLower) ||
-      property.squareFootage.toLowerCase().includes(searchLower) ||
-      (property.bedrooms > 0 && property.bedrooms.toString().includes(searchLower)) ||
-      (property.bathrooms > 0 && property.bathrooms.toString().includes(searchLower));
-
-    const matchesStatus = filterStatus === 'All' || property.status === filterStatus;
-    const matchesType = filterType === 'All' || property.propertyType === filterType;
-
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  // Type filter is applied client-side; search + status are handled server-side
+  const filteredProperties = filterType === 'All'
+    ? properties
+    : properties.filter((p) => p.propertyType === filterType);
 
   // Property management functions
 
@@ -483,6 +349,8 @@ export default function PropertiesPage() {
       </div>
     );
   }
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -732,7 +600,28 @@ export default function PropertiesPage() {
               ))}
             </div>
 
-            {filteredProperties.length === 0 && (
+            {/* Loading / Error / Empty states */}
+            {loading && (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            )}
+
+            {!loading && fetchError && (
+              <div className="text-center py-12">
+                <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-black mb-2">Failed to load properties</h3>
+                <p className="text-gray-500 mb-4">{fetchError}</p>
+                <button
+                  onClick={fetchProperties}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {!loading && !fetchError && filteredProperties.length === 0 && (
               <div className="text-center py-12">
                 <Home className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-black mb-2">No properties found</h3>
@@ -744,6 +633,32 @@ export default function PropertiesPage() {
                   <Plus size={16} />
                   Add Property
                 </button>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {!loading && totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-600">
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} properties
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50 text-black"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-600">Page {currentPage} of {totalPages}</span>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50 text-black"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             )}
 
