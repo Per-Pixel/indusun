@@ -84,58 +84,6 @@ export default function DataTable({
 
   return (
     <div className="bg-white rounded-lg shadow">
-      {/* Filters */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label htmlFor="client-search" className="block text-sm font-medium text-gray-700 mb-1">
-              Search by Client Name
-            </label>
-            <div className="relative">
-              <input
-                id="client-search"
-                type="text"
-                value={clientNameFilter}
-                onChange={(e) => onClientNameFilter(e.target.value)}
-                placeholder="Type to search clients..."
-                className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <svg
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-          </div>
-          
-          <div className="sm:w-64">
-            <label htmlFor="society-filter" className="block text-sm font-medium text-gray-700 mb-1">
-              Filter by Society
-            </label>
-            <select
-              id="society-filter"
-              value={societyFilter}
-              onChange={(e) => onSocietyFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">All Societies</option>
-              {societies.map((society) => (
-                <option key={society} value={society}>
-                  {society}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
 
       {/* Table Info */}
       <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">

@@ -6,7 +6,6 @@ import {
   Search,
   Filter,
   ChevronDown,
-  Download,
   Tag,
   User,
   DollarSign,
@@ -35,6 +34,7 @@ import {
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 import { motion, AnimatePresence } from 'framer-motion';
+import ExportDropdown from '@/components/ui/ExportDropdown';
 
 // Enhanced property interface for management
 interface Property {
@@ -505,13 +505,24 @@ export default function PropertiesPage() {
                 <p className="text-gray-600 mt-1">Manage all properties, listings, and property details</p>
               </div>
               <div className="flex gap-3 mt-4 md:mt-0">
-                <button
-                  onClick={() => router.push('/properties/export')}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-black hover:bg-gray-50"
-                >
-                  <Download size={16} />
-                  <span>Export</span>
-                </button>
+                <ExportDropdown
+                  label="Export"
+                  filename="properties"
+                  disabled={filteredProperties.length === 0}
+                  columns={[
+                    { header: 'Title',    key: 'title' },
+                    { header: 'Price',    key: 'price' },
+                    { header: 'Status',   key: 'status' },
+                    { header: 'Type',     key: 'propertyType' },
+                    { header: 'Location', key: 'actualLocation' },
+                    { header: 'Listed By', key: '_listedByName' },
+                    { header: 'Bedrooms', key: 'bedrooms' },
+                    { header: 'Bathrooms', key: 'bathrooms' },
+                    { header: 'Size',     key: 'squareFootage' },
+                    { header: 'Date Added', key: 'dateAdded' },
+                  ]}
+                  rows={filteredProperties.map((p) => ({ ...p, _listedByName: p.listedBy.name }))}
+                />
                 <button
                   onClick={handleAddProperty}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"

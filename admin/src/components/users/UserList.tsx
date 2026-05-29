@@ -11,12 +11,12 @@ import {
   Edit,
   Trash2,
   UserPlus,
-  Download,
   Mail,
   Phone,
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import ExportDropdown from '@/components/ui/ExportDropdown';
 
 export interface User {
   id: string;
@@ -203,13 +203,21 @@ const UserList: React.FC<UserListProps> = ({
               <span>Add {userType.charAt(0).toUpperCase() + userType.slice(1)}</span>
             </button>
 
-            {/* Export Button */}
-            <button
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <Download size={16} />
-              <span>Export</span>
-            </button>
+            {/* Export Dropdown */}
+            <ExportDropdown
+              label="Export"
+              filename={`${userType}s`}
+              disabled={filteredUsers.length === 0}
+              columns={[
+                { header: 'Name',    key: 'name' },
+                { header: 'Email',   key: 'email' },
+                { header: 'Phone',   key: 'phone' },
+                { header: 'Role',    key: 'role' },
+                { header: 'Status',  key: 'status' },
+                { header: 'Created', key: 'createdAt' },
+              ]}
+              rows={filteredUsers}
+            />
           </div>
         </div>
       </div>
