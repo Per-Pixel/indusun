@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getPaginatedMasterData, getUniqueSocieties } from '@/services/masterDataService';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import DataTable from '@/components/ui/DataTable';
 
@@ -21,8 +20,10 @@ export default function MasterDataPage() {
   useEffect(() => {
     const fetchSocieties = async () => {
       try {
-        const { societies: societyList } = await getUniqueSocieties();
-        setSocieties(societyList);
+        const res = await fetch('/api/master-data/societies');
+        if (!res.ok) throw new Error('Failed to fetch societies');
+        const json = await res.json();
+        setSocieties(json.societies || []);
       } catch (err) {
         console.error('Error fetching societies:', err);
       }
@@ -37,19 +38,20 @@ export default function MasterDataPage() {
       setError(null);
       
       try {
-        const result = await getPaginatedMasterData({
-          page: currentPage,
-          pageSize,
+        const params = new URLSearchParams({
+          page: String(currentPage),
+          pageSize: String(pageSize),
           clientNameFilter,
           societyFilter,
         });
-        
-        if (result.error) {
-          setError(result.error);
-        } else {
-          setData(result.data || []);
-          setTotalCount(result.count || 0);
+        const res = await fetch(`/api/master-data?${params}`);
+        if (!res.ok) {
+          const json = await res.json();
+          throw new Error(json.error || 'Failed to fetch data');
         }
+        const json = await res.json();
+        setData(json.data || []);
+        setTotalCount(json.count || 0);
       } catch (err) {
         setError(err as Error);
       } finally {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getPaginatedMasterData, getUniqueSocieties } from '@/services/masterDataService';
 
 export default function DebugDataPage() {
   const [logs, setLogs] = useState<string[]>([]);
@@ -20,27 +19,19 @@ export default function DebugDataPage() {
       // Test 1: Check environment variables
       addLog('Checking environment variables...');
       const hasUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const hasKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
       addLog(`NEXT_PUBLIC_SUPABASE_URL: ${hasUrl ? '✓' : '✗'}`);
-      addLog(`SUPABASE_SERVICE_ROLE_KEY: ${hasKey ? '✓' : '✗'}`);
-      
+      addLog('SUPABASE_SERVICE_ROLE_KEY: (server-only — checked via API)');
       if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
         addLog(`URL prefix: ${process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 30)}...`);
-      }
-      if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        addLog(`Key prefix: ${process.env.SUPABASE_SERVICE_ROLE_KEY.substring(0, 10)}...`);
-        addLog(`Key length: ${process.env.SUPABASE_SERVICE_ROLE_KEY.length}`);
       }
 
       // Test 2: Try to get total count
       addLog('\\n--- Testing Total Count ---');
-      const countResult = await getPaginatedMasterData({ 
-        page: 1, 
-        pageSize: 1  // Just get 1 record to test count
-      });
+      const countRes = await fetch('/api/master-data?page=1&pageSize=1');
+      const countResult = await countRes.json();
       
-      if (countResult.error) {
-        addLog(`❌ Count query failed: ${countResult.error.message}`);
+      if (!countRes.ok || countResult.error) {
+        addLog(`❌ Count query failed: ${countResult.error || 'Unknown error'}`);
       } else {
         addLog(`✅ Total count: ${countResult.count?.toLocaleString() || 'Unknown'}`);
         addLog(`✅ Sample data rows: ${countResult.data?.length || 0}`);
@@ -52,13 +43,11 @@ export default function DebugDataPage() {
       
       for (const size of pageSizes) {
         addLog(`Testing page size ${size}...`);
-        const result = await getPaginatedMasterData({ 
-          page: 1, 
-          pageSize: size 
-        });
+        const res = await fetch(`/api/master-data?page=1&pageSize=${size}`);
+        const result = await res.json();
         
-        if (result.error) {
-          addLog(`❌ Page size ${size} failed: ${result.error.message}`);
+        if (!res.ok || result.error) {
+          addLog(`❌ Page size ${size} failed: ${result.error || 'Unknown error'}`);
         } else {
           addLog(`✅ Page size ${size}: ${result.data?.length || 0} rows returned`);
         }
@@ -73,14 +62,12 @@ export default function DebugDataPage() {
         const to = page * 50;
         addLog(`Testing page ${page} (rows ${from}-${to})...`);
         
-        const result = await getPaginatedMasterData({ 
-          page, 
-          pageSize: 50 
-        });
+        const res = await fetch(`/api/master-data?page=${page}&pageSize=50`);
+        const result = await res.json();
         
-        if (result.error) {
-          addLog(`❌ Page ${page} failed: ${result.error.message}`);
-          break; // Stop testing if we hit an error
+        if (!res.ok || result.error) {
+          addLog(`❌ Page ${page} failed: ${result.error || 'Unknown error'}`);
+          break;
         } else {
           addLog(`✅ Page ${page}: ${result.data?.length || 0} rows`);
           if (result.data && result.data.length > 0) {
@@ -93,10 +80,11 @@ export default function DebugDataPage() {
 
       // Test 5: Test societies query
       addLog('\\n--- Testing Societies Query ---');
-      const societiesResult = await getUniqueSocieties();
+      const societiesRes = await fetch('/api/master-data/societies');
+      const societiesResult = await societiesRes.json();
       
-      if (societiesResult.error) {
-        addLog(`❌ Societies query failed: ${societiesResult.error.message}`);
+      if (!societiesRes.ok || societiesResult.error) {
+        addLog(`❌ Societies query failed: ${societiesResult.error || 'Unknown error'}`);
       } else {
         addLog(`✅ Found ${societiesResult.societies.length} unique societies`);
         if (societiesResult.societies.length > 0) {
