@@ -1,375 +1,148 @@
-'use client';
+﻿'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
-  Filter,
   ChevronDown,
-  Download,
   Plus,
   FileText,
-  Calendar,
   DollarSign,
   Clock,
   ChevronLeft,
   ChevronRight,
-  Building,
-  User,
-  Users,
   CheckCircle,
   AlertCircle,
-  Clock4
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
+import ExportDropdown from '@/components/ui/ExportDropdown';
 
-// Types for invoices
 interface Invoice {
   id: string;
   invoiceNumber: string;
-  date: string;
-  dueDate: string;
+  date: string | null;
   amount: string;
-  status: 'Paid' | 'Pending' | 'Overdue';
-  client: {
-    name: string;
-    type: 'Individual' | 'Company';
-    id: string;
-  };
-  property?: {
-    id: string;
-    title: string;
-  };
-  generatedBy: 'System' | 'Admin' | 'Broker';
-  generatorName?: string;
-  items: {
-    description: string;
-    quantity: number;
-    unitPrice: string;
-    total: string;
-  }[];
+  amountNum: number;
+  status: 'Paid' | 'Pending';
+  client: { name: string; type: string; id: string };
+  property?: { id: string; title: string };
+  broker?: string | null;
 }
 
-// Mock data for invoices
-const mockInvoices: Invoice[] = [
-  {
-    id: '1',
-    invoiceNumber: 'INV-2023-001',
-    date: '2023-12-15',
-    dueDate: '2023-12-30',
-    amount: '₹1.5 Cr',
-    status: 'Paid',
-    client: {
-      name: 'Priya Patel',
-      type: 'Individual',
-      id: 'c1'
-    },
-    property: {
-      id: '1',
-      title: 'Luxury Villa in Whitefield'
-    },
-    generatedBy: 'System',
-    items: [
-      {
-        description: 'Property Purchase - Luxury Villa in Whitefield',
-        quantity: 1,
-        unitPrice: '₹1.5 Cr',
-        total: '₹1.5 Cr'
-      }
-    ]
-  },
-  {
-    id: '2',
-    invoiceNumber: 'INV-2023-002',
-    date: '2023-12-10',
-    dueDate: '2023-12-25',
-    amount: '₹14 Lakhs',
-    status: 'Paid',
-    client: {
-      name: 'Amit Kumar',
-      type: 'Individual',
-      id: 'b2'
-    },
-    generatedBy: 'Admin',
-    generatorName: 'Rajesh Admin',
-    items: [
-      {
-        description: 'Broker Commission - Commercial Space Sale',
-        quantity: 1,
-        unitPrice: '₹14 Lakhs',
-        total: '₹14 Lakhs'
-      }
-    ]
-  },
-  {
-    id: '3',
-    invoiceNumber: 'INV-2023-003',
-    date: '2023-12-05',
-    dueDate: '2023-12-20',
-    amount: '₹25,000',
-    status: 'Paid',
-    client: {
-      name: 'TechSoft Solutions',
-      type: 'Company',
-      id: 'c3'
-    },
-    generatedBy: 'Broker',
-    generatorName: 'Neha Gupta',
-    items: [
-      {
-        description: 'Property Valuation Service',
-        quantity: 1,
-        unitPrice: '₹25,000',
-        total: '₹25,000'
-      }
-    ]
-  },
-  {
-    id: '4',
-    invoiceNumber: 'INV-2023-004',
-    date: '2023-12-01',
-    dueDate: '2023-12-16',
-    amount: '₹3.5 Lakhs',
-    status: 'Paid',
-    client: {
-      name: 'Global Systems Ltd',
-      type: 'Company',
-      id: 'c4'
-    },
-    property: {
-      id: '5',
-      title: 'Office Space in Central Business District'
-    },
-    generatedBy: 'System',
-    items: [
-      {
-        description: 'Monthly Rental - Office Space in CBD',
-        quantity: 1,
-        unitPrice: '₹3.5 Lakhs',
-        total: '₹3.5 Lakhs'
-      }
-    ]
-  },
-  {
-    id: '5',
-    invoiceNumber: 'INV-2023-005',
-    date: '2023-11-28',
-    dueDate: '2023-12-13',
-    amount: '₹85 Lakhs',
-    status: 'Pending',
-    client: {
-      name: 'Ananya Reddy',
-      type: 'Individual',
-      id: 'c5'
-    },
-    property: {
-      id: '3',
-      title: 'Residential Plot in Sarjapur'
-    },
-    generatedBy: 'Admin',
-    generatorName: 'Rajesh Admin',
-    items: [
-      {
-        description: 'Property Purchase - Residential Plot in Sarjapur',
-        quantity: 1,
-        unitPrice: '₹85 Lakhs',
-        total: '₹85 Lakhs'
-      }
-    ]
-  },
-  {
-    id: '6',
-    invoiceNumber: 'INV-2023-006',
-    date: '2023-11-25',
-    dueDate: '2023-12-10',
-    amount: '₹7.5 Lakhs',
-    status: 'Overdue',
-    client: {
-      name: 'Rahul Sharma',
-      type: 'Individual',
-      id: 'b1'
-    },
-    generatedBy: 'Broker',
-    generatorName: 'Suresh Menon',
-    items: [
-      {
-        description: 'Broker Commission - Villa Sale',
-        quantity: 1,
-        unitPrice: '₹7.5 Lakhs',
-        total: '₹7.5 Lakhs'
-      }
-    ]
-  },
-  {
-    id: '7',
-    invoiceNumber: 'INV-2023-007',
-    date: '2023-11-20',
-    dueDate: '2023-12-05',
-    amount: '₹15,000',
-    status: 'Paid',
-    client: {
-      name: 'Vikram Singh',
-      type: 'Individual',
-      id: 'c2'
-    },
-    generatedBy: 'System',
-    items: [
-      {
-        description: 'Property Documentation Service',
-        quantity: 1,
-        unitPrice: '₹15,000',
-        total: '₹15,000'
-      }
-    ]
-  },
-  {
-    id: '8',
-    invoiceNumber: 'INV-2023-008',
-    date: '2023-11-15',
-    dueDate: '2023-11-30',
-    amount: '₹2.8 Lakhs',
-    status: 'Overdue',
-    client: {
-      name: 'Fashion Trends Ltd',
-      type: 'Company',
-      id: 'c8'
-    },
-    property: {
-      id: '8',
-      title: 'Retail Space in Commercial Complex'
-    },
-    generatedBy: 'Admin',
-    generatorName: 'Rajesh Admin',
-    items: [
-      {
-        description: 'Monthly Rental - Retail Space',
-        quantity: 1,
-        unitPrice: '₹2.8 Lakhs',
-        total: '₹2.8 Lakhs'
-      }
-    ]
-  },
-];
-
-// Summary cards data
-const summaryData = [
-  {
-    title: 'Total Invoices',
-    value: '₹2.58 Cr',
-    icon: <FileText size={20} className="text-blue-600" />,
-    bgColor: 'bg-blue-50'
-  },
-  {
-    title: 'Paid Invoices',
-    value: '₹1.65 Cr',
-    icon: <DollarSign size={20} className="text-green-600" />,
-    bgColor: 'bg-green-50'
-  },
-  {
-    title: 'Pending Invoices',
-    value: '₹85 Lakhs',
-    icon: <Clock size={20} className="text-yellow-600" />,
-    bgColor: 'bg-yellow-50'
-  },
-  {
-    title: 'Overdue Invoices',
-    value: '₹10.3 Lakhs',
-    icon: <Calendar size={20} className="text-red-600" />,
-    bgColor: 'bg-red-50'
-  }
-];
+interface Summary {
+  totalCount: number;
+  paidCount: number;
+  pendingCount: number;
+}
 
 export default function InvoicesPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [filterGenerator, setFilterGenerator] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const invoicesPerPage = 5;
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [summary, setSummary] = useState<Summary>({ totalCount: 0, paidCount: 0, pendingCount: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
-  // Filter invoices based on search term and filters
-  const filteredInvoices = mockInvoices.filter(invoice => {
-    const matchesSearch =
-      invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (invoice.property?.title.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+  const invoicesPerPage = 25;
 
-    const matchesStatus = filterStatus === 'All' || invoice.status === filterStatus;
-    const matchesGenerator = filterGenerator === 'All' || invoice.generatedBy === filterGenerator;
+  const fetchInvoices = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const params = new URLSearchParams();
+      params.append('page', currentPage.toString());
+      params.append('limit', invoicesPerPage.toString());
+      if (searchTerm) params.append('search', searchTerm);
+      if (filterStatus !== 'All') params.append('status', filterStatus);
 
-    return matchesSearch && matchesStatus && matchesGenerator;
-  });
+      const res = await fetch(`/api/invoices?${params.toString()}`);
+      if (!res.ok) throw new Error(`Error: ${res.status}`);
+      const data = await res.json();
 
-  // Calculate pagination
-  const indexOfLastInvoice = currentPage * invoicesPerPage;
-  const indexOfFirstInvoice = indexOfLastInvoice - invoicesPerPage;
-  const currentInvoices = filteredInvoices.slice(indexOfFirstInvoice, indexOfLastInvoice);
-  const totalPages = Math.ceil(filteredInvoices.length / invoicesPerPage);
+      setInvoices(data.invoices || []);
+      setSummary(data.summary || { totalCount: 0, paidCount: 0, pendingCount: 0 });
+      if (data.pagination) {
+        setTotalItems(data.pagination.totalItems);
+        setTotalPages(data.pagination.totalPages);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch invoices');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const getStatusColor = (status: Invoice['status']) => {
+  useEffect(() => {
+    fetchInvoices();
+  }, [currentPage, searchTerm, filterStatus]);
+
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Paid':
-        return 'bg-green-100 text-green-800';
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Overdue':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'Paid':    return 'bg-green-100 text-green-800';
+      case 'Pending': return 'bg-yellow-100 text-yellow-800';
+      default:        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getStatusIcon = (status: Invoice['status']) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Paid':
-        return <CheckCircle size={16} className="mr-1" />;
-      case 'Pending':
-        return <Clock size={16} className="mr-1" />;
-      case 'Overdue':
-        return <AlertCircle size={16} className="mr-1" />;
-      default:
-        return null;
+      case 'Paid':    return <CheckCircle size={14} className="mr-1" />;
+      case 'Pending': return <Clock size={14} className="mr-1" />;
+      default:        return null;
     }
   };
 
-  const getGeneratorIcon = (generator: Invoice['generatedBy'], extraClasses = '') => {
-    switch (generator) {
-      case 'System':
-        return <Building size={16} className={`mr-1 ${extraClasses}`} />;
-      case 'Admin':
-        return <User size={16} className={`mr-1 ${extraClasses}`} />;
-      case 'Broker':
-        return <Users size={16} className={`mr-1 ${extraClasses}`} />;
-      default:
-        return null;
-    }
-  };
-
-  // Toggle sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const summaryCards = [
+    { title: 'Total Invoices',   value: summary.totalCount.toLocaleString('en-IN'),      icon: <FileText size={20} className="text-blue-600" />,   bgColor: 'bg-blue-50' },
+    { title: 'Paid',             value: summary.paidCount.toLocaleString('en-IN'),        icon: <DollarSign size={20} className="text-green-600" />, bgColor: 'bg-green-50' },
+    { title: 'Pending',          value: summary.pendingCount.toLocaleString('en-IN'),     icon: <Clock size={20} className="text-yellow-600" />,    bgColor: 'bg-yellow-50' },
+    { title: 'Showing',          value: `${totalItems.toLocaleString('en-IN')} records`,  icon: <FileText size={20} className="text-purple-600" />, bgColor: 'bg-purple-50' },
+  ];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        {/* Top Navbar */}
         <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
+          <AdminTopNavbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         </div>
 
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
+
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
               <div className="flex gap-2">
+                <ExportDropdown
+                  label="Export"
+                  filename="invoices"
+                  disabled={invoices.length === 0}
+                  columns={[
+                    { header: 'Invoice #', key: 'invoiceNumber' },
+                    { header: 'Client',    key: '_client' },
+                    { header: 'Property',  key: '_property' },
+                    { header: 'Date',      key: '_date' },
+                    { header: 'Amount',    key: 'amount' },
+                    { header: 'Status',    key: 'status' },
+                    { header: 'Broker',    key: '_broker' },
+                  ]}
+                  rows={invoices.map(inv => ({
+                    invoiceNumber: inv.invoiceNumber,
+                    _client:       inv.client.name,
+                    _property:     inv.property?.title || '',
+                    _date:         inv.date || '',
+                    amount:        inv.amount,
+                    status:        inv.status,
+                    _broker:       inv.broker || '',
+                  }))}
+                />
                 <button
                   onClick={() => router.push('/invoices/create')}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -377,34 +150,23 @@ export default function InvoicesPage() {
                   <Plus size={16} />
                   <span>Create Invoice</span>
                 </button>
-                <button
-                  onClick={() => router.push('/invoices/export')}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <Download size={16} />
-                  <span>Export</span>
-                </button>
               </div>
             </div>
 
-            {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {summaryData.map((item, index) => (
+              {summaryCards.map((item, index) => (
                 <div key={index} className={`p-4 rounded-lg border border-gray-200 ${item.bgColor}`}>
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-sm text-gray-600">{item.title}</p>
                       <p className="text-xl font-semibold mt-1 text-black">{item.value}</p>
                     </div>
-                    <div className="p-2 rounded-full bg-white">
-                      {item.icon}
-                    </div>
+                    <div className="p-2 rounded-full bg-white">{item.icon}</div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Filters and Search */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="flex-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -412,185 +174,127 @@ export default function InvoicesPage() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search invoices by number, client, or property..."
+                  placeholder="Search by client name or society..."
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 />
               </div>
-
-              <div className="flex gap-4">
-                <div className="relative">
-                  <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8 text-[#333]"
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                  >
-                    <option value="All" className="text-[#333]">All Status</option>
-                    <option value="Paid" className="text-[#333]">Paid</option>
-                    <option value="Pending" className="text-[#333]">Pending</option>
-                    <option value="Overdue" className="text-[#333]">Overdue</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <ChevronDown size={16} />
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8 text-[#333]"
-                    value={filterGenerator}
-                    onChange={(e) => setFilterGenerator(e.target.value)}
-                  >
-                    <option value="All" className="text-[#333]">All Generators</option>
-                    <option value="System" className="text-[#333]">System</option>
-                    <option value="Admin" className="text-[#333]">Admin</option>
-                    <option value="Broker" className="text-[#333]">Broker</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <ChevronDown size={16} />
-                  </div>
+              <div className="relative">
+                <select
+                  className="appearance-none block px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8 text-gray-700"
+                  value={filterStatus}
+                  onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="All">All Status</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                  <ChevronDown size={16} />
                 </div>
               </div>
             </div>
 
-            {/* Invoices Table */}
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <th className="px-6 py-3">Invoice #</th>
-                      <th className="px-6 py-3">Client</th>
-                      <th className="px-6 py-3">Issue Date</th>
-                      <th className="px-6 py-3">Due Date</th>
-                      <th className="px-6 py-3">Amount</th>
-                      <th className="px-6 py-3">Generated By</th>
-                      <th className="px-6 py-3">Status</th>
-                      <th className="px-6 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {currentInvoices.map((invoice) => (
-                      <tr key={invoice.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {invoice.invoiceNumber}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {invoice.client.name}
-                          <span className="ml-1 text-xs text-gray-400">
-                            ({invoice.client.type})
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(invoice.date).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(invoice.dueDate).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {invoice.amount}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center">
-                          {getGeneratorIcon(invoice.generatedBy, 'text-gray-700')}
-                          <span className="ml-1 text-gray-800">{invoice.generatedBy}</span>
-                          {invoice.generatorName && (
-                            <span className="ml-1 text-xs text-gray-700">
-                              ({invoice.generatorName})
+                {isLoading ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <div className="flex justify-center mb-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    </div>
+                    <p>Loading invoices...</p>
+                  </div>
+                ) : error ? (
+                  <div className="p-8 text-center text-red-500">
+                    <AlertCircle size={32} className="mx-auto mb-4 text-red-400" />
+                    <p className="font-medium">Failed to load invoices</p>
+                    <p className="text-sm text-gray-500 mt-1">{error}</p>
+                  </div>
+                ) : invoices.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <FileText size={32} className="mx-auto mb-4 text-gray-400" />
+                    <p>No invoices found matching your filters.</p>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3">Invoice #</th>
+                        <th className="px-6 py-3">Client</th>
+                        <th className="px-6 py-3">Property</th>
+                        <th className="px-6 py-3">Date</th>
+                        <th className="px-6 py-3">Amount</th>
+                        <th className="px-6 py-3">Status</th>
+                        <th className="px-6 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {invoices.map((invoice) => (
+                        <tr key={invoice.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {invoice.invoiceNumber}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {invoice.client.name}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                            {invoice.property?.title || '—'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {invoice.date ? new Date(invoice.date).toLocaleDateString('en-IN') : '—'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
+                            {invoice.amount}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
+                              {getStatusIcon(invoice.status)}
+                              {invoice.status}
                             </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
-                            {getStatusIcon(invoice.status)}
-                            {invoice.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                          <div className="flex justify-end space-x-2">
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                             <button
                               onClick={() => router.push(`/invoices/${invoice.id}`)}
                               className="text-blue-600 hover:text-blue-900"
                             >
                               View
                             </button>
-                            <button
-                              onClick={() => router.push(`/invoices/${invoice.id}/download`)}
-                              className="text-gray-600 hover:text-gray-900"
-                            >
-                              <Download size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
+              {totalPages > 1 && !isLoading && (
                 <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
-                  <div className="flex-1 flex justify-between sm:hidden">
+                  <p className="text-sm text-gray-700">
+                    Page <span className="font-medium">{currentPage}</span> of{' '}
+                    <span className="font-medium">{totalPages}</span> —{' '}
+                    <span className="font-medium">{totalItems.toLocaleString('en-IN')}</span> total
+                  </p>
+                  <nav className="inline-flex rounded-md shadow-sm -space-x-px">
                     <button
-                      onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)}
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                        currentPage === 1 ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-50'
-                      }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm ${currentPage === 1 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
-                      Previous
+                      <ChevronLeft className="h-5 w-5" />
                     </button>
                     <button
-                      onClick={() => setCurrentPage(currentPage < totalPages ? currentPage + 1 : totalPages)}
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                        currentPage === totalPages ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-50'
-                      }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm ${currentPage === totalPages ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
-                      Next
+                      <ChevronRight className="h-5 w-5" />
                     </button>
-                  </div>
-                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700">
-                        Showing <span className="font-medium">{indexOfFirstInvoice + 1}</span> to{' '}
-                        <span className="font-medium">
-                          {indexOfLastInvoice > filteredInvoices.length
-                            ? filteredInvoices.length
-                            : indexOfLastInvoice}
-                        </span>{' '}
-                        of <span className="font-medium">{filteredInvoices.length}</span> results
-                      </p>
-                    </div>
-                    <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        <button
-                          onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)}
-                          disabled={currentPage === 1}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage === 1 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <span className="sr-only">Previous</span>
-                          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                        <button
-                          onClick={() => setCurrentPage(currentPage < totalPages ? currentPage + 1 : totalPages)}
-                          disabled={currentPage === totalPages}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage === totalPages ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <span className="sr-only">Next</span>
-                          <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                      </nav>
-                    </div>
-                  </div>
+                  </nav>
                 </div>
               )}
             </div>
+
           </div>
         </div>
       </div>

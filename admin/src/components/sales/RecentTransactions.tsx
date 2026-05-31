@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import ExportDropdown from '@/components/ui/ExportDropdown';
 import {
   Search,
   Filter,
@@ -29,7 +30,7 @@ interface Client {
 }
 
 interface Broker {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -82,7 +83,10 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [filterSource, setFilterSource] = useState<string>('All');
-  const [selectedBrokerId, setSelectedBrokerId] = useState<number | null>(null);
+  const [selectedBrokerName, setSelectedBrokerName] = useState<string | null>(null);
+  const [showBrokerDropdown, setShowBrokerDropdown] = useState<boolean>(false);
+  const [brokerSearchTerm, setBrokerSearchTerm] = useState<string>('');
+  const brokerDropdownRef = useRef<HTMLDivElement>(null);
   const [dateRange, setDateRange] = useState<{ startDate: string | null, endDate: string | null }>({ startDate: null, endDate: null });
   
 
@@ -101,7 +105,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
       if (searchTerm) params.append('search', searchTerm);
       if (filterStatus !== 'All') params.append('status', filterStatus);
       if (filterSource !== 'All') params.append('source', filterSource);
-      if (selectedBrokerId) params.append('brokerId', selectedBrokerId.toString());
+      if (selectedBrokerName) params.append('brokerName', selectedBrokerName);
       if (dateRange.startDate) params.append('startDate', dateRange.startDate);
       if (dateRange.endDate) params.append('endDate', dateRange.endDate);
       
@@ -135,7 +139,18 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
   // Fetch data on initial load and when dependencies change
   useEffect(() => {
     fetchTransactions();
-  }, [currentPage, searchTerm, filterStatus, filterSource, selectedBrokerId, dateRange.startDate, dateRange.endDate]);
+  }, [currentPage, searchTerm, filterStatus, filterSource, selectedBrokerName, dateRange.startDate, dateRange.endDate]);
+
+  // Close broker dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (brokerDropdownRef.current && !brokerDropdownRef.current.contains(e.target as Node)) {
+        setShowBrokerDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -155,7 +170,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
     } else if (type === 'source') {
       setFilterSource(value);
     } else if (type === 'broker') {
-      setSelectedBrokerId(value === 'All' ? null : parseInt(value));
+      setSelectedBrokerName(value === 'All' ? null : value);
     }
     setCurrentPage(1); // Reset to first page when filters change
   };
@@ -174,7 +189,8 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
     setSearchTerm('');
     setFilterStatus('All');
     setFilterSource('All');
-    setSelectedBrokerId(null);
+    setSelectedBrokerName(null);
+    setBrokerSearchTerm('');
     setDateRange({ startDate: null, endDate: null });
     setCurrentPage(1);
   };
@@ -276,13 +292,38 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
       {/* Header with title and add button */}
       <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
         <h2 className="font-medium">Recent Transactions</h2>
-        <button
-          onClick={() => router.push('/transactions/add')}
-          className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white border border-blue-700 rounded hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="text-sm">Add Transaction</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <ExportDropdown
+            label="Export"
+            filename="transactions"
+            disabled={transactions.length === 0}
+            columns={[
+              { header: 'Date',        key: 'date' },
+              { header: 'Client',      key: '_client' },
+              { header: 'Description', key: 'description' },
+              { header: 'Amount',      key: '_amount' },
+              { header: 'Status',      key: 'status' },
+              { header: 'Reference',   key: 'reference' },
+              { header: 'Broker',      key: '_broker' },
+            ]}
+            rows={transactions.map(t => ({
+              date:        t.date || '',
+              _client:     t.client?.name || '',
+              description: t.description,
+              _amount:     `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(t.amount)}`,
+              status:      t.status,
+              reference:   t.reference,
+              _broker:     t.broker?.name || '',
+            }))}
+          />
+          <button
+            onClick={() => router.push('/transactions/add')}
+            className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white border border-blue-700 rounded hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="text-sm">Add Transaction</span>
+          </button>
+        </div>
       </div>
       
       {/* Search and filters */}
@@ -311,7 +352,6 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
                 <option value="All">All Status</option>
                 <option value="Completed">Completed</option>
                 <option value="Pending">Pending</option>
-                <option value="Failed">Failed</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                 <ChevronDown size={16} />
@@ -327,7 +367,6 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
                 <option value="All">All Sources</option>
                 <option value="Property Sale">Property Sale</option>
                 <option value="Broker Commission">Broker Commission</option>
-                <option value="Service Fee">Service Fee</option>
                 <option value="Rental Income">Rental Income</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -335,22 +374,66 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
               </div>
             </div>
 
-            <div className="relative">
-              <select
-                className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
-                value={selectedBrokerId?.toString() || 'All'}
-                onChange={(e) => handleFilterChange('broker', e.target.value)}
+            <div className="relative" ref={brokerDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setShowBrokerDropdown(prev => !prev)}
+                className="flex items-center justify-between w-44 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm hover:bg-gray-50"
               >
-                <option value="All">All Brokers</option>
-                {filterOptions.brokers.map((broker) => (
-                  <option key={broker.id} value={broker.id.toString()}>
-                    {broker.name}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <ChevronDown size={16} />
-              </div>
+                <span className="truncate text-gray-700">{selectedBrokerName || 'All Brokers'}</span>
+                <ChevronDown size={16} className="ml-2 flex-shrink-0 text-gray-500" />
+              </button>
+
+              {showBrokerDropdown && (
+                <div className="absolute z-50 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg">
+                  <div className="p-2 border-b border-gray-100">
+                    <div className="relative">
+                      <Search size={13} className="absolute left-2 top-2.5 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search broker..."
+                        className="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        value={brokerSearchTerm}
+                        onChange={(e) => setBrokerSearchTerm(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <ul className="max-h-52 overflow-y-auto py-1">
+                    <li>
+                      <button
+                        type="button"
+                        className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between ${
+                          selectedBrokerName === null ? 'text-blue-700 font-medium bg-blue-50' : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                        onClick={() => { setSelectedBrokerName(null); setShowBrokerDropdown(false); setBrokerSearchTerm(''); setCurrentPage(1); }}
+                      >
+                        All Brokers
+                        {selectedBrokerName === null && <span className="text-blue-600 text-base">✓</span>}
+                      </button>
+                    </li>
+                    {filterOptions.brokers
+                      .filter(b => !brokerSearchTerm || b.name.toLowerCase().includes(brokerSearchTerm.toLowerCase()))
+                      .map(broker => (
+                        <li key={broker.id}>
+                          <button
+                            type="button"
+                            className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between ${
+                              selectedBrokerName === broker.id ? 'text-blue-700 font-medium bg-blue-50' : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                            onClick={() => { setSelectedBrokerName(broker.id); setShowBrokerDropdown(false); setBrokerSearchTerm(''); setCurrentPage(1); }}
+                          >
+                            <span className="truncate">{broker.name}</span>
+                            {selectedBrokerName === broker.id && <span className="text-blue-600 ml-2 text-base flex-shrink-0">✓</span>}
+                          </button>
+                        </li>
+                      ))}
+                    {filterOptions.brokers.filter(b => !brokerSearchTerm || b.name.toLowerCase().includes(brokerSearchTerm.toLowerCase())).length === 0 && (
+                      <li className="px-3 py-2 text-sm text-gray-400 text-center">No brokers found</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <button
@@ -392,6 +475,14 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
             <p>Loading transactions...</p>
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center text-red-500">
+            <div className="mb-4">
+              <FileX size={32} className="mx-auto text-red-400" />
+            </div>
+            <p className="mb-2 font-medium">Failed to load transactions</p>
+            <p className="text-sm text-gray-500">{error}</p>
           </div>
         ) : transactions.length === 0 ? (
           <div className="p-8 text-center text-gray-500">

@@ -1,206 +1,194 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { z } from 'zod';
+import { createServiceClient } from '@/utils/supabase/service';
 
-// Schema for installment/transaction validation
-const transactionSchema = z.object({
-  payment_date: z.string().optional(), // date of payment, null means pending
-  amount: z.number(),
-  receipt_number: z.string().optional(), // reference
-  plot_id: z.number(), // property ID
-  // Derived fields (not directly in installments table but used in UI)
-  description: z.string().optional(),
-  status: z.enum(['Completed', 'Pending']).optional(),
-  source: z.literal('Property Sale').optional() // All installments are property sales
-});
+const TABLE_NAME = 'Master Data Of Gurukrupa';
+const BROKER_FETCH_LIMIT = 10000; // enough rows to cover all unique broker names
 
-// GET handler - retrieve transactions with pagination, filtering, and sorting
+function parseAmount(v: string | null | undefined): number {
+  if (!v) return 0;
+  return parseFloat(String(v).replace(/[^0-9.]/g, '')) || 0;
+}
+
+// Normalise any date format → 'YYYY-MM-DD', returns null if unparseable / blank
+function normalizeDate(d: string | null | undefined): string | null {
+  if (!d || !String(d).trim()) return null;
+  const s = String(d).trim();
+  // Handle DD/MM/YYYY or DD-MM-YYYY (Indian format)
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const iso = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    const dt = new Date(iso);
+    if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+  }
+  try {
+    const dt = new Date(s);
+    if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+  } catch {}
+  return null;
+}
+
+// Whether a row should be treated as "Completed"
+function isCompleted(row: any): boolean {
+  return !!row.emi_paid_date && String(row.emi_paid_date).trim() !== '';
+}
+
+function mapRow(row: any) {
+  const desc =
+    [row.society_name, row.plot_no ? `Plot ${row.plot_no}` : null]
+      .filter(Boolean)
+      .join(' – ') || 'Property Sale';
+
+  return {
+    id:          row.id,
+    date:        normalizeDate(row.emi_paid_date),
+    description: desc,
+    amount:      parseAmount(row.emi_amount),
+    status:      isCompleted(row) ? 'Completed' : 'Pending',
+    source:      'Property Sale',
+    reference:   row.r_no || row.emi_no || `#${row.id}`,
+    clientId:    row.id,
+    client:      row.client_name
+      ? { id: String(row.id), name: row.client_name, type: 'Individual' }
+      : null,
+    broker:      row["broker's_name"]
+      ? { id: row["broker's_name"], name: row["broker's_name"] }
+      : null,
+  };
+}
+
+/** Apply shared non-date filters to any Supabase query builder */
+function applyFilters(query: any, search: string, status: string, brokerName: string) {
+  if (search) {
+    query = query.or(`client_name.ilike.%${search}%,society_name.ilike.%${search}%`);
+  }
+
+  // Status: 'Pending' = null OR empty string; 'Completed' = non-null AND non-empty
+  if (status === 'Completed') {
+    query = query.not('emi_paid_date', 'is', null).neq('emi_paid_date', '');
+  } else if (status === 'Pending') {
+    // Catches both SQL NULL and empty-string values stored in a text column
+    query = query.or('emi_paid_date.is.null,emi_paid_date.eq.');
+  }
+
+  if (brokerName) {
+    query = query.eq("broker's_name", brokerName);
+  }
+
+  return query;
+}
+
+// GET handler – paginated transactions from Supabase master data
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    // Parse pagination parameters
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+
+    const page       = Math.max(1, parseInt(searchParams.get('page')       || '1'));
+    const limit      = Math.max(1, parseInt(searchParams.get('limit')      || '10'));
+    const search     = searchParams.get('search')     || '';
+    const status     = searchParams.get('status')     || 'All';
+    const brokerName = searchParams.get('brokerName') || '';
+    const startDate  = searchParams.get('startDate')  || '';
+    const endDate    = searchParams.get('endDate')    || '';
+
+    const supabase = createServiceClient();
     const offset = (page - 1) * limit;
-    
-    // Parse filter parameters
-    const search = searchParams.get('search') || '';
-    const status = searchParams.get('status') || '';
-    const source = searchParams.get('source') || '';
-    const startDate = searchParams.get('startDate') || '';
-    const endDate = searchParams.get('endDate') || '';
-    const brokerId = searchParams.get('brokerId') || '';
-    
-    // Parse sort parameters
-    const sortBy = searchParams.get('sortBy') || 'date';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
-    
-    // Build SQL query with conditions
-    let whereConditions = [];
-    let queryParams: any[] = [];
-    let paramCounter = 1;
-    
-    if (search) {
-      whereConditions.push(`(CONCAT('Payment for Plot ', p.plot_number) ILIKE $${paramCounter} OR i.receipt_number ILIKE $${paramCounter})`);
-      queryParams.push(`%${search}%`);
-      paramCounter++;
-    }
-    
-    if (status && status !== 'All') {
-      if (status === 'Completed') {
-        whereConditions.push(`i.payment_date IS NOT NULL`);
-      } else if (status === 'Pending') {
-        whereConditions.push(`i.payment_date IS NULL`);
+
+    let transactions: ReturnType<typeof mapRow>[];
+    let totalItems: number;
+
+    // ── Date range: must normalise dates in JS because they may not be ISO ──
+    if (startDate || endDate) {
+      // 1. Count matching rows (without date filter, applied in JS)
+      let countQ = supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true });
+      countQ = applyFilters(countQ, search, status, brokerName);
+      const { count: approxCount, error: countErr } = await countQ;
+      if (countErr) throw new Error(countErr.message);
+
+      const totalPages = Math.ceil((approxCount || 0) / 1000);
+
+      // 2. Fetch all matching rows in parallel batches (same strategy as sales API)
+      let allRows: any[] = [];
+      for (let batch = 0; batch < totalPages; batch += 10) {
+        const end = Math.min(batch + 10, totalPages);
+        const results = await Promise.all(
+          Array.from({ length: end - batch }, (_, i) => {
+            const from = (batch + i) * 1000;
+            let q = applyFilters(supabase.from(TABLE_NAME).select('*'), search, status, brokerName);
+            return q.range(from, from + 999);
+          })
+        );
+        for (const { data, error } of results) {
+          if (error) throw new Error(error.message);
+          allRows = allRows.concat(data || []);
+        }
       }
+
+      // 3. JS-side date filter with normalisation
+      const filtered = allRows.filter(row => {
+        const d = normalizeDate(row.emi_paid_date);
+        if (startDate && endDate) return !!d && d >= startDate && d <= endDate;
+        if (startDate) return !!d && d >= startDate;
+        if (endDate)   return !!d && d <= endDate;
+        return true;
+      });
+
+      totalItems = filtered.length;
+      transactions = filtered
+        .sort((a, b) => (b.id || 0) - (a.id || 0))
+        .slice(offset, offset + limit)
+        .map(mapRow);
+
+    } else {
+      // ── No date filter: efficient server-side pagination ────────────────
+      let query = applyFilters(
+        supabase.from(TABLE_NAME).select('*', { count: 'exact' }),
+        search, status, brokerName
+      );
+
+      const { data, error, count } = await query
+        .order('id', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) throw new Error(error.message);
+
+      totalItems = count || 0;
+      transactions = (data || []).map(mapRow);
     }
-    
-    // All installments are property sales, so we don't need to filter by source
-    
-    if (startDate) {
-      whereConditions.push(`i.payment_date >= $${paramCounter}`);
-      queryParams.push(startDate);
-      paramCounter++;
-    }
-    
-    if (endDate) {
-      whereConditions.push(`i.payment_date <= $${paramCounter}`);
-      queryParams.push(endDate);
-      paramCounter++;
-    }
-    
-    // Installments don't have direct broker association, so we skip broker filtering
-    
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-    
-    // Execute query to get transactions from installments table
-    const sortField = sortBy === 'date' ? 'i.payment_date' : 
-                      sortBy === 'amount' ? 'i.amount' : 
-                      sortBy === 'reference' ? 'i.receipt_number' : 
-                      'i.payment_date';
-    
-    const transactionQuery = `
-      SELECT 
-        i.id,
-        i.payment_date,
-        CONCAT('Payment for Plot ', p.plot_number) AS description,
-        i.amount,
-        CASE WHEN i.payment_date IS NOT NULL THEN 'Completed' ELSE 'Pending' END AS status,
-        'Property Sale' AS source,
-        i.receipt_number AS reference,
-        c.id as client_id,
-        c.full_name as client_name,
-        'Individual' as client_type,
-        p.id as plot_id
-      FROM installments i
-      JOIN plots p ON i.plot_id = p.id
-      JOIN clients c ON p.client_id = c.id
-      ${whereClause}
-      ORDER BY ${sortField} ${sortOrder} NULLS LAST, i.created_at DESC
-      LIMIT $${paramCounter} OFFSET $${paramCounter + 1}
-    `;
-    
-    const transactionResult = await db.query(transactionQuery, [...queryParams, limit, offset]);
-    
-    // Format transactions to match the expected structure in the frontend
-    const transactions = transactionResult.rows.map(row => ({
-      id: row.id,
-      date: row.payment_date,
-      description: row.description,
-      amount: row.amount,
-      status: row.status,
-      source: row.source,
-      reference: row.reference,
-      clientId: row.client_id,
-      propertyId: row.plot_id,
-      client: row.client_id ? {
-        id: row.client_id,
-        name: row.client_name,
-        type: row.client_type
-      } : null,
-      // No broker for installments
-      broker: null
-    }));
-    
-    // Get total count for pagination
-    const countQuery = `
-      SELECT COUNT(*) as total
-      FROM installments i
-      JOIN plots p ON i.plot_id = p.id
-      JOIN clients c ON p.client_id = c.id
-      ${whereClause}
-    `;
-    
-    const countResult = await db.query(countQuery, queryParams);
-    const totalItems = parseInt(countResult.rows[0].total);
-    
-    // Calculate pagination info
+
     const totalPages = Math.ceil(totalItems / limit);
-    
-    // Since installments don't have brokers, we'll just return an empty array
-    const brokers: { id: number; name: string }[] = [];
-    
+    console.log(`Transactions API: page ${page}, ${transactions.length} rows, total ${totalItems}`);
+
+    // ── Broker list for the searchable dropdown ─────────────────────────
+    const { data: brokerRows } = await supabase
+      .from(TABLE_NAME)
+      .select("broker's_name")
+      .not("broker's_name", 'is', null)
+      .neq("broker's_name", '')
+      .range(0, BROKER_FETCH_LIMIT - 1);
+
+    const brokers = [...new Set(
+      (brokerRows || []).map((r: any) => r["broker's_name"] as string).filter(Boolean)
+    )].sort().map(name => ({ id: name, name }));
+
     return NextResponse.json({
       transactions,
-      pagination: {
-        totalItems,
-        totalPages,
-        currentPage: page,
-        itemsPerPage: limit
-      },
-      filterOptions: {
-        brokers
-      }
+      pagination: { totalItems, totalPages, currentPage: page, itemsPerPage: limit },
+      filterOptions: { brokers },
     });
+
   } catch (error: any) {
     console.error('Error fetching transactions:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch transactions' },
+      { error: 'Failed to fetch transactions', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
 }
 
-// POST handler - create a new transaction
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    
-    // Validate request body
-    const validatedData = transactionSchema.parse(body);
-    
-    // Create installment in database using raw SQL
-    const query = `
-      INSERT INTO installments (
-        payment_date, amount, receipt_number, plot_id
-      ) VALUES ($1, $2, $3, $4)
-      RETURNING *
-    `;
-    
-    const values = [
-      validatedData.payment_date || null,
-      validatedData.amount,
-      validatedData.receipt_number || null,
-      validatedData.plot_id
-    ];
-    
-    const result = await db.query(query, values);
-    const transaction = result.rows[0];
-    
-    return NextResponse.json(transaction, { status: 201 });
-  } catch (error: any) {
-    console.error('Error creating transaction:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
-      );
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to create transaction' },
-      { status: 500 }
-    );
-  }
+// POST is not supported on read-only master data
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Adding transactions directly is not supported on master data' },
+    { status: 405 }
+  );
 }

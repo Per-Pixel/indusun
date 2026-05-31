@@ -1,201 +1,129 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { createServiceClient } from '@/utils/supabase/service';
+
+const TABLE_NAME = 'Master Data Of Gurukrupa';
+
+function parseAmount(v: any): number {
+  if (!v) return 0;
+  return parseFloat(String(v).replace(/[^0-9.]/g, '')) || 0;
+}
+
+function normalizeDate(d: any): string | null {
+  if (!d || !String(d).trim()) return null;
+  const s = String(d).trim();
+  // Handle DD/MM/YYYY or DD-MM-YYYY (Indian format)
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const iso = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    const dt = new Date(iso);
+    if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+  }
+  try {
+    const dt = new Date(s);
+    if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+  } catch {}
+  return null;
+}
+
+function isPaid(emiDate: any): boolean {
+  return !!(emiDate && String(emiDate).trim());
+}
+
+function applyFilters(query: any, search: string, status: string) {
+  if (search) query = query.or(`client_name.ilike.%${search}%,society_name.ilike.%${search}%`);
+  if (status === 'Completed') query = query.not('emi_paid_date', 'is', null).neq('emi_paid_date', '');
+  else if (status === 'Pending') query = query.or('emi_paid_date.is.null,emi_paid_date.eq.');
+  return query;
+}
 
 export async function GET(request: NextRequest) {
-  // Get pagination and filtering parameters
-  const searchParams = request.nextUrl.searchParams;
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = parseInt(searchParams.get('limit') || '25', 10);
-  const offset = (page - 1) * limit;
-  const searchTerm = searchParams.get('search') || '';
-  const status = searchParams.get('status') || 'All';
-  const source = searchParams.get('source') || 'All';
   try {
-    // Get summary metrics
-    const summaryResult = await db.query(`
-      SELECT
-        SUM(amount) AS total_revenue,
-        COUNT(*) AS total_transactions
-      FROM 
-        installments 
-      WHERE 
-        payment_date IS NOT NULL
-    `);
-    
-    // Get billing trends (revenue by month)
-    const trendsResult = await db.query(`
-      SELECT
-        TO_CHAR(payment_date, 'Mon') AS name,
-        EXTRACT(MONTH FROM payment_date) AS month_num,
-        EXTRACT(YEAR FROM payment_date) AS year,
-        COALESCE(SUM(amount), 0)::NUMERIC AS value
-      FROM
-        installments
-      WHERE
-        payment_date IS NOT NULL
-        AND amount IS NOT NULL
-      GROUP BY
-        TO_CHAR(payment_date, 'Mon'),
-        EXTRACT(MONTH FROM payment_date),
-        EXTRACT(YEAR FROM payment_date)
-      ORDER BY
-        year, month_num
-      LIMIT 12
-    `);
+    const { searchParams } = new URL(request.url);
+    const page   = Math.max(1, parseInt(searchParams.get('page')   || '1'));
+    const limit  = Math.max(1, parseInt(searchParams.get('limit')  || '25'));
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || 'All';
+    const offset = (page - 1) * limit;
+    const supabase = createServiceClient();
 
-    // Transform trends data to ensure proper format
-    const formattedTrends = trendsResult.rows.map(row => {
-      const value = row.value;
-      const numericValue = typeof value === 'string' ? parseFloat(value) : (typeof value === 'number' ? value : 0);
+    // ── Summary & trends: fetch only 2 columns for all rows (lightweight) ─
+    const { count: totalCount } = await supabase
+      .from(TABLE_NAME).select('*', { count: 'exact', head: true });
+
+    const totalBatches = Math.ceil((totalCount || 0) / 1000);
+    let aggRows: any[] = [];
+
+    for (let batch = 0; batch < totalBatches; batch += 10) {
+      const batchEnd = Math.min(batch + 10, totalBatches);
+      const results = await Promise.all(
+        Array.from({ length: batchEnd - batch }, (_, i) => {
+          const from = (batch + i) * 1000;
+          return supabase.from(TABLE_NAME).select('emi_paid_date,emi_amount').range(from, from + 999);
+        })
+      );
+      for (const { data } of results) aggRows = aggRows.concat(data || []);
+    }
+
+    let totalRevenue = 0, pendingPayments = 0, completedCount = 0;
+    const monthMap: Record<string, number> = {};
+    for (const row of aggRows) {
+      const amount = parseAmount(row.emi_amount);
+      const paid = isPaid(row.emi_paid_date);
+      const d    = paid ? normalizeDate(row.emi_paid_date) : null;
+      if (paid) {
+        totalRevenue += amount;
+        completedCount++;
+        const mk = (d || String(row.emi_paid_date).trim()).substring(0, 7);
+        monthMap[mk] = (monthMap[mk] || 0) + amount;
+      } else {
+        pendingPayments += amount;
+      }
+    }
+
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const trends = Object.entries(monthMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-12)
+      .map(([k, v]) => {
+        const [year, month] = k.split('-');
+        return { name: `${MONTHS[+month - 1]} ${year}`, value: v };
+      });
+
+    // ── Paginated transaction list ─────────────────────────────────────────
+    let query = applyFilters(
+      supabase.from(TABLE_NAME).select('*', { count: 'exact' }),
+      search, status
+    );
+    const { data, error, count } = await query
+      .order('id', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw new Error(error.message);
+
+    const transactions = (data || []).map((row: any) => {
+      const paid = isPaid(row.emi_paid_date);
+      const d    = paid ? normalizeDate(row.emi_paid_date) : null;
       return {
-        name: row.name || 'Unknown',
-        value: isNaN(numericValue) ? 0 : numericValue
+        id:          String(row.id),
+        date:        d || (paid ? String(row.emi_paid_date).trim() : null),
+        description: [row.society_name, row.plot_no ? `Plot ${row.plot_no}` : null].filter(Boolean).join(' – ') || 'Property Sale',
+        amount:      `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseAmount(row.emi_amount))}`,
+        status:      paid ? 'Completed' : 'Pending',
+        source:      'Property Sale',
+        reference:   row.r_no || row.emi_no || `#${row.id}`,
+        client:      row.client_name ? { name: row.client_name, type: 'Individual' } : null,
       };
     });
 
-    console.log('Raw trends data from DB:', trendsResult.rows);
-    console.log('Formatted trends data:', formattedTrends);
-
-    // If no trends data, provide some default structure
-    const finalTrends = formattedTrends.length > 0 ? formattedTrends : [
-      { name: 'Jan', value: 0 },
-      { name: 'Feb', value: 0 },
-      { name: 'Mar', value: 0 },
-      { name: 'Apr', value: 0 },
-      { name: 'May', value: 0 },
-      { name: 'Jun', value: 0 }
-    ];
-    
-    // Build the WHERE clause for filtering
-    let whereConditions = [];
-    let queryParams = [];
-    let paramCounter = 1;
-    
-    // Add search term filter if provided
-    if (searchTerm) {
-      whereConditions.push(`(
-        LOWER(p.plot_number::text) LIKE LOWER($${paramCounter}) OR 
-        LOWER(i.receipt_number) LIKE LOWER($${paramCounter + 1}) OR
-        LOWER(c.full_name) LIKE LOWER($${paramCounter + 2})
-      )`);
-      const searchPattern = `%${searchTerm}%`;
-      queryParams.push(searchPattern, searchPattern, searchPattern);
-      paramCounter += 3;
-    }
-    
-    // Add status filter if provided
-    if (status && status !== 'All') {
-      if (status === 'Completed') {
-        whereConditions.push('i.payment_date IS NOT NULL');
-      } else if (status === 'Pending') {
-        whereConditions.push('i.payment_date IS NULL');
-      }
-    }
-    
-    // Construct the final WHERE clause
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-    
-    // Get paginated transactions
-    const transactionsResult = await db.query({
-      text: `
-        SELECT 
-          i.id,
-          i.payment_date AS date,
-          CONCAT('Payment for Plot ', p.plot_number) AS description,
-          i.amount,
-          CASE WHEN i.payment_date IS NOT NULL THEN 'Completed' ELSE 'Pending' END AS status,
-          'Property Sale' AS source,
-          i.receipt_number AS reference,
-          c.full_name AS client_name,
-          'Individual' AS client_type
-        FROM 
-          installments i
-        JOIN 
-          plots p ON i.plot_id = p.id
-        JOIN 
-          clients c ON p.client_id = c.id
-        ${whereClause}
-        ORDER BY 
-          i.payment_date DESC NULLS LAST,
-          i.created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `,
-      values: queryParams
-    });
-    
-    // Get total count for pagination (with the same filters)
-    const countResult = await db.query({
-      text: `
-        SELECT COUNT(*) AS total
-        FROM installments i
-        JOIN plots p ON i.plot_id = p.id
-        JOIN clients c ON p.client_id = c.id
-        ${whereClause}
-      `,
-      values: queryParams
-    });
-
-    // Get pending payments
-    const pendingPaymentsResult = await db.query(`
-      SELECT
-        SUM(amount) AS pending_amount
-      FROM 
-        installments 
-      WHERE 
-        payment_date IS NULL
-    `);
-    
-    
-    // Format the transactions data to match the expected structure
-    const formattedTransactions = transactionsResult.rows.map(transaction => ({
-      id: transaction.id,
-      date: transaction.date ? new Date(transaction.date).toISOString().split('T')[0] : null,
-      description: transaction.description,
-      amount: `₹${formatAmount(transaction.amount)}`,
-      status: transaction.status,
-      source: transaction.source,
-      reference: transaction.reference,
-      client: {
-        name: transaction.client_name,
-        type: transaction.client_type
-      }
-    }));
-    
-    // Calculate total pages
-    const totalItems = parseInt(countResult.rows[0]?.total || '0', 10);
-    const totalPages = Math.ceil(totalItems / limit);
-
+    const totalItems = count || 0;
     return NextResponse.json({
-      summary: {
-        totalRevenue: summaryResult.rows[0]?.total_revenue || 0,
-        totalTransactions: summaryResult.rows[0]?.total_transactions || 0,
-        pendingPayments: pendingPaymentsResult.rows[0]?.pending_amount || 0
-      },
-      trends: finalTrends,
-      transactions: formattedTransactions,
-      pagination: {
-        page,
-        limit,
-        totalItems,
-        totalPages
-      }
+      summary: { totalRevenue, pendingPayments, totalTransactions: totalCount || 0, completedTransactions: completedCount },
+      trends,
+      transactions,
+      pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) },
     });
-  } catch (error) {
-    console.error('Error fetching billing data:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch billing data' },
-      { status: 500 }
-    );
-  }
-}
 
-// Helper function to format amount in Indian currency format
-function formatAmount(amount: number): string {
-  if (amount >= 10000000) { // 1 crore or more
-    return `${(amount / 10000000).toFixed(2)} Cr`;
-  } else if (amount >= 100000) { // 1 lakh or more
-    return `${(amount / 100000).toFixed(2)} Lakhs`;
-  } else {
-    return amount.toLocaleString('en-IN');
+  } catch (error: any) {
+    console.error('Billing API error:', error);
+    return NextResponse.json({ error: 'Failed to fetch billing data' }, { status: 500 });
   }
 }

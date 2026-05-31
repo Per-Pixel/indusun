@@ -1,297 +1,207 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { verifyToken } from '@/lib/jwt-utils';
+import { createServiceClient } from '@/utils/supabase/service';
 
-// Define the type for filters
-interface SalesFilters {
-  startDate?: string;
-  endDate?: string;
-  brokerId?: number;
-  clientId?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  limit?: number;
+const TABLE_NAME = 'Master Data Of Gurukrupa';
+const PAGE_SIZE   = 1000;
+const BATCH_SIZE  = 10; // parallel requests per round
+
+async function fetchAllRows(supabase: ReturnType<typeof createServiceClient>): Promise<any[]> {
+  // 1. Get total row count without downloading data
+  const { count, error: countErr } = await supabase
+    .from(TABLE_NAME)
+    .select('*', { count: 'exact', head: true });
+
+  if (countErr) throw new Error(countErr.message);
+  if (!count)   return [];
+
+  const totalPages = Math.ceil(count / PAGE_SIZE);
+  let allRows: any[] = [];
+
+  // 2. Fetch pages in parallel batches
+  for (let batchStart = 0; batchStart < totalPages; batchStart += BATCH_SIZE) {
+    const batchEnd = Math.min(batchStart + BATCH_SIZE, totalPages);
+    const promises = Array.from({ length: batchEnd - batchStart }, (_, i) => {
+      const from = (batchStart + i) * PAGE_SIZE;
+      return supabase.from(TABLE_NAME).select('*').range(from, from + PAGE_SIZE - 1);
+    });
+
+    const results = await Promise.all(promises);
+    for (const { data, error } of results) {
+      if (error) throw new Error(error.message);
+      allRows = allRows.concat(data || []);
+    }
+  }
+
+  console.log(`fetchAllRows: retrieved ${allRows.length} / ${count} rows in ${totalPages} pages`);
+  return allRows;
+}
+
+function parseAmount(amount: string | null | undefined): number {
+  if (!amount) return 0;
+  const cleaned = String(amount).replace(/[^0-9.]/g, '');
+  return parseFloat(cleaned) || 0;
+}
+
+function normalizeDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr || !String(dateStr).trim()) return null;
+  const s = String(dateStr).trim();
+  // Handle DD/MM/YYYY or DD-MM-YYYY (Indian format)
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const iso = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    const d = new Date(iso);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  }
+  try {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  } catch {}
+  return null;
 }
 
 export async function GET(request: NextRequest) {
   try {
-    // DEVELOPMENT MODE: Authentication bypass
-    // TODO: Remove this bypass in production and implement proper authentication
-    console.log('Authentication bypassed for development');
-    
-    // For reference, this is the original authentication code:
-    /*
-    // Check if user is authenticated using JWT token
-    const adminToken = request.cookies.get('admin_token')?.value;
-    
-    if (!adminToken) {
-      return NextResponse.json(
-        { error: 'Unauthorized access - No token provided' },
-        { status: 401 }
-      );
-    }
-    
-    // Verify the admin token
-    const user = await verifyToken(adminToken);
-    
-    if (!user || user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized access - Invalid token' },
-        { status: 401 }
-      );
-    }
-    */
-
-    // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
-    const filters: SalesFilters = {
-      startDate: searchParams.get('startDate') || undefined,
-      endDate: searchParams.get('endDate') || undefined,
-      brokerId: searchParams.get('brokerId') ? parseInt(searchParams.get('brokerId') as string) : undefined,
-      clientId: searchParams.get('clientId') ? parseInt(searchParams.get('clientId') as string) : undefined,
-      sortBy: searchParams.get('sortBy') || 'payment_date',
-      sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit') as string) : 100,
+    const startDate  = searchParams.get('startDate')  || undefined;
+    const endDate    = searchParams.get('endDate')    || undefined;
+    const brokerName = searchParams.get('brokerName') || undefined;
+    const sortBy     = searchParams.get('sortBy')     || 'date';
+    const sortOrder  = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
+
+    const supabase = createServiceClient();
+
+    // Fetch all records using paginated parallel requests (bypasses Supabase 1000-row default cap)
+    const rows = await fetchAllRows(supabase);
+    console.log(`Supabase master data: ${rows.length} total rows`);
+
+    // ── Filter rows: "paid" = non-empty emi_paid_date ─────────────────────
+    // When a date range is active we also require a parseable date so the
+    // comparison works; when no range is set we include ALL paid rows (same
+    // logic as the billing page).
+    const filteredRows = rows.filter((r) => {
+      const hasPaidDate = !!(r.emi_paid_date && String(r.emi_paid_date).trim());
+      if (!hasPaidDate) return false;
+
+      if (startDate || endDate) {
+        const d = normalizeDate(r.emi_paid_date);
+        if (!d) return false;
+        if (startDate && d < startDate) return false;
+        if (endDate   && d > endDate)   return false;
+      }
+
+      if (brokerName && r["broker's_name"] !== brokerName) return false;
+      return true;
+    });
+
+    // Determine chart granularity: monthly for long/unfiltered ranges, daily for short ones
+    const granularity: 'monthly' | 'daily' = (() => {
+      if (!startDate && !endDate) return 'monthly'; // All Time → monthly
+      if (startDate && endDate) {
+        const days = (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000;
+        return days > 90 ? 'monthly' : 'daily';
+      }
+      return 'daily';
+    })();
+
+    // Aggregate by date (chart only — requires a parseable date)
+    const dateMap: Record<string, { total_amount: number; transaction_count: number }> = {};
+    filteredRows.forEach((r) => {
+      const d = normalizeDate(r.emi_paid_date);
+      if (!d) return;
+      const dateKey = granularity === 'monthly' ? d.substring(0, 7) : d; // YYYY-MM or YYYY-MM-DD
+      if (!dateMap[dateKey]) dateMap[dateKey] = { total_amount: 0, transaction_count: 0 };
+      dateMap[dateKey].total_amount     += parseAmount(r.emi_amount);
+      dateMap[dateKey].transaction_count += 1;
+    });
+
+    // For monthly keys (YYYY-MM) use first-of-month as date so the frontend can parse consistently
+    let salesData = Object.entries(dateMap).map(([key, s]) => ({
+      date: granularity === 'monthly' ? `${key}-01` : key,
+      total_amount:      s.total_amount,
+      transaction_count: s.transaction_count,
+    }));
+
+    salesData.sort((a, b) => {
+      if (sortBy === 'total_amount') {
+        return sortOrder === 'asc'
+          ? a.total_amount - b.total_amount
+          : b.total_amount - a.total_amount;
+      }
+      return sortOrder === 'asc'
+        ? a.date.localeCompare(b.date)
+        : b.date.localeCompare(a.date);
+    });
+    // Monthly: up to 120 buckets (10 years); Daily: up to 366 days
+    salesData = salesData.slice(0, granularity === 'monthly' ? 120 : 366);
+
+    console.log(`Sales chart: ${filteredRows.length} payment rows → ${salesData.length} date buckets`);
+
+    // ── Summary statistics ─────────────────────────────────────────────────
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const sixMonthsAgoStr = sixMonthsAgo.toISOString().split('T')[0];
+
+    const clientSet       = new Set<string>();
+    const activeClientSet = new Set<string>();
+    const brokerSet       = new Set<string>();
+    const activeBrokerSet = new Set<string>();
+    const propertySet     = new Set<string>();
+    const soldPropertySet = new Set<string>();
+    const brokerNameSet   = new Set<string>();
+
+    rows.forEach((r) => {
+      const cn   = r.client_name;
+      const bn   = r["broker's_name"];
+      const normDate = normalizeDate(r.emi_paid_date);
+      const plotKey  = r.plot_no ? `${r.society_name || ''}||${r.plot_no}` : null;
+
+      if (cn) clientSet.add(cn);
+      if (bn) { brokerSet.add(bn); brokerNameSet.add(bn); }
+
+      if (normDate && normDate >= sixMonthsAgoStr) {
+        if (cn) activeClientSet.add(cn);
+        if (bn) activeBrokerSet.add(bn);
+      }
+
+      if (plotKey) {
+        propertySet.add(plotKey);
+        if (!r.cancel_date && r.paid_amount) soldPropertySet.add(plotKey);
+      }
+    });
+
+    // Dynamic stats (respect the active filters)
+    const filteredRevenue = filteredRows.reduce((s, r) => s + parseAmount(r.emi_amount), 0);
+    const filteredTxCount = filteredRows.length;
+
+    const summary = {
+      totalClients:      clientSet.size,
+      activeClients:     activeClientSet.size,
+      totalBrokers:      brokerSet.size,
+      activeBrokers:     activeBrokerSet.size,
+      totalProperties:   propertySet.size,
+      propertiesSold:    soldPropertySet.size,
+      totalTransactions: filteredTxCount,
+      totalRevenue:      filteredRevenue,
     };
 
-    // Build the SQL query based on filters
-    let query = `
-      SELECT 
-        DATE(i.payment_date) as date,
-        SUM(i.amount) as total_amount,
-        COUNT(i.id) as transaction_count
-      FROM 
-        installments i
-      LEFT JOIN
-        plots p ON i.plot_id = p.id
-      LEFT JOIN
-        clients c ON p.client_id = c.id
-      LEFT JOIN
-        brokers b ON p.broker_id = b.id
-      WHERE 
-        i.payment_date IS NOT NULL
-    `;
+    const brokers = Array.from(brokerNameSet)
+      .sort()
+      .map((name) => ({ id: name, name }));
 
-    const queryParams: any[] = [];
-    
-    // Add filters to query
-    if (filters.startDate) {
-      query += ` AND i.payment_date >= $${queryParams.length + 1}`;
-      queryParams.push(filters.startDate);
-    }
-    
-    if (filters.endDate) {
-      query += ` AND i.payment_date <= $${queryParams.length + 1}`;
-      queryParams.push(filters.endDate);
-    }
-    
-    if (filters.brokerId) {
-      query += ` AND p.broker_id = $${queryParams.length + 1}`;
-      queryParams.push(filters.brokerId);
-    }
-    
-    if (filters.clientId) {
-      query += ` AND p.client_id = $${queryParams.length + 1}`;
-      queryParams.push(filters.clientId);
-    }
-    
-    // Group by date
-    query += ` GROUP BY DATE(i.payment_date)`;
-    
-    // Add sorting with validation
-    // Validate sortBy to prevent SQL injection
-    const validSortColumns = ['date', 'total_amount', 'transaction_count'];
-    const sortColumn = validSortColumns.includes(filters.sortBy || '') ? filters.sortBy : 'date';
-    const sortOrder = filters.sortOrder === 'asc' ? 'ASC' : 'DESC';
-    
-    query += ` ORDER BY ${sortColumn} ${sortOrder}`;
-    
-    // Add limit
-    query += ` LIMIT $${queryParams.length + 1}`;
-    queryParams.push(filters.limit);
+    console.log('Sales summary:', summary);
 
-    // Execute the query with specific error handling
-    let result;
-    try {
-      console.log('Executing sales query:', query);
-      console.log('Query parameters:', queryParams);
-      result = await db.query(query, queryParams);
-      console.log('Sales query successful, returned rows:', result.rows.length);
-    } catch (queryError) {
-      console.error('Error executing sales query:', queryError);
-      if (queryError instanceof Error) {
-        console.error('Query error message:', queryError.message);
-        console.error('Query error stack:', queryError.stack);
-      }
-      throw new Error(`Sales query failed: ${queryError instanceof Error ? queryError.message : String(queryError)}`);
-    }
-    
-    // Get broker list for filters with specific error handling
-    let brokers;
-    try {
-      console.log('Fetching broker list');
-      brokers = await db.query(`
-        SELECT id, full_name as name FROM brokers ORDER BY full_name
-      `);
-      console.log('Broker query successful, returned brokers:', brokers.rows.length);
-    } catch (brokerError) {
-      console.error('Error fetching brokers:', brokerError);
-      if (brokerError instanceof Error) {
-        console.error('Broker error message:', brokerError.message);
-        console.error('Broker error stack:', brokerError.stack);
-      }
-      throw new Error(`Broker query failed: ${brokerError instanceof Error ? brokerError.message : String(brokerError)}`);
-    }
-    
-    // Get summary statistics for the sales dashboard
-    let summaryStats;
-    try {
-      console.log('Fetching sales summary statistics');
-
-      // Get total clients count
-      const totalClientsResult = await db.query('SELECT COUNT(*) as count FROM clients');
-      const totalClients = parseInt(totalClientsResult.rows[0]?.count || '0');
-
-      // Get active clients count (clients with payments in last 6 months or ongoing installments)
-      const activeClientsResult = await db.query(`
-        SELECT COUNT(DISTINCT c.id) as count
-        FROM clients c
-        JOIN plots p ON c.id = p.client_id
-        LEFT JOIN installments i ON p.id = i.plot_id
-        WHERE (i.payment_date >= CURRENT_DATE - INTERVAL '6 months')
-           OR (i.payment_date IS NULL AND i.created_at >= CURRENT_DATE - INTERVAL '6 months')
-           OR (i.id IS NULL AND p.created_at >= CURRENT_DATE - INTERVAL '6 months')
-      `);
-      const activeClients = parseInt(activeClientsResult.rows[0]?.count || '0');
-
-      // Get total brokers count
-      const totalBrokersResult = await db.query('SELECT COUNT(*) as count FROM brokers');
-      const totalBrokers = parseInt(totalBrokersResult.rows[0]?.count || '0');
-
-      // Get active brokers count (brokers with recent transactions or ongoing deals)
-      const activeBrokersResult = await db.query(`
-        SELECT COUNT(DISTINCT b.id) as count
-        FROM brokers b
-        JOIN plots p ON b.id = p.broker_id
-        LEFT JOIN installments i ON p.id = i.plot_id
-        WHERE (i.payment_date >= CURRENT_DATE - INTERVAL '6 months')
-           OR (i.payment_date IS NULL AND i.created_at >= CURRENT_DATE - INTERVAL '6 months')
-           OR (i.id IS NULL AND p.created_at >= CURRENT_DATE - INTERVAL '6 months')
-      `);
-      const activeBrokers = parseInt(activeBrokersResult.rows[0]?.count || '0');
-
-      // Get total properties count
-      const totalPropertiesResult = await db.query('SELECT COUNT(*) as count FROM plots');
-      const totalProperties = parseInt(totalPropertiesResult.rows[0]?.count || '0');
-
-      // Get properties sold count (plots where all installments have been paid)
-      const propertiesSoldResult = await db.query(`
-        SELECT COUNT(DISTINCT p.id) as count
-        FROM plots p
-        WHERE NOT EXISTS (
-          SELECT 1 FROM installments i
-          WHERE i.plot_id = p.id AND i.payment_date IS NULL
-        )
-        AND EXISTS (
-          SELECT 1 FROM installments i
-          WHERE i.plot_id = p.id AND i.payment_date IS NOT NULL
-        )
-      `);
-      const propertiesSold = parseInt(propertiesSoldResult.rows[0]?.count || '0');
-
-      // Get dynamic filtered transaction statistics
-      let dynamicStatsQuery = `
-        SELECT 
-          COUNT(i.id) as transaction_count,
-          SUM(i.amount) as total_revenue
-        FROM 
-          installments i
-        LEFT JOIN
-          plots p ON i.plot_id = p.id
-        LEFT JOIN
-          clients c ON p.client_id = c.id
-        WHERE 
-          i.payment_date IS NOT NULL
-      `;
-      
-      const dynamicQueryParams: any[] = [];
-      
-      // Add the same filters as the main query
-      if (filters.startDate) {
-        dynamicStatsQuery += ` AND i.payment_date >= $${dynamicQueryParams.length + 1}`;
-        dynamicQueryParams.push(filters.startDate);
-      }
-      
-      if (filters.endDate) {
-        dynamicStatsQuery += ` AND i.payment_date <= $${dynamicQueryParams.length + 1}`;
-        dynamicQueryParams.push(filters.endDate);
-      }
-      
-      if (filters.brokerId) {
-        dynamicStatsQuery += ` AND p.broker_id = $${dynamicQueryParams.length + 1}`;
-        dynamicQueryParams.push(filters.brokerId);
-      }
-      
-      if (filters.clientId) {
-        dynamicStatsQuery += ` AND p.client_id = $${dynamicQueryParams.length + 1}`;
-        dynamicQueryParams.push(filters.clientId);
-      }
-      
-      const dynamicStatsResult = await db.query(dynamicStatsQuery, dynamicQueryParams);
-      const totalTransactions = parseInt(dynamicStatsResult.rows[0]?.transaction_count || '0');
-      const totalRevenue = parseFloat(dynamicStatsResult.rows[0]?.total_revenue || '0');
-
-      summaryStats = {
-        // Static lifetime stats
-        totalClients,
-        activeClients,
-        totalBrokers,
-        activeBrokers,
-        totalProperties,
-        propertiesSold,
-        
-        // Dynamic filtered stats
-        totalTransactions,
-        totalRevenue
-      };
-
-      console.log('Sales summary statistics:', summaryStats);
-    } catch (statsError) {
-      console.error('Error fetching sales summary statistics:', statsError);
-      // Provide default values if stats query fails
-      summaryStats = {
-        totalClients: 0,
-        activeClients: 0,
-        totalBrokers: 0,
-        activeBrokers: 0,
-        totalProperties: 0,
-        propertiesSold: 0,
-        totalTransactions: 0,
-        totalRevenue: 0
-      };
-    }
-
-    // Return the sales data, filter options, and summary statistics
     return NextResponse.json({
-      sales: result.rows,
-      filterOptions: {
-        brokers: brokers.rows
-      },
-      summary: summaryStats
+      sales: salesData,
+      granularity,
+      filterOptions: { brokers },
+      summary,
     });
 
   } catch (error) {
     console.error('Error fetching sales data:', error);
-    
-    // Detailed error logging
     if (error instanceof Error) {
       console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
     }
-    
-    // Log query details for debugging
-    console.error('Query parameters:', request.nextUrl.searchParams.toString());
-    
     return NextResponse.json(
       { error: 'Failed to fetch sales data', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

@@ -207,6 +207,45 @@ export async function getMasterDataSummary(): Promise<{
     const totalPlotAmount = data.reduce((sum, item) => sum + parseAmount(item.plot_amount), 0);
     const totalPaidAmount = data.reduce((sum, item) => sum + parseAmount(item.paid_amount), 0);
 
+    const listedProperties = data.filter((r) => !r.cancel_date).length;
+    const soldProperties = data.filter((r) => r.paid_amount && !r.cancel_date).length;
+    const cancelledProperties = data.filter((r) => !!r.cancel_date).length;
+
+    // Count by society (top 8)
+    const societyCounts: Record<string, number> = {};
+    data.forEach((r) => {
+      if (r.society_name) {
+        societyCounts[r.society_name] = (societyCounts[r.society_name] || 0) + 1;
+      }
+    });
+    const propertiesBySociety = Object.entries(societyCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name, count]) => ({
+        name: name.length > 12 ? name.substring(0, 12) + '…' : name,
+        count,
+      }));
+
+    // Monthly listings from date_of_form / date / created_at
+    const monthlyCounts: Record<string, number> = {};
+    data.forEach((r) => {
+      const raw = r.date_of_form ?? r.date ?? r.created_at;
+      if (raw) {
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) {
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          monthlyCounts[key] = (monthlyCounts[key] || 0) + 1;
+        }
+      }
+    });
+    const monthlyListings = Object.entries(monthlyCounts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-8)
+      .map(([key, count]) => ({
+        month: new Date(key + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
+        count,
+      }));
+
     const summary: MasterDataSummary = {
       totalRecords: data.length,
       totalClients: uniqueClients.size,
@@ -214,6 +253,11 @@ export async function getMasterDataSummary(): Promise<{
       uniqueBrokers: uniqueBrokers.size,
       totalPlotAmount,
       totalPaidAmount,
+      listedProperties,
+      soldProperties,
+      cancelledProperties,
+      propertiesBySociety,
+      monthlyListings,
     };
 
     return { summary, error: null };

@@ -6,7 +6,6 @@ import {
   Search,
   Filter,
   ChevronDown,
-  Download,
   Calendar,
   DollarSign,
   CreditCard,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
+import ExportDropdown from '@/components/ui/ExportDropdown';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -279,11 +279,11 @@ export default function BillingPage() {
             change: '+8% from last month' // This could be calculated in the future
           },
           {
-            title: 'Invoices Generated',
-            value: `${data.summary.totalTransactions || 0}`, // Using same value as transactions for now
+            title: 'Completed Transactions',
+            value: `${data.summary.completedTransactions || 0}`,
             icon: <FileText size={20} className="text-purple-600" />,
             bgColor: 'bg-purple-50',
-            change: '+15% from last month' // This could be calculated in the future
+            change: ''
           }
         ];
         setSummaryData(updatedSummary);
@@ -323,11 +323,6 @@ export default function BillingPage() {
       setIsLoading(false);
     }
   };
-  
-  // Fetch data on initial load
-  useEffect(() => {
-    fetchBillingData();
-  }, []);
   
   // Helper function to format amount in Indian currency format
   const formatAmount = (amount: number): string => {
@@ -406,13 +401,29 @@ export default function BillingPage() {
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Billing</h1>
-              <button
-                onClick={() => router.push('/billing/export')}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                <Download size={16} />
-                <span>Export</span>
-              </button>
+              <ExportDropdown
+                label="Export"
+                filename="billing-transactions"
+                disabled={transactions.length === 0}
+                columns={[
+                  { header: 'Date',        key: 'date' },
+                  { header: 'Client',      key: '_client' },
+                  { header: 'Description', key: 'description' },
+                  { header: 'Amount',      key: 'amount' },
+                  { header: 'Status',      key: 'status' },
+                  { header: 'Source',      key: 'source' },
+                  { header: 'Reference',   key: 'reference' },
+                ]}
+                rows={transactions.map((t: any) => ({
+                  date:        t.date || '',
+                  _client:     t.client?.name || '',
+                  description: t.description,
+                  amount:      t.amount,
+                  status:      t.status,
+                  source:      t.source,
+                  reference:   t.reference,
+                }))}
+              />
             </div>
 
             {/* Summary Cards */}
@@ -578,7 +589,6 @@ export default function BillingPage() {
                     <option value="All">All Status</option>
                     <option value="Completed">Completed</option>
                     <option value="Pending">Pending</option>
-                    <option value="Failed">Failed</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                     <ChevronDown size={16} />
@@ -594,7 +604,6 @@ export default function BillingPage() {
                     <option value="All">All Sources</option>
                     <option value="Property Sale">Property Sale</option>
                     <option value="Broker Commission">Broker Commission</option>
-                    <option value="Service Fee">Service Fee</option>
                     <option value="Rental Income">Rental Income</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">

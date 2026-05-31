@@ -36,4 +36,9 @@ export interface MasterDataSummary {
   uniqueBrokers: number;
   totalPlotAmount: number;
   totalPaidAmount: number;
+  listedProperties: number;
+  soldProperties: number;
+  cancelledProperties: number;
+  propertiesBySociety: { name: string; count: number }[];
+  monthlyListings: { month: string; count: number }[];
 }

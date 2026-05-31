@@ -27,7 +27,7 @@ interface SaleData {
 }
 
 interface Broker {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -62,7 +62,7 @@ const getStatsCards = (summary: SalesSummary | null) => [
     title: 'Total Revenue',
     value: summary?.totalRevenue || 0,
     formattedValue: formatAmount(summary?.totalRevenue || 0),
-    description: 'Based on current filters',
+    description: 'All paid transactions',
     icon: <DollarSign className="h-6 w-6 text-green-600" />,
     bgColor: 'bg-green-50',
     isMonetary: true,
@@ -73,7 +73,7 @@ const getStatsCards = (summary: SalesSummary | null) => [
     title: 'Total Transactions',
     value: summary?.totalTransactions || 0,
     formattedValue: (summary?.totalTransactions || 0).toLocaleString(),
-    description: 'Based on current filters',
+    description: 'All paid transactions',
     icon: <Calendar className="h-6 w-6 text-blue-600" />,
     bgColor: 'bg-blue-50',
     isDynamic: true
@@ -146,12 +146,13 @@ const SalesPage = () => {
   const [salesData, setSalesData] = useState<SaleData[]>([]);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({ brokers: [] });
   const [salesSummary, setSalesSummary] = useState<SalesSummary | null>(null);
+  const [granularity, setGranularity] = useState<'monthly' | 'daily'>('monthly');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
   // Filter state
   const [dateRange, setDateRange] = useState<{ startDate: string | null, endDate: string | null }>({ startDate: null, endDate: null });
-  const [selectedBrokerId, setSelectedBrokerId] = useState<number | null>(null);
+  const [selectedBrokerName, setSelectedBrokerName] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<string>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
@@ -165,7 +166,7 @@ const SalesPage = () => {
   // Filter brokers based on search term and separate selected broker
   const { selectedBroker, otherBrokers } = useMemo(() => {
     const allBrokers = filterOptions.brokers;
-    const selectedBroker = selectedBrokerId ? allBrokers.find(b => b.id === selectedBrokerId) : null;
+    const selectedBroker = selectedBrokerName ? allBrokers.find(b => b.id === selectedBrokerName) : null;
 
     // Filter brokers based on search term
     let filteredBrokers = allBrokers;
@@ -176,13 +177,13 @@ const SalesPage = () => {
     }
 
     // Separate selected broker from others
-    const otherBrokers = filteredBrokers.filter(broker => broker.id !== selectedBrokerId);
+    const otherBrokers = filteredBrokers.filter(broker => broker.id !== selectedBrokerName);
 
     return {
       selectedBroker,
       otherBrokers
     };
-  }, [filterOptions.brokers, brokerSearchTerm, selectedBrokerId]);
+  }, [filterOptions.brokers, brokerSearchTerm, selectedBrokerName]);
 
   // Handle clicks outside of dropdowns
   useEffect(() => {
@@ -249,7 +250,7 @@ const SalesPage = () => {
         const params = new URLSearchParams();
         if (dateRange.startDate) params.append('startDate', dateRange.startDate);
         if (dateRange.endDate) params.append('endDate', dateRange.endDate);
-        if (selectedBrokerId) params.append('brokerId', selectedBrokerId.toString());
+        if (selectedBrokerName) params.append('brokerName', selectedBrokerName);
         params.append('sortBy', sortBy);
         params.append('sortOrder', sortOrder);
         
@@ -265,6 +266,7 @@ const SalesPage = () => {
         setSalesData(data.sales);
         setFilterOptions(data.filterOptions);
         setSalesSummary(data.summary);
+        setGranularity(data.granularity || 'monthly');
         console.log('Sales summary data:', data.summary);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch sales data');
@@ -274,16 +276,19 @@ const SalesPage = () => {
     };
     
     fetchSalesData();
-  }, [dateRange.startDate, dateRange.endDate, selectedBrokerId, sortBy, sortOrder, refreshTrigger]);
+  }, [dateRange.startDate, dateRange.endDate, selectedBrokerName, sortBy, sortOrder, refreshTrigger]);
 
   // Format sales data for chart
   const formattedSalesData = salesData.map((item) => {
-    const date = new Date(item.date);
+    // Use noon UTC to avoid timezone-driven off-by-one-day issues
+    const date = new Date(`${item.date}T12:00:00Z`);
+    const label = granularity === 'monthly'
+      ? date.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+      : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
     return {
-      name: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      name: label,
       value: Number(item.total_amount) || 0,
       transactions: Number(item.transaction_count) || 0,
-      // For tooltip display
       date: item.date,
       amount: Number(item.total_amount) || 0,
     };
@@ -309,12 +314,9 @@ const SalesPage = () => {
       return (
         <div className="bg-white p-3 shadow-lg rounded-lg border border-gray-200 max-w-xs">
           <p className="text-sm font-medium text-gray-900 mb-1">
-            {new Date(data.date).toLocaleDateString('en-US', {
-              weekday: 'short',
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            })}
+            {granularity === 'monthly'
+              ? new Date(`${data.date}T12:00:00Z`).toLocaleDateString('en-US', { year: 'numeric', month: 'long', timeZone: 'UTC' })
+              : new Date(`${data.date}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
           </p>
           <p className="text-sm font-semibold text-green-600 mb-1">
             Amount: {formatAmount(data.amount)}
@@ -391,7 +393,7 @@ const SalesPage = () => {
   // Reset all filters
   const resetFilters = () => {
     setDateRange({ startDate: null, endDate: null });
-    setSelectedBrokerId(null);
+    setSelectedBrokerName(null);
     setSelectedPeriod('All Time');
     setSortBy('date');
     setSortOrder('desc');
@@ -488,29 +490,6 @@ const SalesPage = () => {
         <div className="p-4 lg:p-6 max-w-full overflow-hidden">
           {/* Sales Header with Filters */}
           <div className="flex flex-col mb-6 space-y-4">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Sales Dashboard</h1>
-              <div className="flex items-center space-x-2 mt-2 lg:mt-0">
-                <button
-                  onClick={() => router.push('/transactions/add')}
-                  className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white border border-blue-700 rounded hover:bg-blue-700"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="text-sm">Add Transaction</span>
-                </button>
-                <button 
-                  onClick={refreshData}
-                  className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50"
-                >
-                  <RefreshCw className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">Refresh</span>
-                </button>
-                <button className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50">
-                  <Bell className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">Notifications</span>
-                </button>
-              </div>
-            </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center">
                 <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Sales Overview</h1>
@@ -609,7 +588,7 @@ const SalesPage = () => {
                     className="flex items-center space-x-1 bg-white border border-gray-300 rounded px-3 py-1.5 text-sm min-w-[140px] justify-between"
                     onClick={() => setShowBrokerDropdown(!showBrokerDropdown)}
                   >
-                    <span className="truncate text-gray-900">{selectedBrokerId ? filterOptions.brokers.find(b => b.id === selectedBrokerId)?.name || 'Select Broker' : 'All Brokers'}</span>
+                    <span className="truncate text-gray-900">{selectedBrokerName || 'All Brokers'}</span>
                     <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
                   </button>
                   {showBrokerDropdown && (
@@ -638,18 +617,18 @@ const SalesPage = () => {
                         <div className="broker-sticky-header">
                           <button
                             className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between broker-dropdown-item ${
-                              selectedBrokerId === null
+                              selectedBrokerName === null
                                 ? 'broker-selected-item text-blue-700 font-medium'
                                 : 'hover:bg-gray-100 text-gray-900'
                             }`}
                             onClick={() => {
-                              setSelectedBrokerId(null);
+                              setSelectedBrokerName(null);
                               setShowBrokerDropdown(false);
                               setBrokerSearchTerm('');
                             }}
                           >
                             <span>All Brokers</span>
-                            {selectedBrokerId === null && (
+                            {selectedBrokerName === null && (
                               <span className="text-blue-600 font-bold text-base">✓</span>
                             )}
                           </button>
@@ -686,7 +665,7 @@ const SalesPage = () => {
                               key={broker.id}
                               className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between broker-dropdown-item"
                               onClick={() => {
-                                setSelectedBrokerId(broker.id);
+                                setSelectedBrokerName(broker.id);
                                 setShowBrokerDropdown(false);
                                 setBrokerSearchTerm('');
                               }}
@@ -796,15 +775,17 @@ const SalesPage = () => {
                       domain={[0, 'auto']}
                       width={60}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '5 5', strokeOpacity: 0.6 }} />
                     <Line
                       type="monotone"
                       dataKey="value"
                       stroke="#10b981"
-                      strokeWidth={2}
-                      dot={{ r: 4, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
-                      activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
+                      activeDot={{ r: 7, fill: '#10b981', stroke: '#fff', strokeWidth: 3 }}
                       connectNulls={false}
+                      animationEasing="ease-in-out"
+                      animationDuration={400}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -851,8 +832,12 @@ const SalesPage = () => {
                       {card.icon}
                     </div>
                     {card.isDynamic ? (
-                      <div className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                        Filtered
+                      <div className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        (dateRange.startDate || dateRange.endDate || selectedBrokerName)
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {(dateRange.startDate || dateRange.endDate || selectedBrokerName) ? 'Filtered' : 'All Data'}
                       </div>
                     ) : (
                       <div className="text-gray-400">
