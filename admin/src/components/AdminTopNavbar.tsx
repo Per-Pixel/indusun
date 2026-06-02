@@ -10,8 +10,13 @@ import {
   Settings,
   LogOut,
   ChevronDown,
-  X,
-  Info
+  CreditCard,
+  Activity,
+  Lock,
+  HelpCircle,
+  ExternalLink,
+  Shield,
+  Crown
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 
@@ -195,59 +200,162 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
           )}
         </div>
 
-        {/* Profile icon always visible and links to profile page */}
-        <div className="relative ml-3 flex items-center">
-          <button
-            onClick={() => router.push('/profile')}
-            className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center hover:ring-2 hover:ring-blue-500 focus:outline-none"
-            title="Profile"
-            aria-label="Profile"
-          >
-            <User size={20} className="text-[#333]" />
-          </button>
-          {/* Keep dropdown for other actions */}
+        {/* Profile Avatar & Dropdown */}
+        <div className="relative ml-3" ref={profileMenuRef}>
+          {/* Trigger Button */}
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="ml-2 flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none group"
           >
-            <span className="ml-2 text-[#333] hidden md:block">{user?.name || 'Admin User'}</span>
-            <ChevronDown size={16} className="ml-1 text-gray-500 hidden md:block" />
+            {/* Avatar circle with initials */}
+            <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-sm flex-shrink-0">
+              <span className="text-white text-sm font-bold leading-none select-none">
+                {(user?.name || 'AU').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+              </span>
+              {/* Online indicator */}
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white"></span>
+            </div>
+            <div className="hidden md:flex flex-col items-start leading-tight">
+              <span className="text-sm font-semibold text-gray-800 max-w-[120px] truncate">{user?.name || 'Admin User'}</span>
+              <span className="text-[11px] text-gray-500 capitalize">{user?.role === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
+            </div>
+            <ChevronDown
+              size={15}
+              className={`hidden md:block text-gray-400 transition-transform duration-200 ${showProfileMenu ? 'rotate-180' : ''}`}
+            />
           </button>
+
+          {/* Rich Dropdown */}
           {showProfileMenu && (
-            <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-              <div className="py-1">
+            <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl shadow-2xl bg-white ring-1 ring-black/10 z-50 overflow-hidden">
+
+              {/* ── Header: dark navy ── */}
+              <div className="bg-gradient-to-b from-slate-800 to-slate-900 px-5 pt-5 pb-4">
+                <div className="flex flex-col items-center text-center">
+                  {/* Avatar */}
+                  <div className="relative mb-3">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg">
+                      <span className="text-white text-xl font-bold select-none">
+                        {(user?.name || 'AU').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </span>
+                    </div>
+                    <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-400 border-2 border-slate-800"></span>
+                  </div>
+                  {/* Name */}
+                  <p className="text-white font-bold text-base leading-tight">{user?.name || 'Admin User'}</p>
+                  {/* Email */}
+                  <p className="text-slate-400 text-xs mt-0.5">{user?.email || 'admin@indusun.com'}</p>
+                  {/* Role badge */}
+                  <span className={`mt-2 inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-semibold ${
+                    user?.role === 'super_admin'
+                      ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30'
+                      : 'bg-blue-500/20 text-blue-300 ring-1 ring-blue-400/30'
+                  }`}>
+                    {user?.role === 'super_admin' ? <Crown size={11} /> : <Shield size={11} />}
+                    {user?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                  </span>
+                </div>
+
+                {/* Stats row */}
+                <div className="mt-4 grid grid-cols-3 divide-x divide-slate-700 border border-slate-700 rounded-xl overflow-hidden">
+                  <div className="flex flex-col items-center py-2.5">
+                    <span className="text-white font-bold text-sm">—</span>
+                    <span className="text-slate-400 text-[10px] mt-0.5">Properties</span>
+                  </div>
+                  <div className="flex flex-col items-center py-2.5">
+                    <span className="text-white font-bold text-sm">—</span>
+                    <span className="text-slate-400 text-[10px] mt-0.5">Clients</span>
+                  </div>
+                  <div className="flex flex-col items-center py-2.5">
+                    <span className="text-white font-bold text-sm">—</span>
+                    <span className="text-slate-400 text-[10px] mt-0.5">Revenue</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Menu Items ── */}
+              <div className="py-1.5 bg-white">
+                {[
+                  {
+                    icon: <User size={16} className="text-slate-500" />,
+                    iconBg: 'bg-slate-100',
+                    label: 'My Profile',
+                    sub: 'View & edit profile',
+                    path: '/profile',
+                  },
+                  {
+                    icon: <Settings size={16} className="text-blue-500" />,
+                    iconBg: 'bg-blue-50',
+                    label: 'Account Settings',
+                    sub: 'Preferences & config',
+                    path: '/settings',
+                  },
+                  {
+                    icon: <CreditCard size={16} className="text-amber-500" />,
+                    iconBg: 'bg-amber-50',
+                    label: 'Billing & Plans',
+                    sub: 'Subscription & invoices',
+                    path: '/billing',
+                  },
+                  {
+                    icon: <Activity size={16} className="text-cyan-500" />,
+                    iconBg: 'bg-cyan-50',
+                    label: 'Activity Log',
+                    sub: 'Recent actions',
+                    path: '/activity',
+                  },
+                  {
+                    icon: <Lock size={16} className="text-violet-500" />,
+                    iconBg: 'bg-violet-50',
+                    label: 'Privacy & Security',
+                    sub: '2FA & passwords',
+                    path: '/security',
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.path}
+                    onClick={() => { setShowProfileMenu(false); router.push(item.path); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left group/item"
+                  >
+                    <div className={`h-8 w-8 rounded-lg ${item.iconBg} flex items-center justify-center flex-shrink-0`}>
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 leading-tight">{item.label}</p>
+                      <p className="text-xs text-gray-400 leading-tight mt-0.5">{item.sub}</p>
+                    </div>
+                  </button>
+                ))}
+
+                {/* Divider */}
+                <div className="my-1 border-t border-gray-100" />
+
+                {/* Help Center */}
                 <button
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    router.push('/profile');
-                  }}
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                  onClick={() => { setShowProfileMenu(false); window.open('/help', '_blank'); }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
                 >
-                  <User size={16} className="mr-2 text-gray-500" />
-                  Profile
-                </button>
-                <button
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    router.push('/settings');
-                  }}
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                >
-                  <Settings size={16} className="mr-2 text-gray-500" />
-                  Settings
-                </button>
-                <hr className="my-1" />
-                <button
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    logout();
-                  }}
-                  className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-gray-100 w-full text-left"
-                >
-                  <LogOut size={16} className="mr-2 text-red-500" />
-                  Logout
+                  <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <HelpCircle size={16} className="text-gray-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-800">Help Center</p>
+                  </div>
+                  <ExternalLink size={13} className="text-gray-400 flex-shrink-0" />
                 </button>
               </div>
+
+              {/* ── Sign Out ── */}
+              <div className="px-3 pb-3 pt-1 bg-white border-t border-gray-100">
+                <button
+                  onClick={() => { setShowProfileMenu(false); logout(); }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm transition-colors"
+                >
+                  <LogOut size={15} />
+                  Sign Out
+                </button>
+              </div>
+
             </div>
           )}
         </div>
