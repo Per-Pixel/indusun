@@ -3,8 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useAdminAuth } from '@/context/AdminAuthContext';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 import {
   User, Bell, Lock, Palette, Shield, Mail, Smartphone,
   Eye, EyeOff, Save, Check, Moon, Sun, Monitor, AlertCircle,
@@ -116,10 +115,6 @@ export default function SettingsPage() {
 
   const supabase = useMemo(() =>
     SUPA_URL && SUPA_KEY ? createBrowserClient(SUPA_URL, SUPA_KEY) : null, []);
-
-  // Layout
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const toggleSidebar = () => setIsSidebarOpen(v => !v);
 
   const fileRef               = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<Tab>('profile');
@@ -283,17 +278,8 @@ export default function SettingsPage() {
   const initials   = (profile.name || user?.name || 'AU').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      {/* Main content */}
-      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
-        </div>
-
-        <div className="p-6">
+    <CRMLayout>
+        <div className="page-container">
           <div className="max-w-4xl mx-auto space-y-5">
 
         {/* ── Page title ── */}
@@ -772,7 +758,6 @@ export default function SettingsPage() {
 
           </div>
         </div>
-      </div>
-    </div>
+    </CRMLayout>
   );
 }

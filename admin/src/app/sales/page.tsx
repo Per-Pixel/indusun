@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -12,7 +11,7 @@ import {
   Calendar, Filter, SortAsc, SortDesc, Loader, RefreshCw, Users, UserCheck, Building2,
   Briefcase, Home, CheckCircle, Plus
 } from 'lucide-react';
-import Sidebar from '@/components/dashboard/Sidebar';
+import CRMLayout from '@/components/CRMLayout';
 import RecentTransactions from '@/components/sales/RecentTransactions';
 
 // Types for sales data
@@ -137,10 +136,8 @@ const getStatsCards = (summary: SalesSummary | null) => [
 
 const SalesPage = () => {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('All Time');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
-  const [showNotification, setShowNotification] = useState(false);
   
   // Sales data state
   const [salesData, setSalesData] = useState<SaleData[]>([]);
@@ -158,7 +155,6 @@ const SalesPage = () => {
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   const periodDropdownRef = useRef<HTMLDivElement>(null);
-  const notificationRef = useRef<HTMLDivElement>(null);
   const brokerDropdownRef = useRef<HTMLDivElement>(null);
   const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
   const [brokerSearchTerm, setBrokerSearchTerm] = useState('');
@@ -190,9 +186,6 @@ const SalesPage = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (periodDropdownRef.current && !periodDropdownRef.current.contains(event.target as HTMLElement)) {
         setShowPeriodDropdown(false);
-      }
-      if (notificationRef.current && !notificationRef.current.contains(event.target as HTMLElement)) {
-        setShowNotification(false);
       }
       if (brokerDropdownRef.current && !brokerDropdownRef.current.contains(event.target as HTMLElement)) {
         setShowBrokerDropdown(false);
@@ -293,10 +286,6 @@ const SalesPage = () => {
       amount: Number(item.total_amount) || 0,
     };
   }).filter(item => !isNaN(item.value)) as SaleData[];
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
 
   // Custom tooltip for the line chart
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -406,86 +395,7 @@ const SalesPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
-
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        {/* Top Navigation */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center space-x-4">
-            <button onClick={toggleSidebar} className="p-1.5 rounded-md hover:bg-gray-100">
-              {sidebarOpen ? <ChevronLeft className="h-5 w-5 text-gray-500" /> : <ChevronRight className="h-5 w-5 text-gray-500" />}
-            </button>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search"
-                className="pl-10 pr-4 py-2 rounded-full bg-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="relative" ref={notificationRef}>
-              <button
-                className="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200"
-                onClick={() => setShowNotification(!showNotification)}
-              >
-                <Bell className="h-5 w-5 text-gray-500" />
-              </button>
-              {showNotification && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-20">
-                  <div className="py-2 px-3 bg-gray-100 border-b border-gray-200">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-sm font-semibold text-black">Notifications</h3>
-                      <button className="text-xs text-blue-500 hover:text-blue-700">Mark all as read</button>
-                    </div>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    <div className="py-2 px-3 hover:bg-gray-50 border-b border-gray-100">
-                      <div className="flex items-start">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                          <DollarSign className="h-4 w-4 text-blue-500" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-black">New sale completed</p>
-                          <p className="text-xs text-gray-500">Amount: $2,500</p>
-                          <p className="text-xs text-gray-400 mt-1">2 hours ago</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="py-2 px-3 hover:bg-gray-50">
-                      <div className="flex items-start">
-                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
-                          <User className="h-4 w-4 text-green-500" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-black">New customer registered</p>
-                          <p className="text-xs text-gray-500">John Smith</p>
-                          <p className="text-xs text-gray-400 mt-1">4 hours ago</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="py-2 text-center border-t border-gray-100">
-                    <button className="text-sm text-blue-500 hover:text-blue-700">View all notifications</button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="h-8 w-8 rounded-full overflow-hidden">
-              <Image
-                src="https://source.unsplash.com/random/100x100?face=1"
-                alt="User Profile"
-                width={32}
-                height={32}
-                className="object-cover"
-              />
-            </div>
-          </div>
-        </div>
-
+    <CRMLayout>
         {/* Main Content */}
         <div className="p-4 lg:p-6 max-w-full overflow-hidden">
           {/* Sales Header with Filters */}
@@ -877,8 +787,7 @@ const SalesPage = () => {
             <RecentTransactions className="mb-6" />
           </div>
         </div>
-      </div>
-    </div>
+    </CRMLayout>
   );
 };
 

@@ -26,6 +26,7 @@ export interface User {
   role: string;
   status: 'active' | 'inactive' | 'pending';
   image?: string;
+  title?: string;
   location?: string;
   lastActive?: string;
   createdAt: string;

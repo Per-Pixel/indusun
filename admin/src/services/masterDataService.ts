@@ -292,11 +292,12 @@ export async function getUniqueSocieties(): Promise<{
       new Set(data.map((item) => item.society_name).filter(Boolean))
     ).sort();
 
-    console.log(`Found ${uniqueSocieties.length} unique societies`);
-
     return { societies: uniqueSocieties as string[], error: null };
   } catch (err) {
     console.error('Unexpected error in getUniqueSocieties:', err);
     return { societies: [], error: err as Error };
   }
 }
+
+
+

@@ -12,10 +12,11 @@ function parseAmount(amount: string | null | undefined): number {
 // GET handler – fetch a single master-data record by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id: rawId } = await params;
+    const id = parseInt(rawId);
     if (isNaN(id)) {
       return NextResponse.json({ error: 'Invalid transaction ID' }, { status: 400 });
     }

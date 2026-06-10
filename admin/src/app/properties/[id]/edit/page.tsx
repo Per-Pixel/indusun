@@ -150,7 +150,7 @@ const mockProperties: Property[] = [
     description: 'Premium commercial space in a prime tech park location. Ideal for IT companies, startups, or corporate offices.',
     price: '₹2.8 Cr',
     status: 'Listed',
-    images: ['/properties/property-02.jpg'],
+    images: [{ id: 'img3', url: '/properties/property-02.jpg', order: 1, isPrimary: true }],
     targetedLocation: 'Electronic City Tech Hub, IT Corridor',
     actualLocation: '456 Tech Avenue, Electronic City, Bangalore',
     listedBy: {
@@ -163,7 +163,10 @@ const mockProperties: Property[] = [
     bedrooms: 0,
     bathrooms: 4,
     squareFootage: '5000 sq ft',
-    propertyType: 'Office',
+    propertyType: 'Commercial',
+    isDraft: false,
+    categories: ['Featured'],
+    displayPages: [{ page: 'listing', enabled: true }],
     dateAdded: '2023-11-20',
     dateModified: '2023-11-25'
   },
@@ -173,7 +176,7 @@ const mockProperties: Property[] = [
     description: 'Prime residential plot in developing area with excellent connectivity and future growth potential.',
     price: '₹85 Lakhs',
     status: 'Listed',
-    images: ['/properties/property-03.jpg'],
+    images: [{ id: 'img4', url: '/properties/property-03.jpg', order: 1, isPrimary: true }],
     targetedLocation: 'Sarjapur Road Development Zone',
     actualLocation: '789 Green Valley, Sarjapur Road, Bangalore',
     listedBy: {
@@ -187,6 +190,9 @@ const mockProperties: Property[] = [
     bathrooms: 0,
     squareFootage: '2400 sq ft',
     propertyType: 'Plot',
+    isDraft: false,
+    categories: ['Investment'],
+    displayPages: [{ page: 'listing', enabled: true }],
     dateAdded: '2023-12-05',
     dateModified: '2023-12-05'
   }
@@ -205,13 +211,16 @@ export default function EditPropertyPage() {
     description: '',
     price: '',
     status: 'Listed',
+    isDraft: false,
     targetedLocation: '',
     actualLocation: '',
     listedBy: 'admin1',
     bedrooms: 0,
     bathrooms: 0,
     squareFootage: '',
-    propertyType: 'Residential',
+    propertyType: 'Plot',
+    categories: [],
+    displayPages: [],
     images: [],
     existingImages: [],
   });
@@ -235,6 +244,9 @@ export default function EditPropertyPage() {
         propertyType: foundProperty.propertyType,
         images: [],
         existingImages: foundProperty.images,
+        isDraft: foundProperty.isDraft ?? false,
+        categories: foundProperty.categories ?? [],
+        displayPages: foundProperty.displayPages ?? [],
       });
     }
   }, [propertyId]);
@@ -591,7 +603,7 @@ export default function EditPropertyPage() {
                         {formData.existingImages.map((image, index) => (
                           <div key={index} className="relative">
                             <img
-                              src={image}
+                              src={typeof image === 'string' ? image : image.url}
                               alt={`Current ${index + 1}`}
                               className="w-full h-24 object-cover rounded-md"
                             />

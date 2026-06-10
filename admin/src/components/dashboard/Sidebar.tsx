@@ -2,21 +2,28 @@
 
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   LayoutDashboard,
-  FileText,
-  MessageSquare,
-  Lock,
-  Layers,
-  ChevronDown,
-  DollarSign,
-  Calendar,
-  CheckSquare,
-  StickyNote,
+  Database,
   Users,
-  UserPlus,
+  UserCheck,
+  Calendar,
+  BookOpen,
+  Building2,
+  Image as ImageIcon,
+  Globe,
+  Bell,
+  BarChart3,
+  Activity,
+  Settings,
+  ChevronDown,
+  TrendingUp,
+  DollarSign,
+  MessageSquare,
   UserCog,
-  Database
+  Layers,
+  ClipboardList,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,377 +31,224 @@ interface SidebarProps {
   closeSidebar?: () => void;
 }
 
+interface NavItem {
+  icon: React.ReactNode;
+  label: string;
+  path?: string;
+  badge?: number;
+  children?: { label: string; path: string }[];
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'Main',
+    items: [
+      { icon: <LayoutDashboard size={17} />, label: 'Dashboard', path: '/dashboard' },
+      { icon: <Database size={17} />, label: 'Master Data', path: '/master-data' },
+    ],
+  },
+  {
+    title: 'CRM',
+    items: [
+      { icon: <Users size={17} />, label: 'Lead Management', path: '/leads' },
+      { icon: <Calendar size={17} />, label: 'Site Visits', path: '/site-visits' },
+      { icon: <BookOpen size={17} />, label: 'Bookings', path: '/bookings' },
+      { icon: <UserCheck size={17} />, label: 'Customer Profiles', path: '/customers' },
+    ],
+  },
+  {
+    title: 'Properties',
+    items: [
+      { icon: <Layers size={17} />, label: 'Projects', path: '/projects' },
+      { icon: <Building2 size={17} />, label: 'Properties', path: '/properties' },
+      { icon: <ImageIcon size={17} />, label: 'Media Library', path: '/media-library' },
+    ],
+  },
+  {
+    title: 'Sales',
+    items: [
+      { icon: <TrendingUp size={17} />, label: 'Sales Overview', path: '/sales' },
+      { icon: <UserCog size={17} />, label: 'Sales Team', path: '/sales-team' },
+      {
+        icon: <DollarSign size={17} />, label: 'Billing & Invoices', path: '/billing',
+        children: [
+          { label: 'Billing', path: '/billing' },
+          { label: 'Invoices', path: '/invoices' },
+        ],
+      },
+    ],
+  },
+  {
+    title: 'Communications',
+    items: [
+      { icon: <Bell size={17} />, label: 'Notifications', path: '/notifications', badge: 3 },
+      { icon: <MessageSquare size={17} />, label: 'Messages', path: '/messages' },
+    ],
+  },
+  {
+    title: 'CMS',
+    items: [
+      { icon: <Globe size={17} />, label: 'Website CMS', path: '/website-cms' },
+    ],
+  },
+  {
+    title: 'System',
+    items: [
+      { icon: <BarChart3 size={17} />, label: 'Reports & Analytics', path: '/reports' },
+      { icon: <Activity size={17} />, label: 'Activity Logs', path: '/activity-logs' },
+      { icon: <ClipboardList size={17} />, label: 'Admin Users', path: '/admin-users' },
+      { icon: <Settings size={17} />, label: 'Settings', path: '/settings' },
+    ],
+  },
+];
+
 const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
-  const [pagesOpen, setPagesOpen] = useState(pathname.startsWith('/pages'));
-  const [salesOpen, setSalesOpen] = useState(pathname.startsWith('/sales'));
-  const [authOpen, setAuthOpen] = useState(false);
-  const [componentsOpen, setComponentsOpen] = useState(pathname.startsWith('/components'));
-  const [messagesOpen, setMessagesOpen] = useState(pathname.startsWith('/messages'));
 
-  const togglePages = () => setPagesOpen(!pagesOpen);
-  const toggleSales = () => setSalesOpen(!salesOpen);
-  const toggleAuth = () => setAuthOpen(!authOpen);
-  const toggleComponents = () => setComponentsOpen(!componentsOpen);
-  const toggleMessages = () => setMessagesOpen(!messagesOpen);
+  // Track which sections with children are expanded
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    NAV_SECTIONS.forEach((section) => {
+      section.items.forEach((item) => {
+        if (item.children) {
+          const isActive = item.children.some((c) => pathname.startsWith(c.path))
+            || (item.path && pathname.startsWith(item.path));
+          init[item.label] = !!isActive;
+        }
+      });
+    });
+    return init;
+  });
 
-  // Handle navigation with sidebar closing for mobile
-  const handleNavigation = (path: string) => {
-    if (closeSidebar) {
-      closeSidebar();
-    }
+  const toggleExpand = (label: string) => {
+    setExpanded((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const navigate = (path: string) => {
+    if (closeSidebar && window.innerWidth < 1024) closeSidebar();
     router.push(path);
   };
 
+  const isActive = (path: string) => {
+    if (path === '/dashboard') return pathname === '/dashboard';
+    return pathname === path || pathname.startsWith(path + '/');
+  };
+
+  const isParentActive = (item: NavItem): boolean => {
+    if (item.path && isActive(item.path)) return true;
+    if (item.children) return item.children.some((c) => isActive(c.path));
+    return false;
+  };
+
   return (
-    <div
-      className={`h-screen fixed left-0 top-0 flex flex-col text-gray-700 border-r border-gray-200 rounded-tr-xl rounded-br-xl overflow-hidden transition-all duration-300 w-[200px] ${
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}
-      style={{
-        background: 'linear-gradient(to left, rgba(217, 217, 217, 1) 15%, rgba(115, 181, 236, 1) 150%)'
-      }}
-    >
-      {/* Logo */}
-      <div className="p-4 flex items-center">
-        <div className="bg-green-600 rounded-full h-8 w-8 flex items-center justify-center mr-2">
-          <span className="text-white font-bold">I</span>
-        </div>
-        <span className="text-xl font-semibold">Indusun</span>
-      </div>
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={closeSidebar}
+        />
+      )}
 
-      {/* Navigation */}
-      <nav className="flex-1 p-2 overflow-y-auto">
-        <div className="mb-4">
-          <button
-            onClick={() => handleNavigation('/dashboard')}
-            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
-              pathname === '/dashboard'
-                ? 'bg-white text-black'
-                : 'text-black hover:bg-gray-600 hover:text-white'
-            }`}
-          >
-            <LayoutDashboard className="w-5 h-5 mr-3 stroke-[2.5px]" />
-            <span>Dashboard</span>
-          </button>
-        </div>
-
-        {/* Master Data - Supabase Integration */}
-        <div className="mb-4">
-          <button
-            onClick={() => handleNavigation('/master-data')}
-            className={`w-full flex items-center p-3 rounded-md font-bold transition-colors ${
-              pathname === '/master-data'
-                ? 'bg-white text-black'
-                : 'text-black hover:bg-gray-600 hover:text-white'
-            }`}
-          >
-            <Database className="w-5 h-5 mr-3 stroke-[2.5px]" />
-            <span>Master Data</span>
-          </button>
-        </div>
-
-        {/* Pages Section with Dropdown */}
-        <div className="mb-2">
-          <div
-            className={`flex items-center justify-between p-3 rounded-md cursor-pointer font-bold transition-colors ${
-              pathname.startsWith('/pages')
-                ? 'bg-white text-black'
-                : 'text-black hover:bg-gray-600 hover:text-white'
-            }`}
-            onClick={togglePages}
-          >
-            <div className="flex items-center">
-              <FileText className="w-5 h-5 mr-3 stroke-[2.5px]" />
-              <span>Pages</span>
-            </div>
-            <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${pagesOpen ? 'transform rotate-180' : ''}`} />
+      {/* Sidebar */}
+      <aside
+        className={`sidebar sidebar-scroll ${isOpen ? '' : 'hidden lg:flex'} flex-col`}
+        style={{ transform: isOpen ? 'translateX(0)' : undefined }}
+      >
+        {/* Logo */}
+        <div className="sidebar-logo">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden">
+            <Image
+              src="/indusun-logo.png"
+              alt="Indusun"
+              width={40}
+              height={40}
+              className="object-contain w-full h-full"
+            />
           </div>
-
-          {pagesOpen && (
-            <div className="ml-4 mt-1 space-y-1">
-              {[
-                { slug: 'homepage', label: 'Homepage' },
-                { slug: 'properties', label: 'Properties Page' },
-                { slug: 'about-us', label: 'About Us' },
-                { slug: 'contact-us', label: 'Contact Us' },
-              ].map((p) => (
-                <button
-                  key={p.slug}
-                  onClick={() => handleNavigation(`/pages/${p.slug}`)}
-                  className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                    pathname === `/pages/${p.slug}`
-                      ? 'bg-white text-black'
-                      : 'text-black hover:bg-gray-600 hover:text-white'
-                  }`}
-                >
-                  <span>{p.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Sales Section with Dropdown */}
-        <div className="mb-2">
-          <div
-            className={`flex items-center justify-between p-3 rounded-md cursor-pointer font-bold transition-colors ${
-              pathname.startsWith('/sales')
-                ? 'bg-white text-black'
-                : 'text-black hover:bg-gray-600 hover:text-white'
-            }`}
-          >
-            <div
-              className="flex items-center w-full"
-              onClick={toggleSales}
-            >
-              <DollarSign className="w-5 h-5 mr-3 stroke-[2.5px]" />
-              <span>Sales</span>
-            </div>
-            <div onClick={toggleSales}>
-              <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${salesOpen ? 'transform rotate-180' : ''}`} />
-            </div>
+          <div className="overflow-hidden">
+            <p className="font-extrabold text-base leading-tight tracking-wide" style={{ color: '#0F172A' }}>INDUSUN</p>
+            <p className="text-xs font-medium" style={{ color: '#334155', letterSpacing: '0.08em' }}>
+              Real Estate CRM
+            </p>
           </div>
-
-          {/* Submenu */}
-          {salesOpen && (
-            <div className="ml-4 mt-1 space-y-1">
-              <button
-                onClick={() => handleNavigation('/sales')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/sales'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Sales Overview</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/properties')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/properties' || pathname.startsWith('/properties/')
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Properties</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/billing')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/billing' || pathname.startsWith('/billing/')
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Billing</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/invoices')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/invoices' || pathname.startsWith('/invoices/')
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Invoices</span>
-              </button>
-            </div>
-          )}
         </div>
 
-        <div className="mb-2">
-          <div
-            className={`flex items-center justify-between p-3 rounded-md cursor-pointer font-bold transition-colors ${
-              pathname.startsWith('/messages')
-                ? 'bg-white text-black'
-                : 'text-black hover:bg-gray-600 hover:text-white'
-            }`}
-          >
-            <div
-              className="flex items-center w-full"
-              onClick={toggleMessages}
-            >
-              <MessageSquare className="w-5 h-5 mr-3 stroke-[2.5px]" />
-              <span>Messages</span>
-            </div>
-            <div className="flex items-center">
-              <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 mr-2">1</span>
-              <div onClick={toggleMessages}>
-                <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${messagesOpen ? 'transform rotate-180' : ''}`} />
-              </div>
-            </div>
-          </div>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-2" style={{ scrollbarWidth: 'none' }}>
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <div className="sidebar-section-label">{section.title}</div>
+              {section.items.map((item) => {
+                const hasChildren = item.children && item.children.length > 0;
+                const parentActive = isParentActive(item);
+                const isExpanded = expanded[item.label];
 
-          {/* Messages Submenu */}
-          {messagesOpen && (
-            <div className="ml-4 mt-1 space-y-1">
-              <button
-                onClick={() => handleNavigation('/messages')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/messages'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Compose</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/messages/received')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/messages/received' || pathname.startsWith('/messages/received/')
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Received Messages</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/messages/history')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/messages/history' || pathname.startsWith('/messages/history/')
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <span>Message History</span>
-              </button>
-            </div>
-          )}
-        </div>
+                return (
+                  <div key={item.label}>
+                    <div
+                      className={`sidebar-item ${parentActive && !hasChildren ? 'active' : ''} ${parentActive && hasChildren ? 'font-semibold' : ''}`}
+                      onClick={() => {
+                        if (hasChildren) {
+                          toggleExpand(item.label);
+                        } else if (item.path) {
+                          navigate(item.path);
+                        }
+                      }}
+                    >
+                      <span className="item-icon">{item.icon}</span>
+                      <span className="item-label">{item.label}</span>
+                      {item.badge && (
+                        <span className="item-badge">{item.badge}</span>
+                      )}
+                      {hasChildren && (
+                        <ChevronDown
+                          size={15}
+                          style={{
+                            transition: 'transform 0.2s',
+                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                            color: '#475569',
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                    </div>
 
-        {/* Authentication Section with Dropdown */}
-        <div className="mb-2">
-          <div
-            className="flex items-center justify-between p-3 text-black hover:bg-gray-600 hover:text-white rounded-md cursor-pointer font-bold transition-colors"
-            onClick={toggleAuth}
-          >
-            <div className="flex items-center">
-              <Lock className="w-5 h-5 mr-3 stroke-[2.5px]" />
-              <span>Authentication</span>
+                    {/* Sub-menu */}
+                    {hasChildren && (
+                      <div
+                        className="sidebar-submenu"
+                        style={{
+                          maxHeight: isExpanded ? `${item.children!.length * 44}px` : '0px',
+                        }}
+                      >
+                        {item.children!.map((child) => (
+                          <div
+                            key={child.path}
+                            className={`sidebar-item ${isActive(child.path) ? 'active' : ''}`}
+                            onClick={() => navigate(child.path)}
+                          >
+                            <span className="item-label">{child.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${authOpen ? 'transform rotate-180' : ''}`} />
-          </div>
+          ))}
+        </nav>
 
-          {authOpen && (
-            <div className="ml-4 mt-1 space-y-1">
-              <button
-                onClick={() => handleNavigation('/clients')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/clients' || pathname.startsWith('/clients/')
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <Users className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>Clients</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/brokers')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/brokers' || pathname.startsWith('/brokers/')
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <UserPlus className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>Brokers</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/admin-users')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/admin-users' || pathname.startsWith('/admin-users/')
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <UserCog className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>Admin Users</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Components Section with Dropdown */}
-        <div className="mb-2">
-          <div
-            className={`flex items-center justify-between p-3 rounded-md cursor-pointer font-bold transition-colors ${
-              pathname.startsWith('/components')
-                ? 'bg-white text-black'
-                : 'text-black hover:bg-gray-600 hover:text-white'
-            }`}
-          >
-            <div
-              className="flex items-center w-full"
-              onClick={toggleComponents}
-            >
-              <Layers className="w-5 h-5 mr-3 stroke-[2.5px]" />
-              <span>Components</span>
-            </div>
-            <div onClick={toggleComponents}>
-              <ChevronDown className={`w-4 h-4 transition-transform stroke-[2.5px] ${componentsOpen ? 'transform rotate-180' : ''}`} />
-            </div>
-          </div>
-
-          {/* Components Submenu */}
-          {componentsOpen && (
-            <div className="ml-4 mt-1 space-y-1">
-              <button
-                onClick={() => handleNavigation('/components/calendar')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/components/calendar'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <Calendar className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>Calendar</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/components/tasks')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/components/tasks'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <CheckSquare className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>Task Manager</span>
-              </button>
-              <button
-                onClick={() => handleNavigation('/components/notes')}
-                className={`w-full flex items-center p-2 pl-8 rounded-md font-bold transition-colors text-left ${
-                  pathname === '/components/notes'
-                    ? 'bg-white text-black'
-                    : 'text-black hover:bg-gray-600 hover:text-white'
-                }`}
-              >
-                <StickyNote className="w-4 h-4 mr-2 stroke-[2.5px]" />
-                <span>Notes</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-      </nav>
-    </div>
+      </aside>
+    </>
   );
 };
 
 export default Sidebar;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

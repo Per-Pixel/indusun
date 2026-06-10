@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -18,8 +18,7 @@ import {
   Clock,
   Users
 } from 'lucide-react';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 
 // Types for invoices (same as in the listing page)
 interface Invoice {
@@ -315,48 +314,30 @@ const getGeneratorIcon = (generator: Invoice['generatedBy'], extraClasses = '') 
   }
 };
 
-export default function InvoiceDetailPage({ params }: { params: { id: string } }) {
+export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Toggle sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
 
   // Find the invoice by ID
-  const invoice = mockInvoices.find(inv => inv.id === params.id);
+  const invoice = mockInvoices.find(inv => inv.id === id);
 
   if (!invoice) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Invoice Not Found</h1>
-          <button
-            onClick={() => router.push('/invoices')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-          >
-            Back to Invoices
-          </button>
+      <CRMLayout>
+        <div className="page-container">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Invoice Not Found</h1>
+            <button onClick={() => router.push('/invoices')} className="btn btn-primary btn-sm">Back to Invoices</button>
+          </div>
         </div>
-      </div>
+      </CRMLayout>
     );
   }
 
   return (
-    <div className="flex h-screen bg-white">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 bg-white ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        {/* Top Navbar */}
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
-        </div>
-
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+    <CRMLayout>
+      <div className="page-container">
+        <div className="max-w-7xl mx-auto">
             {/* Back Button and Actions */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
               <div>
@@ -594,9 +575,8 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 </div>
               </div>
             </div>
-          </div>
         </div>
       </div>
-    </div>
+    </CRMLayout>
   );
 }

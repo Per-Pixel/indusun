@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 import UserForm from '@/components/users/UserForm';
 import { User } from '@/components/users/UserList';
 import { toast } from 'react-hot-toast';
@@ -115,7 +114,7 @@ export default function AdminUserDetailPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: Record<string, unknown>) => ({
       ...prev,
       [name]: value
     }));
@@ -123,10 +122,10 @@ export default function AdminUserDetailPage() {
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: Record<string, unknown>) => ({
       ...prev,
       permissions: {
-        ...prev.permissions,
+        ...(prev.permissions as Record<string, unknown>),
         [name]: checked
       }
     }));
@@ -330,19 +329,9 @@ export default function AdminUserDetailPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        {/* Top Navbar */}
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
-        </div>
-
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+    <CRMLayout>
+      <div className="page-container">
+        <div className="max-w-7xl mx-auto">
             {/* Back Button */}
             <button
               onClick={() => router.push('/admin-users')}
@@ -506,9 +495,8 @@ export default function AdminUserDetailPage() {
                 </div>
               </>
             )}
-          </div>
         </div>
       </div>
-    </div>
+    </CRMLayout>
   );
 }

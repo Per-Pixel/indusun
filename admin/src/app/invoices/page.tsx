@@ -14,8 +14,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 import ExportDropdown from '@/components/ui/ExportDropdown';
 
 interface Invoice {
@@ -41,8 +40,6 @@ export default function InvoicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [summary, setSummary] = useState<Summary>({ totalCount: 0, paidCount: 0, pendingCount: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -107,13 +104,7 @@ export default function InvoicesPage() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-        </div>
-
+    <CRMLayout>
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
 
@@ -297,7 +288,6 @@ export default function InvoicesPage() {
 
           </div>
         </div>
-      </div>
-    </div>
+    </CRMLayout>
   );
 }

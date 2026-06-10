@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 import UserList, { User } from '@/components/users/UserList';
 import UserForm from '@/components/users/UserForm';
 import { toast } from 'react-hot-toast';
@@ -60,15 +59,10 @@ const mockAdminUsers: User[] = [
 export default function AdminUsersPage() {
   const router = useRouter();
   const { user } = useAdminAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [adminUsers, setAdminUsers] = useState<User[]>(mockAdminUsers);
   const [showForm, setShowForm] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<User | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
 
   const handleAddNew = () => {
     setSelectedAdmin(undefined);
@@ -153,23 +147,12 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        {/* Top Navbar */}
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
+    <CRMLayout>
+      <div className="page-container">
+        <div className="mb-6">
+          <h1 className="page-title">Admin User Management</h1>
+          <p className="page-subtitle">Manage admin users and their permissions</p>
         </div>
-
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Admin User Management</h1>
-              <p className="text-gray-500">Manage admin users and their permissions</p>
-            </div>
 
             {showForm ? (
               <UserForm
@@ -190,9 +173,7 @@ export default function AdminUsersPage() {
                 useEditPage={true}
               />
             )}
-          </div>
-        </div>
       </div>
-    </div>
+    </CRMLayout>
   );
 }

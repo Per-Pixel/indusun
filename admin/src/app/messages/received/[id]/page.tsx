@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 import {
   ArrowLeft,
   MessageSquare,
@@ -153,18 +152,13 @@ const mockReceivedMessages: ReceivedMessage[] = [
   }
 ];
 
-export default function MessageDetailPage({ params }: { params: { id: string } }) {
+export default function MessageDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [message, setMessage] = useState<ReceivedMessage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [replyText, setReplyText] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
-
-  // Toggle sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -251,99 +245,50 @@ export default function MessageDetailPage({ params }: { params: { id: string } }
 
   // Load message data
   useEffect(() => {
-    if (params.id) {
+    if (id) {
       setIsLoading(true);
-
-      // Simulate API call
       setTimeout(() => {
-        const foundMessage = mockReceivedMessages.find(msg => msg.id === params.id);
-
+        const foundMessage = mockReceivedMessages.find(msg => msg.id === id);
         if (foundMessage) {
-          // If message was unread, mark it as read
-          if (foundMessage.status === 'unread') {
-            setMessage({
-              ...foundMessage,
-              status: 'read'
-            });
-          } else {
-            setMessage(foundMessage);
-          }
+          setMessage(foundMessage.status === 'unread' ? { ...foundMessage, status: 'read' } : foundMessage);
         }
-
         setIsLoading(false);
       }, 500);
     }
-  }, [params.id]);
+  }, [id]);
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-        <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-          <div className="sticky top-0 z-10">
-            <AdminTopNavbar toggleSidebar={toggleSidebar} />
-          </div>
-          <div className="p-6">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                <div className="animate-pulse flex flex-col items-center">
-                  <div className="rounded-full bg-gray-200 h-12 w-12 mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-                  <div className="h-32 bg-gray-200 rounded w-full"></div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <CRMLayout>
+        <div className="page-container">
+          <div className="card p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto" /></div>
         </div>
-      </div>
+      </CRMLayout>
     );
   }
 
   if (!message) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-        <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-          <div className="sticky top-0 z-10">
-            <AdminTopNavbar toggleSidebar={toggleSidebar} />
-          </div>
-          <div className="p-6">
-            <div className="max-w-4xl mx-auto">
-              <button
-                onClick={() => router.push('/messages/received')}
-                className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-              >
-                <ArrowLeft size={16} className="mr-1" />
-                <span>Back to Received Messages</span>
-              </button>
-              <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                <AlertCircle size={48} className="mx-auto mb-4 text-red-500" />
-                <h2 className="text-xl font-semibold mb-2">Message Not Found</h2>
-                <p className="text-gray-600 mb-4">The message you are looking for does not exist or has been deleted.</p>
-                <button
-                  onClick={() => router.push('/messages/received')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Return to Messages
-                </button>
-              </div>
-            </div>
+      <CRMLayout>
+        <div className="page-container">
+          <button onClick={() => router.push('/messages/received')} className="btn btn-ghost btn-sm mb-4">
+            <ArrowLeft size={16} /> Back to Messages
+          </button>
+          <div className="card p-8 text-center">
+            <AlertCircle size={48} className="mx-auto mb-4" style={{ color: 'var(--danger)' }} />
+            <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Message Not Found</h2>
+            <p className="mb-4" style={{ color: 'var(--text-muted)' }}>The message you are looking for does not exist or has been deleted.</p>
+            <button onClick={() => router.push('/messages/received')} className="btn btn-primary btn-sm">Return to Messages</button>
           </div>
         </div>
-      </div>
+      </CRMLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
-        </div>
-        <div className="p-6">
-          <div className="max-w-4xl mx-auto">
+    <CRMLayout>
+      <div className="page-container">
+        <div className="max-w-4xl mx-auto">
             {/* Back Button */}
             <button
               onClick={() => router.push('/messages/received')}
@@ -509,9 +454,8 @@ export default function MessageDetailPage({ params }: { params: { id: string } }
                 </div>
               )}
             </div>
-          </div>
         </div>
       </div>
-    </div>
+    </CRMLayout>
   );
 }

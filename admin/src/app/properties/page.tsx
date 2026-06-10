@@ -31,9 +31,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
 import { motion, AnimatePresence } from 'framer-motion';
+import CRMLayout from '@/components/CRMLayout';
 import ExportDropdown from '@/components/ui/ExportDropdown';
 
 // Enhanced property interface for management
@@ -189,7 +188,6 @@ export default function PropertiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [filterType, setFilterType] = useState<string>('All');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Property management state
@@ -329,43 +327,20 @@ export default function PropertiesPage() {
     }
   };
 
-  // Toggle sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
   // Toggle action menu
   const toggleActionMenu = (propertyId: string) => {
     setShowActionMenu(showActionMenu === propertyId ? null : propertyId);
   };
 
   // Show loading state during hydration
-  if (!mounted) {
-    return (
-      <div className="flex min-h-screen bg-gray-50">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        {/* Top Navbar */}
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
-        </div>
-
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+    <CRMLayout>
+      <div className="page-container">
+        <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
               <div>
@@ -393,10 +368,10 @@ export default function PropertiesPage() {
                 />
                 <button
                   onClick={handleAddProperty}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                  className="btn btn-primary btn-sm"
                 >
                   <Plus size={16} />
-                  <span>Add Property</span>
+                  Add Property
                 </button>
               </div>
             </div>
@@ -711,9 +686,8 @@ export default function PropertiesPage() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
         </div>
       </div>
-    </div>
+    </CRMLayout>
   );
 }

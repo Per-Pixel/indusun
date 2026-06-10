@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -16,8 +16,7 @@ import {
   CreditCard,
   FileText,
 } from 'lucide-react';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 import { formatIndianNumber } from '@/utils/format';
 
 interface MasterDataRecord {
@@ -64,9 +63,9 @@ function Field({ label, value }: { label: string; value: string | null | undefin
   );
 }
 
-export default function PropertyDetailPage({ params }: { params: { id: string } }) {
+export default function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'payment'>('details');
   const [property, setProperty] = useState<MasterDataRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +74,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`/api/properties/${params.id}`);
+        const res = await fetch(`/api/properties/${id}`);
         if (!res.ok) throw new Error('Property not found');
         const json = await res.json();
         if (json.error) throw new Error(json.error);
@@ -87,9 +86,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
       }
     };
     load();
-  }, [params.id]);
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  }, [id]);
 
   if (loading) {
     return (
@@ -119,16 +116,9 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   const dateLabel = property.date_of_form ?? property.date ?? property.emi_paid_date ?? '';
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
-        </div>
-
-        <div className="p-6">
-          <div className="max-w-5xl mx-auto">
+    <CRMLayout>
+      <div className="page-container">
+        <div className="max-w-5xl mx-auto">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 gap-4">
               <div>
@@ -271,9 +261,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </div>
               </div>
             )}
-          </div>
         </div>
       </div>
-    </div>
+    </CRMLayout>
   );
 }

@@ -18,8 +18,7 @@ import {
   Users,
   Home
 } from 'lucide-react';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 import ExportDropdown from '@/components/ui/ExportDropdown';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -221,8 +220,6 @@ export default function BillingPage() {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [filterSource, setFilterSource] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
   // State for real data from API
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -380,23 +377,8 @@ export default function BillingPage() {
     }
   };
 
-  // Toggle sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        {/* Top Navbar */}
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
-        </div>
-
+    <CRMLayout>
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -786,7 +768,6 @@ export default function BillingPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </CRMLayout>
   );
 }

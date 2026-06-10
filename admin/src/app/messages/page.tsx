@@ -2,8 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 import {
   MessageSquare,
   Users,
@@ -93,7 +92,6 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, bgColor, onCl
 
 export default function MessagesPage() {
   const router = useRouter();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'clients' | 'brokers' | 'admins'>('clients');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -117,11 +115,6 @@ export default function MessagesPage() {
   const [hasMoreBrokers, setHasMoreBrokers] = useState(true);
   const [totalClients, setTotalClients] = useState(0);
   const [totalBrokers, setTotalBrokers] = useState(0);
-
-  // Toggle sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
 
   // Fetch message statistics
   useEffect(() => {
@@ -389,17 +382,7 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-        {/* Top Navbar */}
-        <div className="sticky top-0 z-10">
-          <AdminTopNavbar toggleSidebar={toggleSidebar} />
-        </div>
-
+    <CRMLayout>
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -781,7 +764,6 @@ export default function MessagesPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </CRMLayout>
   );
 }

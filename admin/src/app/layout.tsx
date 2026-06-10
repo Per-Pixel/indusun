@@ -1,23 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 import { AdminAuthProvider } from '@/context/AdminAuthContext';
 import RouteTransitionToaster from '@/components/common/RouteTransitionToaster';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Indusun Admin Panel",
-  description: "Admin dashboard for Indusun Mortgage Service",
+  title: "Indusun CRM | Real Estate Management Platform",
+  description: "Enterprise-grade real estate CRM and admin panel for Indusun — Lead management, bookings, site visits, analytics and more.",
 };
 
 export default function RootLayout({
@@ -27,11 +16,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      </head>
+      <body className="antialiased">
         <AdminAuthProvider>
-          <Toaster position="top-right" />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: { fontFamily: 'Inter, sans-serif', fontSize: '14px' },
+              success: { iconTheme: { primary: '#C9A84C', secondary: '#fff' } },
+            }}
+          />
           <RouteTransitionToaster />
           {children}
         </AdminAuthProvider>

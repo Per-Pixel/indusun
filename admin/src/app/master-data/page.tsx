@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import DataTable from '@/components/ui/DataTable';
-import Sidebar from '@/components/dashboard/Sidebar';
-import AdminTopNavbar from '@/components/AdminTopNavbar';
+import CRMLayout from '@/components/CRMLayout';
 import ExportDropdown from '@/components/ui/ExportDropdown';
 import {
   Database,
@@ -56,8 +55,6 @@ const StatCard = ({ title, value, icon, gradient, badge }: StatCardProps) => (
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function MasterDataPage() {
-  /* ── layout ─────────────────────────────── */
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   /* ── data ───────────────────────────────── */
   const [data, setData] = useState<MasterDataOfGurukrupa[]>([]);
@@ -184,65 +181,39 @@ export default function MasterDataPage() {
   /* ── error screen ────────────────────────── */
   if (error) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
-        <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
-          <AdminTopNavbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-          <div className="p-8">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-2xl">
-              <div className="flex items-center gap-3 mb-3">
-                <AlertCircle className="h-6 w-6 text-red-600" />
-                <h1 className="text-xl font-bold text-red-700">Error Loading Data</h1>
-              </div>
-              <p className="text-red-600 mb-4">{error.message}</p>
-              <div className="bg-white rounded-lg p-4 text-sm mb-4">
-                <p className="font-semibold text-gray-700 mb-2">Troubleshooting:</p>
-                <ul className="list-disc list-inside space-y-1 text-gray-600">
-                  <li>Make sure <code className="bg-gray-100 px-1 rounded">.env.local</code> has both Publishable Key AND Service Role Key</li>
-                  <li>Get Service Role Key from: Supabase Dashboard → Project Settings → API</li>
-                  <li>Check that the table &quot;Master Data Of Gurukrupa&quot; exists in Supabase</li>
-                  <li>Restart the dev server after adding environment variables</li>
-                </ul>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleRefresh}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-                >
-                  <RefreshCw className="h-4 w-4" /> Retry
-                </button>
-              </div>
+      <CRMLayout>
+        <div className="page-container">
+          <div className="card p-6" style={{ borderColor: 'var(--danger)', background: 'var(--danger-bg)' }}>
+            <div className="flex items-center gap-3 mb-3">
+              <AlertCircle className="h-6 w-6" style={{ color: 'var(--danger)' }} />
+              <h1 className="text-xl font-bold" style={{ color: 'var(--danger)' }}>Error Loading Data</h1>
             </div>
+            <p className="mb-4 text-sm" style={{ color: 'var(--danger)' }}>{error.message}</p>
+            <button onClick={handleRefresh} className="btn btn-primary btn-sm">
+              <RefreshCw className="h-4 w-4" /> Retry
+            </button>
           </div>
         </div>
-      </div>
+      </CRMLayout>
     );
   }
 
   /* ── main render ─────────────────────────── */
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
-
-      {/* Content area */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-[200px]' : 'ml-0'} flex flex-col`}>
-        {/* Top Navbar */}
-        <AdminTopNavbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-
+    <CRMLayout>
         {/* Breadcrumb strip */}
-        <div className="flex items-center gap-2 px-6 py-3 bg-white border-b border-gray-200 text-sm text-gray-500">
+        <div className="flex items-center gap-2 px-6 py-2 bg-white border-b text-sm" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
           <Star className="h-4 w-4" />
           <span>Admin</span>
-          <span className="text-gray-300">/</span>
-          <span className="font-medium text-gray-800 flex items-center gap-1.5">
-            <Database className="h-4 w-4 text-blue-600" />
+          <span style={{ color: 'var(--border-strong)' }}>/</span>
+          <span className="font-medium flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+            <Database className="h-4 w-4" style={{ color: 'var(--gold)' }} />
             Master Database
           </span>
         </div>
 
         {/* Page body */}
-        <main className="flex-1 p-6 space-y-6">
+        <main className="p-6 space-y-6">
 
           {/* ── Header + Quick Actions ────────────────────────────────── */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -289,7 +260,7 @@ export default function MasterDataPage() {
               <button
                 onClick={handleRefresh}
                 title="Refresh data"
-                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition"
+                className="btn btn-primary btn-sm"
               >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh
@@ -440,7 +411,6 @@ export default function MasterDataPage() {
             Data fetched server-side with pagination.
           </p>
         </main>
-      </div>
-    </div>
+    </CRMLayout>
   );
 }

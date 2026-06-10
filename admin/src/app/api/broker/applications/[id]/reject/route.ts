@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import transporter from '@/lib/nodemailer';
+import { sendEmail } from '@/lib/nodemailer';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const applicationId = params.id;
+    const { id: applicationId } = await params;
     const { adminNotes } = await req.json();
     
     // Get the admin user from the token
@@ -44,8 +44,7 @@ export async function POST(
     );
     
     // Send rejection email
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+    await sendEmail({
       to: application.email,
       subject: 'Broker Application Status',
       html: `
