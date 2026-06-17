@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -24,8 +24,8 @@ import CRMLayout from '@/components/CRMLayout';
 interface Invoice {
   id: string;
   invoiceNumber: string;
-  date: string;
-  dueDate: string;
+  date: string | null;
+  dueDate: string | null;
   amount: string;
   status: 'Paid' | 'Pending' | 'Overdue';
   client: {
@@ -317,16 +317,42 @@ const getGeneratorIcon = (generator: Invoice['generatedBy'], extraClasses = '') 
 export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Find the invoice by ID
-  const invoice = mockInvoices.find(inv => inv.id === id);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/invoices/${id}`)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status === 404 ? 'Invoice not found' : `HTTP ${r.status}`)))
+      .then(data => {
+        if (cancelled) return;
+        const inv = data.invoice;
+        setInvoice(inv);
+      })
+      .catch((e: any) => { if (!cancelled) setFetchError(e.message || 'Failed to load invoice'); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, [id]);
 
-  if (!invoice) {
+  if (isLoading) {
+    return (
+      <CRMLayout>
+        <div className="p-12 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading invoice…</p>
+        </div>
+      </CRMLayout>
+    );
+  }
+
+  if (fetchError || !invoice) {
     return (
       <CRMLayout>
         <div className="page-container">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Invoice Not Found</h1>
+            {fetchError && <p className="text-sm text-gray-500 mb-2">{fetchError}</p>}
             <button onClick={() => router.push('/invoices')} className="btn btn-primary btn-sm">Back to Invoices</button>
           </div>
         </div>
@@ -336,10 +362,18 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <CRMLayout>
+      <style>{`
+        @media print {
+          body > * { visibility: hidden !important; }
+          #invoice-print-area, #invoice-print-area * { visibility: visible !important; }
+          #invoice-print-area { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; padding: 24px !important; background: white !important; }
+          .no-print { display: none !important; }
+        }
+      `}</style>
       <div className="page-container">
         <div className="max-w-7xl mx-auto">
             {/* Back Button and Actions */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 no-print">
               <div>
                 <button
                   onClick={() => router.push('/invoices')}
@@ -356,7 +390,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                   <Download size={16} />
                   <span>Download</span>
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <button onClick={() => window.print()} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
                   <Printer size={16} />
                   <span>Print</span>
                 </button>
@@ -371,6 +405,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
 
+            <div id="invoice-print-area">
             {/* Invoice Content */}
             <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
               {/* Invoice Header */}
@@ -396,7 +431,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                       <div className="flex items-center mt-1">
                         <Calendar size={16} className="text-gray-400 mr-1" />
                         {/* Date values */}
-                        <p className="text-sm font-medium text-gray-900">{new Date(invoice.date).toLocaleDateString()}</p>
+                        <p className="text-sm font-medium text-gray-900">{invoice.date ? new Date(invoice.date).toLocaleDateString('en-IN') : '—'}</p>
                       </div>
                     </div>
                     <div>
@@ -404,7 +439,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                       <div className="flex items-center mt-1">
                         <Calendar size={16} className="text-gray-400 mr-1" />
                         {/* Date values */}
-                        <p className="text-sm font-medium text-gray-900">{new Date(invoice.dueDate).toLocaleDateString()}</p>
+                        <p className="text-sm font-medium text-gray-900">{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN') : '—'}</p>
                       </div>
                     </div>
                     <div>
@@ -563,7 +598,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                   <div>
                     <h3 className="font-medium mb-3 text-[#111]">Notes</h3>
                     <p className="text-sm text-[#333]">
-                      Thank you for your business. Please make payment by the due date.
+                      {(invoice as any).notes || 'Thank you for your business. Please make payment by the due date.'}
                     </p>
                   </div>
                   <div>
@@ -575,6 +610,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
             </div>
+            </div> {/* end #invoice-print-area */}
         </div>
       </div>
     </CRMLayout>

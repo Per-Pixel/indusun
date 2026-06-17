@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -22,15 +22,15 @@ import AdminTopNavbar from '@/components/AdminTopNavbar';
 // Mock data for transactions (same as in the billing page)
 interface Transaction {
   id: string;
-  date: string;
+  date: string | null;
   description: string;
   amount: string;
   status: 'Completed' | 'Pending' | 'Failed';
-  source: 'Property Sale' | 'Broker Commission' | 'Service Fee' | 'Rental Income';
+  source: string;
   reference: string;
   client?: {
     name: string;
-    type: 'Individual' | 'Company';
+    type: string;
   };
 }
 
@@ -264,32 +264,41 @@ export default function BillingTransactionsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [filterSource, setFilterSource] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const transactionsPerPage = 10;
 
-  // Filter transactions based on search term and filters
-  const filteredTransactions = mockTransactions.filter(transaction => {
-    const matchesSearch =
-      transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (transaction.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterStatus]);
 
-    const matchesStatus = filterStatus === 'All' || transaction.status === filterStatus;
-    const matchesSource = filterSource === 'All' || transaction.source === filterSource;
+  useEffect(() => {
+    const p = new URLSearchParams();
+    p.set('page', currentPage.toString());
+    p.set('limit', transactionsPerPage.toString());
+    if (searchTerm) p.set('search', searchTerm);
+    if (filterStatus !== 'All') p.set('status', filterStatus);
 
-    return matchesSearch && matchesStatus && matchesSource;
-  });
+    setIsLoading(true);
+    setFetchError(null);
+    fetch(`/api/billing?${p}`)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then(data => {
+        setTransactions(data.transactions || []);
+        setTotalItems(data.pagination?.totalItems || 0);
+        setTotalPages(data.pagination?.totalPages || 0);
+      })
+      .catch((e: any) => setFetchError(e.message || 'Failed to load transactions'))
+      .finally(() => setIsLoading(false));
+  }, [currentPage, searchTerm, filterStatus]);
 
-  // Calculate pagination
-  const indexOfLastTransaction = currentPage * transactionsPerPage;
-  const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
-  const currentTransactions = filteredTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
-  const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
+  const indexOfFirstTransaction = totalItems === 0 ? 0 : (currentPage - 1) * transactionsPerPage + 1;
+  const indexOfLastTransaction  = Math.min(currentPage * transactionsPerPage, totalItems);
 
-  // Toggle sidebar
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -362,22 +371,6 @@ export default function BillingTransactionsPage() {
                   </div>
                 </div>
 
-                <div className="relative">
-                  <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
-                    value={filterSource}
-                    onChange={(e) => setFilterSource(e.target.value)}
-                  >
-                    <option value="All">All Sources</option>
-                    <option value="Property Sale">Property Sale</option>
-                    <option value="Broker Commission">Broker Commission</option>
-                    <option value="Service Fee">Service Fee</option>
-                    <option value="Rental Income">Rental Income</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <ChevronDown size={16} />
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -398,13 +391,25 @@ export default function BillingTransactionsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {currentTransactions.map((transaction) => (
+                    {isLoading ? (
+                      Array(5).fill(0).map((_, i) => (
+                        <tr key={i} className="animate-pulse">
+                          {Array(8).fill(0).map((__, j) => (
+                            <td key={j} className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-full"></div></td>
+                          ))}
+                        </tr>
+                      ))
+                    ) : fetchError ? (
+                      <tr><td colSpan={8} className="px-6 py-8 text-center text-red-500">{fetchError}</td></tr>
+                    ) : transactions.length === 0 ? (
+                      <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-500">No transactions found.</td></tr>
+                    ) : transactions.map((transaction) => (
                       <tr key={transaction.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {transaction.id}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(transaction.date).toLocaleDateString()}
+                          {transaction.date ? new Date(transaction.date).toLocaleDateString('en-IN') : '—'}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
                           {transaction.description}
@@ -425,7 +430,7 @@ export default function BillingTransactionsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800">
                           <button
-                            onClick={() => router.push(`/invoices/${transaction.reference.split('-')[2]}`)}
+                            onClick={() => router.push(`/invoices/${transaction.id}`)}
                           >
                             {transaction.reference}
                           </button>
@@ -470,13 +475,9 @@ export default function BillingTransactionsPage() {
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Showing <span className="font-medium">{indexOfFirstTransaction + 1}</span> to{' '}
-                        <span className="font-medium">
-                          {indexOfLastTransaction > filteredTransactions.length
-                            ? filteredTransactions.length
-                            : indexOfLastTransaction}
-                        </span>{' '}
-                        of <span className="font-medium">{filteredTransactions.length}</span> results
+                        Showing <span className="font-medium">{indexOfFirstTransaction}</span> to{' '}
+                        <span className="font-medium">{indexOfLastTransaction}</span>{' '}
+                        of <span className="font-medium">{totalItems}</span> results
                       </p>
                     </div>
                     <div>

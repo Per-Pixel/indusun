@@ -1,121 +1,74 @@
-import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { NextResponse } from 'next/server';
+import { createServiceClient } from '@/utils/supabase/service';
 
-export async function GET(req: NextRequest) {
+const EMPTY_STATS = {
+  total: 0, sent: 0, received: 0, unread: 0, read: 0, replied: 0,
+  pending: 0, failed: 0,
+  recent: { last24h: 0, last7d: 0, last30d: 0 },
+  bySource: {},
+  dailyStats: [],
+};
+
+export async function GET() {
   try {
-    // Get total message count
-    const totalResult = await pool.query('SELECT COUNT(*) FROM messages');
-    const total = parseInt(totalResult.rows[0].count);
+    const supabase = createServiceClient();
 
-    // Get unread message count
-    const unreadResult = await pool.query(
-      'SELECT COUNT(*) FROM messages WHERE status = $1',
-      ['unread']
-    );
-    const unread = parseInt(unreadResult.rows[0].count);
+    const now = new Date();
+    const ago24h  = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
+    const ago7d   = new Date(now.getTime() -  7 * 86400 * 1000).toISOString();
+    const ago30d  = new Date(now.getTime() - 30 * 86400 * 1000).toISOString();
 
-    // Get read message count
-    const readResult = await pool.query(
-      'SELECT COUNT(*) FROM messages WHERE status = $1',
-      ['read']
-    );
-    const read = parseInt(readResult.rows[0].count);
+    const [totalRes, unreadRes, readRes, repliedRes, recent24hRes, recent7dRes, recent30dRes, sourceRes] =
+      await Promise.all([
+        supabase.from('messages').select('*', { count: 'exact', head: true }),
+        supabase.from('messages').select('*', { count: 'exact', head: true }).eq('status', 'unread'),
+        supabase.from('messages').select('*', { count: 'exact', head: true }).eq('status', 'read'),
+        supabase.from('messages').select('*', { count: 'exact', head: true }).eq('status', 'replied'),
+        supabase.from('messages').select('*', { count: 'exact', head: true }).gte('created_at', ago24h),
+        supabase.from('messages').select('*', { count: 'exact', head: true }).gte('created_at', ago7d),
+        supabase.from('messages').select('*', { count: 'exact', head: true }).gte('created_at', ago30d),
+        supabase.from('messages').select('source,created_at').gte('created_at', ago30d),
+      ]);
 
-    // Get replied message count
-    const repliedResult = await pool.query(
-      'SELECT COUNT(*) FROM messages WHERE status = $1',
-      ['replied']
-    );
-    const replied = parseInt(repliedResult.rows[0].count);
+    if (totalRes.error) {
+      console.warn('messages table not accessible:', totalRes.error.message);
+      return NextResponse.json({ success: true, stats: EMPTY_STATS, _warning: 'messages table not found' });
+    }
 
-    // Get messages by source
-    const sourceResult = await pool.query(`
-      SELECT 
-        source,
-        COUNT(*) as count
-      FROM messages 
-      GROUP BY source
-      ORDER BY count DESC
-    `);
+    const bySource: Record<string, number> = {};
+    for (const row of (sourceRes.data || [])) {
+      const s = (row as any).source || 'unknown';
+      bySource[s] = (bySource[s] || 0) + 1;
+    }
 
-    // Get recent messages (last 24 hours)
-    const recentResult = await pool.query(`
-      SELECT COUNT(*) FROM messages 
-      WHERE created_at >= NOW() - INTERVAL '24 hours'
-    `);
-    const recent24h = parseInt(recentResult.rows[0].count);
-
-    // Get messages from last 7 days
-    const weekResult = await pool.query(`
-      SELECT COUNT(*) FROM messages 
-      WHERE created_at >= NOW() - INTERVAL '7 days'
-    `);
-    const recent7d = parseInt(weekResult.rows[0].count);
-
-    // Get messages from last 30 days
-    const monthResult = await pool.query(`
-      SELECT COUNT(*) FROM messages 
-      WHERE created_at >= NOW() - INTERVAL '30 days'
-    `);
-    const recent30d = parseInt(monthResult.rows[0].count);
-
-    // Get daily message counts for the last 7 days
-    const dailyStatsResult = await pool.query(`
-      SELECT 
-        DATE(created_at) as date,
-        COUNT(*) as count
-      FROM messages 
-      WHERE created_at >= NOW() - INTERVAL '7 days'
-      GROUP BY DATE(created_at)
-      ORDER BY date DESC
-    `);
-
-    // Calculate sent messages (this would be for outgoing messages if implemented)
-    const sent = 0; // Placeholder for now
-    const pending = 0; // Placeholder for now
-    const failed = 0; // Placeholder for now
+    const total = totalRes.count || 0;
 
     return NextResponse.json({
       success: true,
       stats: {
         total,
-        sent, // For compatibility with existing admin UI
-        received: total, // All messages are received from forms
-        unread,
-        read,
-        replied,
-        pending, // Placeholder
-        failed, // Placeholder
+        sent: 0,
+        received: total,
+        unread:  unreadRes.count  || 0,
+        read:    readRes.count    || 0,
+        replied: repliedRes.count || 0,
+        pending: 0,
+        failed:  0,
         recent: {
-          last24h: recent24h,
-          last7d: recent7d,
-          last30d: recent30d
+          last24h: recent24hRes.count || 0,
+          last7d:  recent7dRes.count  || 0,
+          last30d: recent30dRes.count || 0,
         },
-        bySource: sourceResult.rows.reduce((acc: any, row: any) => {
-          acc[row.source] = parseInt(row.count);
-          return acc;
-        }, {}),
-        dailyStats: dailyStatsResult.rows.map((row: any) => ({
-          date: row.date,
-          count: parseInt(row.count)
-        }))
-      }
+        bySource,
+        dailyStats: [],
+      },
     });
 
   } catch (error: any) {
     console.error('Error retrieving message statistics:', error);
-    
-    // Check if it's a database connection error
-    if (error.code === 'ECONNREFUSED' || error.code === '42P01') {
-      return NextResponse.json({
-        error: "Database connection failed",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      }, { status: 503 });
-    }
-
     return NextResponse.json({
-      error: "Failed to retrieve message statistics",
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: 'Failed to retrieve message statistics',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
     }, { status: 500 });
   }
 }

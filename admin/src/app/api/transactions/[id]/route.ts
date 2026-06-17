@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
+import { parseAmount } from '@/utils/dataUtils';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
-
-function parseAmount(amount: string | null | undefined): number {
-  if (!amount) return 0;
-  const cleaned = String(amount).replace(/[^0-9.]/g, '');
-  return parseFloat(cleaned) || 0;
-}
 
 // GET handler – fetch a single master-data record by ID
 export async function GET(

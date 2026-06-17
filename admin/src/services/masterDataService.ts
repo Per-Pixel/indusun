@@ -2,6 +2,7 @@
 
 import { createServiceClient } from '@/utils/supabase/service';
 import { MasterDataOfGurukrupa, MasterDataSummary } from '@/types/masterData';
+import { parseAmount } from '@/utils/dataUtils';
 
 // Table name with spaces needs special handling
 const TABLE_NAME = 'Master Data Of Gurukrupa';
@@ -196,13 +197,6 @@ export async function getMasterDataSummary(): Promise<{
     const uniqueClients = new Set(data.map((item) => item.client_name).filter(Boolean));
     const uniqueSocieties = new Set(data.map((item) => item.society_name).filter(Boolean));
     const uniqueBrokers = new Set(data.map((item) => item["broker's_name"]).filter(Boolean));
-
-    // Parse amounts (remove currency symbols and convert to number)
-    const parseAmount = (amount: string | null): number => {
-      if (!amount) return 0;
-      const cleaned = amount.replace(/[^0-9.]/g, '');
-      return parseFloat(cleaned) || 0;
-    };
 
     const totalPlotAmount = data.reduce((sum, item) => sum + parseAmount(item.plot_amount), 0);
     const totalPaidAmount = data.reduce((sum, item) => sum + parseAmount(item.paid_amount), 0);

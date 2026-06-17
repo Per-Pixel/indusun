@@ -1,174 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery } from '@/lib/db';
+import { createServiceClient } from '@/utils/supabase/service';
+
+const TABLE_NAME = 'Master Data Of Gurukrupa';
+const PAGE_SIZE = 1000;
+
+function rowToClient(name: string, phone: string | null, idx: number) {
+  const parts = name.trim().split(' ');
+  const first = parts[0].toLowerCase();
+  const last  = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
+  return {
+    id:         idx + 1,
+    name:       name.trim(),
+    phone:      phone || '',
+    email:      `${first}.${last}@example.com`,
+    role:       'client',
+    status:     'active',
+    location:   '',
+    image:      `/images/avatars/avatar_${((idx + 1) % 24) + 1}.jpg`,
+    lastActive: new Date().toISOString().split('T')[0],
+    createdAt:  new Date().toISOString().split('T')[0],
+  };
+}
 
 export async function GET(req: NextRequest) {
   try {
-    console.log('Fetching clients from database...');
-    
-    // Get pagination parameters from query string
-    const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = parseInt(url.searchParams.get('limit') || '50');
-    const search = url.searchParams.get('search') || '';
-    
-    // Calculate offset
-    const offset = (page - 1) * limit;
-    
-    // Build the query based on search parameter
-    let query = `
-      SELECT 
-        id,
-        full_name,
-        normalized_name as name,
-        contact_number as phone,
-        created_at as "createdAt"
-      FROM clients
-    `;
-    
-    const queryParams: any[] = [];
-    
-    // Add search condition if search parameter is provided
-    if (search) {
-      query += ` WHERE normalized_name ILIKE $1 OR contact_number ILIKE $1`;
-      queryParams.push(`%${search}%`);
-    }
-    
-    // Add sorting - alphabetical by normalized_name
-    query += ` ORDER BY normalized_name ASC`;
-    
-    // Add pagination
-    query += ` LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
-    queryParams.push(limit, offset);
-    
-    // Get total count for pagination
-    let countQuery = `SELECT COUNT(*) FROM clients`;
-    if (search) {
-      countQuery += ` WHERE normalized_name ILIKE $1 OR contact_number ILIKE $1`;
-    }
-    
-    // Execute the queries
-    const [clientsResult, countResult] = await Promise.all([
-      executeQuery(query, queryParams),
-      executeQuery(countQuery, search ? [`%${search}%`] : [])
-    ]).catch((err: Error) => {
-      console.error('Database query error:', err.message);
-      throw new Error(`Database query failed: ${err.message}`);
-    });
-    
-    const totalClients = parseInt(countResult.rows[0].count);
-    const totalPages = Math.ceil(totalClients / limit);
-    
-    console.log(`Found ${totalClients} clients in database, showing page ${page} of ${totalPages}`);
+    const url    = new URL(req.url);
+    const page   = Math.max(1, parseInt(url.searchParams.get('page')  || '1'));
+    const limit  = Math.max(1, parseInt(url.searchParams.get('limit') || '50'));
+    const search = (url.searchParams.get('search') || '').trim().toLowerCase();
 
-    if (clientsResult.rows.length === 0) {
-      return NextResponse.json(
-        { clients: [] },
-        { status: 200 }
+    const supabase = createServiceClient();
+
+    // Fetch only the two columns needed to build the client list
+    const { count: totalRows } = await supabase
+      .from(TABLE_NAME)
+      .select('*', { count: 'exact', head: true });
+
+    const batches = Math.ceil((totalRows || 0) / PAGE_SIZE);
+    let allRows: { client_name: string | null; contact_no: string | null }[] = [];
+
+    for (let b = 0; b < batches; b += 10) {
+      const end = Math.min(b + 10, batches);
+      const results = await Promise.all(
+        Array.from({ length: end - b }, (_, i) => {
+          const from = (b + i) * PAGE_SIZE;
+          return supabase
+            .from(TABLE_NAME)
+            .select('client_name,contact_no')
+            .range(from, from + PAGE_SIZE - 1);
+        })
+      );
+      for (const { data } of results) allRows = allRows.concat(data || []);
+    }
+
+    // Deduplicate by client_name (case-insensitive), preserve original casing
+    const seen = new Map<string, { display: string; phone: string | null }>();
+    for (const r of allRows) {
+      if (!r.client_name) continue;
+      const key = r.client_name.trim().toLowerCase();
+      if (!seen.has(key)) seen.set(key, { display: r.client_name.trim(), phone: r.contact_no });
+    }
+
+    // Build full client list sorted alphabetically
+    let clients = Array.from(seen.values())
+      .sort((a, b) => a.display.localeCompare(b.display))
+      .map(({ display, phone }, idx) => rowToClient(display, phone, idx));
+
+    // Apply search filter
+    if (search) {
+      clients = clients.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search) ||
+          c.phone.includes(search)
       );
     }
 
-    // Map database results to expected format
-    const clients = clientsResult.rows.map(client => {
-      // Generate a simplified email from the name (which is now normalized_name)
-      const nameParts = client.name.split(' ');
-      const firstName = nameParts[0].toLowerCase();
-      const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : '';
-      const email = `${firstName}.${lastName}@example.com`;
-      
-      return {
-        id: client.id,
-        name: client.name,
-        phone: client.phone,
-        // Add missing fields required by the frontend
-        email,
-        role: 'client',
-        status: 'active',
-        location: '',
-        image: `/images/avatars/avatar_${(client.id % 24) + 1}.jpg`,
-        lastActive: new Date().toISOString().split('T')[0],
-        createdAt: client.createdAt ? new Date(client.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-      };
-    });
+    const totalItems = clients.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    const paged = clients.slice((page - 1) * limit, page * limit);
 
     return NextResponse.json({
-      clients,
-      pagination: {
-        page,
-        limit,
-        totalItems: totalClients,
-        totalPages
-      }
+      clients: paged,
+      pagination: { page, limit, totalItems, totalPages },
     });
   } catch (error) {
     console.error('Error fetching clients:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch clients' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const data = await req.json();
-    const { name, phone } = data;
-
-    // Validate required fields
-    if (!name || !phone) {
-      return NextResponse.json(
-        { error: 'Name and phone are required fields' },
-        { status: 400 }
-      );
-    }
-
-    // Generate normalized name (lowercase first letter of each word)
-    const normalizedName = name.split(' ')
-      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-
-    // Insert client into database
-    const result = await executeQuery(`
-      INSERT INTO clients (
-        full_name,
-        normalized_name,
-        contact_number
-      ) VALUES ($1, $2, $3)
-      RETURNING 
-        id,
-        normalized_name as name,
-        contact_number as phone,
-        created_at as "createdAt"
-    `, [
-      name,
-      normalizedName,
-      phone
-    ]);
-
-    // Generate a simplified email from the normalized name
-    const nameParts = normalizedName.split(' ');
-    const firstName = nameParts[0].toLowerCase();
-    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : '';
-    const email = `${firstName}.${lastName}@example.com`;
-    
-    const newClient = {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      phone: result.rows[0].phone,
-      email,
-      role: 'client',
-      status: 'active',
-      location: '',
-      image: `/images/avatars/avatar_${(result.rows[0].id % 24) + 1}.jpg`,
-      lastActive: new Date().toISOString().split('T')[0],
-      createdAt: result.rows[0].createdAt ? new Date(result.rows[0].createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-    };
-
-    return NextResponse.json({ client: newClient }, { status: 201 });
-  } catch (error) {
-    console.error('Error creating client:', error);
-    return NextResponse.json(
-      { error: 'Failed to create client' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    { error: 'Client creation is not supported on the read-only master data table. Add the client directly in the source spreadsheet.' },
+    { status: 405 }
+  );
 }

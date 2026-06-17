@@ -1,33 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
+import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
-
-function parseAmount(v: any): number {
-  if (!v) return 0;
-  return parseFloat(String(v).replace(/[^0-9.]/g, '')) || 0;
-}
-
-function normalizeDate(d: any): string | null {
-  if (!d || !String(d).trim()) return null;
-  const s = String(d).trim();
-  // Handle DD/MM/YYYY or DD-MM-YYYY (Indian format)
-  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (m) {
-    const iso = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-    const dt = new Date(iso);
-    if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
-  }
-  try {
-    const dt = new Date(s);
-    if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
-  } catch {}
-  return null;
-}
-
-function isPaid(emiDate: any): boolean {
-  return !!(emiDate && String(emiDate).trim());
-}
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,35 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
+import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
 const BROKER_FETCH_LIMIT = 10000; // enough rows to cover all unique broker names
 
-function parseAmount(v: string | null | undefined): number {
-  if (!v) return 0;
-  return parseFloat(String(v).replace(/[^0-9.]/g, '')) || 0;
-}
-
-// Normalise any date format → 'YYYY-MM-DD', returns null if unparseable / blank
-function normalizeDate(d: string | null | undefined): string | null {
-  if (!d || !String(d).trim()) return null;
-  const s = String(d).trim();
-  // Handle DD/MM/YYYY or DD-MM-YYYY (Indian format)
-  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (m) {
-    const iso = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-    const dt = new Date(iso);
-    if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
-  }
-  try {
-    const dt = new Date(s);
-    if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
-  } catch {}
-  return null;
-}
-
 // Whether a row should be treated as "Completed"
 function isCompleted(row: any): boolean {
-  return !!row.emi_paid_date && String(row.emi_paid_date).trim() !== '';
+  return isPaid(row.emi_paid_date);
 }
 
 function mapRow(row: any) {
