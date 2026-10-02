@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         }
 
         let user;
-        let identifier;
+        let identifier: string;
 
         // Determine identifier for brute-force protection
         if (isEmailLogin) {

@@ -36,6 +36,8 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     if (supabaseUrl && supabaseKey) {
       const client = createBrowserClient(supabaseUrl, supabaseKey);
       setSupabase(client);
+    } else {
+      setIsLoading(false);
     }
   }, []);
 

@@ -40,7 +40,7 @@ export default function FavoritesPage() {
   });
 
   // Remove from favorites
-  const removeFromFavorites = (id: number) => {
+  const removeFromFavorites = (id: string) => {
     setFavorites(favorites.filter(property => property.id !== id));
   };
 

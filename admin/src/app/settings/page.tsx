@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
@@ -8,7 +8,8 @@ import {
   User, Bell, Lock, Palette, Shield, Mail, Smartphone,
   Eye, EyeOff, Save, Check, Moon, Sun, Monitor, AlertCircle,
   Camera, Laptop, MapPin, Globe, Phone, AtSign, Upload,
-  Crown, Trash2, Zap, Loader2
+  Crown, Trash2, Zap, Loader2, Activity, Wifi, WifiOff,
+  RefreshCw, Database, MessageSquare, Server, ExternalLink
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -16,7 +17,7 @@ const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'account' | 'notifications' | 'security' | 'appearance';
+type Tab = 'profile' | 'account' | 'notifications' | 'security' | 'appearance' | 'api_console';
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'profile',       label: 'Profile',       icon: <User size={15} />      },
@@ -24,6 +25,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'notifications', label: 'Notifications',  icon: <Bell size={15} />      },
   { id: 'security',      label: 'Security',       icon: <Lock size={15} />      },
   { id: 'appearance',    label: 'Appearance',     icon: <Palette size={15} />   },
+  { id: 'api_console',   label: 'API Console',    icon: <Activity size={15} />  },
 ];
 
 const ACCENT_COLORS = [
@@ -35,11 +37,7 @@ const ACCENT_COLORS = [
   { id: 'rose',    bg: 'bg-rose-500',    ring: 'ring-rose-500'    },
 ];
 
-const MOCK_SESSIONS = [
-  { id: 1, device: 'Chrome on Windows 11',  location: 'Mumbai, India', time: 'Active now',           current: true  },
-  { id: 2, device: 'Safari on iPhone 15',   location: 'Mumbai, India', time: '2 hours ago',          current: false },
-  { id: 3, device: 'Firefox on macOS',      location: 'Pune, India',   time: 'Yesterday, 6:30 PM',   current: false },
-];
+
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function getPasswordStrength(pw: string) {
@@ -153,13 +151,38 @@ export default function SettingsPage() {
   const [pw, setPw]         = useState({ current: '', next: '', confirm: '' });
   const [showPw, setShowPw] = useState({ current: false, next: false, confirm: false });
   const [twoFA, setTwoFA]   = useState(false);
-  const [sessions, setSessions] = useState(MOCK_SESSIONS);
+  const [sessions, setSessions] = useState([
+    { id: 1, device: 'Current Session', location: 'Local Session', time: 'Active now', current: true },
+  ]);
 
   // Appearance state
   const [theme, setTheme]     = useState<'light' | 'dark' | 'system'>('light');
   const [accent, setAccent]   = useState('blue');
   const [compact, setCompact] = useState(false);
   const [animations, setAnimations] = useState(true);
+
+  // Initialize current session device
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const ua = navigator.userAgent;
+      let browser = 'Browser';
+      if (ua.includes('Edg')) browser = 'Edge';
+      else if (ua.includes('Chrome')) browser = 'Chrome';
+      else if (ua.includes('Firefox')) browser = 'Firefox';
+      else if (ua.includes('Safari')) browser = 'Safari';
+
+      let os = 'Device';
+      if (ua.includes('Win')) os = 'Windows';
+      else if (ua.includes('Mac')) os = 'macOS';
+      else if (ua.includes('Linux')) os = 'Linux';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+
+      setSessions([
+        { id: 1, device: `${browser} on ${os}`, location: 'Current Location', time: 'Active now', current: true },
+      ]);
+    }
+  }, []);
 
   // ── Load persisted data on mount ─────────────────────────────────────────
   useEffect(() => {
@@ -616,13 +639,37 @@ export default function SettingsPage() {
                   )}
 
                   <button type="button"
-                    onClick={() => {
-                      if (pw.next && pw.next === pw.confirm) {
-                        toast.success('Password updated');
-                        setPw({ current: '', next: '', confirm: '' });
-                      } else toast.error('Check your password inputs');
+                    disabled={updatingPw}
+                    onClick={async () => {
+                      if (!pw.next || pw.next !== pw.confirm) {
+                        toast.error('Check your password inputs - passwords must match');
+                        return;
+                      }
+                      if (pw.next.length < 8) {
+                        toast.error('Password must be at least 8 characters');
+                        return;
+                      }
+                      setUpdatingPw(true);
+                      try {
+                        if (!supabase) {
+                          toast.error('Authentication client not available');
+                          return;
+                        }
+                        const { error } = await supabase.auth.updateUser({ password: pw.next });
+                        if (error) {
+                          toast.error(error.message);
+                        } else {
+                          toast.success('Password updated successfully');
+                          setPw({ current: '', next: '', confirm: '' });
+                        }
+                      } catch (err: any) {
+                        toast.error(err?.message || 'Failed to update password');
+                      } finally {
+                        setUpdatingPw(false);
+                      }
                     }}
-                    className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors">
+                    {updatingPw && <Loader2 size={14} className="animate-spin" />}
                     Update Password
                   </button>
                 </div>
@@ -742,6 +789,9 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {/* ─────────────────────────── API Console Tab ─────────────────────────────── */}
+          {activeTab === 'api_console' && <ApiConsolePanel />}
+
           {/* ── Footer ── */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
             <p className="text-xs text-gray-400">Changes are saved to your account profile</p>
@@ -759,5 +809,201 @@ export default function SettingsPage() {
           </div>
         </div>
     </CRMLayout>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// API Console Panel
+// ═══════════════════════════════════════════════════════════════════════
+interface HealthCheck {
+  id: string;
+  name: string;
+  category: string;
+  ok: boolean;
+  latency: number;
+  detail: string;
+}
+interface HealthResult {
+  status: 'healthy' | 'warning' | 'degraded';
+  timestamp: string;
+  checks: HealthCheck[];
+  summary: { total: number; passing: number; failing: number };
+}
+
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  'Database':      <Database size={14} className="text-blue-500" />,
+  'External APIs': <Wifi size={14} className="text-purple-500" />,
+  'Internal APIs': <Server size={14} className="text-gray-500" />,
+};
+
+function ApiConsolePanel() {
+  const [result, setResult] = React.useState<HealthResult | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [lastRun, setLastRun] = React.useState<string | null>(null);
+
+  const runCheck = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/health');
+      const data: HealthResult = await res.json();
+      setResult(data);
+      setLastRun(new Date().toLocaleTimeString('en-IN'));
+    } catch (e: any) {
+      toast.error('Health check failed: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => { runCheck(); }, []);
+
+  const grouped = result
+    ? result.checks.reduce<Record<string, HealthCheck[]>>((acc, c) => {
+        (acc[c.category] = acc[c.category] || []).push(c);
+        return acc;
+      }, {})
+    : {};
+
+  const statusColors = {
+    healthy:  { bg: 'bg-green-50',  border: 'border-green-200',  text: 'text-green-700',  dot: 'bg-green-500'  },
+    warning:  { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700', dot: 'bg-yellow-500' },
+    degraded: { bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-700',    dot: 'bg-red-500'    },
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900">API Health Console</h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {lastRun ? `Last checked at ${lastRun}` : 'Running checks...'}
+          </p>
+        </div>
+        <button
+          onClick={runCheck}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors"
+        >
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          {loading ? 'Checking…' : 'Run Health Check'}
+        </button>
+      </div>
+
+      {/* Overall status banner */}
+      {result && (() => {
+        const s = statusColors[result.status];
+        return (
+          <div className={`flex items-center gap-4 p-4 rounded-xl border ${s.bg} ${s.border}`}>
+            <div className={`h-3 w-3 rounded-full ${s.dot} animate-pulse flex-shrink-0`} />
+            <div className="flex-1">
+              <p className={`text-sm font-semibold capitalize ${s.text}`}>{result.status}</p>
+              <p className="text-xs text-gray-500">
+                {result.summary.passing} passing · {result.summary.failing} failing · {result.summary.total} total checks
+              </p>
+            </div>
+            <p className="text-xs text-gray-400">{new Date(result.timestamp).toLocaleString('en-IN')}</p>
+          </div>
+        );
+      })()}
+
+      {/* Loading skeleton */}
+      {loading && !result && (
+        <div className="space-y-3">
+          {[1,2,3].map(i => (
+            <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {/* Grouped checks */}
+      {Object.entries(grouped).map(([category, checks]) => (
+        <div key={category}>
+          <div className="flex items-center gap-2 mb-3">
+            {CATEGORY_ICONS[category]}
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{category}</h4>
+            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-xs text-gray-400">
+              {checks.filter(c => c.ok).length}/{checks.length} ok
+            </span>
+          </div>
+          <div className="space-y-2">
+            {checks.map(check => (
+              <div
+                key={check.id}
+                className={`flex items-center gap-3 p-3 rounded-lg border ${
+                  check.ok
+                    ? 'bg-white border-gray-200'
+                    : 'bg-red-50 border-red-200'
+                }`}
+              >
+                {/* Status dot */}
+                <div className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${
+                  check.ok ? 'bg-green-500' : 'bg-red-500'
+                }`} />
+
+                {/* Name */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900">{check.name}</p>
+                  <p className={`text-xs truncate ${
+                    check.ok ? 'text-gray-400' : 'text-red-600 font-medium'
+                  }`}>
+                    {check.detail}
+                  </p>
+                </div>
+
+                {/* Latency */}
+                {check.latency > 0 && (
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    check.latency < 500  ? 'bg-green-100 text-green-700' :
+                    check.latency < 2000 ? 'bg-yellow-100 text-yellow-700' :
+                                          'bg-red-100 text-red-700'
+                  }`}>
+                    {check.latency}ms
+                  </span>
+                )}
+
+                {/* Status badge */}
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  check.ok
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                }`}>
+                  {check.ok ? 'OK' : 'FAIL'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* Quick links */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <ExternalLink size={14} className="text-gray-400" />
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Quick Links</h4>
+          <div className="flex-1 h-px bg-gray-100" />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: 'Supabase Dashboard',    href: 'https://supabase.com/dashboard/project/ebhnbnewthtzhxsinuad' },
+            { label: 'AWS SNS Dashboard',     href: 'https://console.aws.amazon.com/sns/v3/home' },
+            { label: 'AWS SNS SMS Docs',      href: 'https://docs.aws.amazon.com/sns/latest/dg/sns-mobile-phone-number-as-subscriber.html' },
+            { label: 'Raw Health JSON',       href: '/api/health' },
+          ].map(link => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 p-3 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <ExternalLink size={11} />
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

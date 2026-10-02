@@ -2,17 +2,26 @@
 
 import Link from 'next/link';
 import { Bed, Bath, Clock, MapPin, Heart } from 'lucide-react';
-import { Property } from '@/types/property';
 import { formatTimeAgo } from '@/utils/dateUtils';
 import { useState } from 'react';
 
+interface PropertyCardData {
+  id: string | number;
+  title: string;
+  location: string;
+  price: string;
+  image: string;
+  beds?: number;
+  baths?: number;
+  views?: number;
+  listedDate?: string;
+  postedDate?: string;
+  featured?: boolean;
+}
+
 interface PropertyCardDesktopProps {
-  property: Property & {
-    views?: number;
-    listedDate: string;
-    featured?: boolean;
-  };
-  onFavoriteToggle?: (propertyId: number) => void;
+  property: PropertyCardData;
+  onFavoriteToggle?: (propertyId: string | number) => void;
 }
 
 export const PropertyCardDesktop = ({ property, onFavoriteToggle }: PropertyCardDesktopProps) => {
@@ -97,7 +106,7 @@ export const PropertyCardDesktop = ({ property, onFavoriteToggle }: PropertyCard
               </div>
               <div className="flex items-center text-xs text-gray-500 mt-1">
                 <Clock className="h-3.5 w-3.5 text-gray-400 mr-1" />
-                <span>{formatTimeAgo(property.listedDate)}</span>
+                <span>{formatTimeAgo(property.listedDate || property.postedDate || new Date().toISOString())}</span>
               </div>
             </div>
           </div>

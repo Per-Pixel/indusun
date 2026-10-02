@@ -16,8 +16,14 @@ console.log("Environment variables check:", {
     clientSecretLength: process.env.GOOGLE_CLIENT_SECRET?.length
 });
 
-// Initialize passport with Google strategy
-passport.use(
+const googleAuthConfigured = Boolean(
+    process.env.GOOGLE_CLIENT_ID &&
+    process.env.GOOGLE_CLIENT_SECRET &&
+    process.env.NEXT_PUBLIC_APP_URL
+);
+
+if (googleAuthConfigured) {
+    passport.use(
     new GoogleStrategy(
         {
             clientID: process.env.GOOGLE_CLIENT_ID || "",
@@ -67,7 +73,8 @@ passport.use(
             }
         }
     )
-);
+    );
+}
 
 // Configure passport session handling
 passport.serializeUser((user: any, done: (err: any, id?: any) => void) => {
@@ -91,6 +98,10 @@ const initializePassport = () => {
 };
 
 export async function GET(request: NextRequest): Promise<Response> {
+    if (!googleAuthConfigured) {
+        return NextResponse.json({ error: "Google authentication is not configured" }, { status: 503 });
+    }
+
     console.log("Google auth GET request received");
     // Create a URL object from the request URL
     const url = new URL(request.url);

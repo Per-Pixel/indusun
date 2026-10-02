@@ -22,7 +22,8 @@ interface Notification {
   action?: { label: string; href: string };
 }
 
-const MOCK_NOTIFICATIONS: Notification[] = [
+const INITIAL_NOTIFICATIONS: Notification[] = [];
+/*
   { id: '1',  type: 'lead',    priority: 'high',   title: 'New Hot Lead Registered',           description: 'Rahul Sharma submitted an inquiry for Gurukrupa Heights Phase 2. Budget ₹85L.',                       time: '5 min ago',    read: false, action: { label: 'View Lead', href: '/leads' } },
   { id: '2',  type: 'visit',   priority: 'high',   title: 'Site Visit Confirmed — Today 3 PM',  description: 'Priya Mehta confirmed her site visit at Indusun Greens. Assigned to Sneha Patel.',                   time: '22 min ago',   read: false, action: { label: 'View Visit', href: '/site-visits' } },
   { id: '3',  type: 'payment', priority: 'high',   title: 'Payment Received ₹5.5L',             description: 'Vikram Patel cleared second instalment for Plot #A-42, Gurukrupa Residency.',                        time: '1 hour ago',   read: false, action: { label: 'View Booking', href: '/bookings' } },
@@ -38,7 +39,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
   { id: '13', type: 'alert',   priority: 'high',   title: 'Inventory Alert — Low Availability',  description: 'Only 3 plots remaining at Gurukrupa Heights Phase 1. Consider activating waitlist.',                 time: '3 days ago',   read: true  },
   { id: '14', type: 'visit',   priority: 'low',    title: '3 Visits Scheduled for Tomorrow',     description: 'Upcoming: Neha Singh 10AM, Ravi Tiwari 12PM, Sunita Rao 4PM. Confirm with sales team.',              time: '3 days ago',   read: true,  action: { label: 'View Schedule', href: '/site-visits' } },
   { id: '15', type: 'payment', priority: 'high',   title: 'Payment Failed — Auto Retry',         description: 'EMI deduction failed for Prakash Verma (Plot #D-22). Manual follow-up required.',                   time: '4 days ago',   read: true  },
-];
+*/
 
 const TYPE_CONFIG: Record<NotifType, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
   lead:    { icon: <Users size={16} />,       color: '#3B82F6', bg: 'bg-blue-50',    label: 'Lead' },
@@ -64,7 +65,7 @@ function NotificationCard({ notif, onToggleRead, onDelete }: {
   return (
     <div
       className={`card p-4 flex items-start gap-4 transition-all ${notif.read ? 'opacity-70' : ''}`}
-      style={{ borderLeft: notif.read ? undefined : `3px solid ${cfg.color}` }}
+      style={notif.read ? undefined : { borderColor: cfg.color }}
     >
       <div className={`p-2.5 rounded-xl flex-shrink-0 ${cfg.bg}`} style={{ color: cfg.color }}>
         {cfg.icon}
@@ -120,7 +121,7 @@ function NotificationCard({ notif, onToggleRead, onDelete }: {
 }
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   const [filterType, setFilterType] = useState<NotifType | 'all'>('all');
   const [filterRead, setFilterRead] = useState<'all' | 'unread' | 'read'>('all');
   const [search, setSearch] = useState('');

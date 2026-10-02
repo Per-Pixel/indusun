@@ -24,6 +24,7 @@ import {
   UserCog,
   Layers,
   ClipboardList,
+  Lock,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -86,8 +87,9 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Communications',
     items: [
-      { icon: <Bell size={17} />, label: 'Notifications', path: '/notifications', badge: 3 },
+      { icon: <Bell size={17} />, label: 'Notifications', path: '/notifications' },
       { icon: <MessageSquare size={17} />, label: 'Messages', path: '/messages' },
+      { icon: <Lock size={17} />, label: 'Internal Comms', path: '/internal-comms' },
     ],
   },
   {
@@ -103,6 +105,12 @@ const NAV_SECTIONS: NavSection[] = [
       { icon: <Activity size={17} />, label: 'Activity Logs', path: '/activity-logs' },
       { icon: <ClipboardList size={17} />, label: 'Admin Users', path: '/admin-users' },
       { icon: <Settings size={17} />, label: 'Settings', path: '/settings' },
+    ],
+  },
+  {
+    title: 'Help & Docs',
+    items: [
+      { icon: <BookOpen size={17} />, label: 'Docs', path: '/guide' },
     ],
   },
 ];

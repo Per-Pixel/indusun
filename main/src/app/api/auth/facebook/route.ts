@@ -14,8 +14,14 @@ console.log("Environment variables check:", {
     appUrl: process.env.NEXT_PUBLIC_APP_URL
 });
 
-// Initialize passport with Facebook strategy
-passport.use(
+const facebookAuthConfigured = Boolean(
+    process.env.FACEBOOK_CLIENT_ID &&
+    process.env.FACEBOOK_CLIENT_SECRET &&
+    process.env.NEXT_PUBLIC_APP_URL
+);
+
+if (facebookAuthConfigured) {
+    passport.use(
     new FacebookStrategy(
         {
             clientID: process.env.FACEBOOK_CLIENT_ID || "",
@@ -60,7 +66,8 @@ passport.use(
             }
         }
     )
-);
+    );
+}
 
 // Configure passport session handling (if not already configured in Google auth)
 if (!passport._serializers || passport._serializers.length === 0) {
@@ -86,6 +93,10 @@ const initializePassport = () => {
 };
 
 export async function GET(request: NextRequest): Promise<Response> {
+    if (!facebookAuthConfigured) {
+        return NextResponse.json({ error: "Facebook authentication is not configured" }, { status: 503 });
+    }
+
     console.log("Facebook auth GET request received");
     // Create a URL object from the request URL
     const url = new URL(request.url);

@@ -218,7 +218,7 @@ export const getCustomerPayments = (userId: string): Payment[] => {
 };
 
 // Login credentials for testing
-export const mockLoginCredentials = {
+export const mockLoginCredentials: Record<string, { password: string; user: User }> = {
   // Customer credentials
   'perpixel@email.com': { password: 'customer123', user: mockCustomerUsers[0] },
   '+91 8849180795': { password: 'customer123', user: mockCustomerUsers[0] },

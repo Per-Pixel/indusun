@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // Custom Hamburger Menu Component
-const HamburgerMenu = ({ onClick }) => {
+const HamburgerMenu = ({ onClick }: { onClick: React.MouseEventHandler<HTMLButtonElement> }) => {
   return (
     <button 
       onClick={onClick}

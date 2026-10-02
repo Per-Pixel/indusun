@@ -131,6 +131,84 @@ export async function sendPasswordResetEmail(email: string, resetToken: string):
   }
 }
 
+export interface PaymentAlertDetails {
+  email: string;
+  customerName: string;
+  invoiceNumber: string;
+  amount: string;
+  dueDate: string;
+  propertyName?: string;
+  paymentLink?: string;
+}
+
+// Send pending payment alert email
+export async function sendPaymentPendingAlertEmail(details: PaymentAlertDetails): Promise<boolean> {
+  try {
+    const { email, customerName, invoiceNumber, amount, dueDate, propertyName, paymentLink } = details;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📧 Payment Pending Alert for ${email}:`);
+      console.log(`  Customer: ${customerName}`);
+      console.log(`  Invoice: ${invoiceNumber}`);
+      console.log(`  Amount: ${amount}`);
+      console.log(`  Due Date: ${dueDate}`);
+      console.log(`  Property: ${propertyName || 'N/A'}`);
+      console.log(`  Payment Link: ${paymentLink || 'N/A'}`);
+      return true;
+    }
+
+    const mailOptions: EmailTemplate = {
+      to: email,
+      subject: `Payment Reminder - Invoice ${invoiceNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1e40af;">Payment Reminder</h2>
+          <p>Dear ${customerName},</p>
+          <p>This is a friendly reminder that your payment is pending.</p>
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr>
+              <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Invoice Number</td>
+              <td style="padding: 8px; border: 1px solid #e5e7eb;">${invoiceNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Amount Due</td>
+              <td style="padding: 8px; border: 1px solid #e5e7eb;">${amount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Due Date</td>
+              <td style="padding: 8px; border: 1px solid #e5e7eb;">${dueDate}</td>
+            </tr>
+            ${propertyName ? `
+            <tr>
+              <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Property</td>
+              <td style="padding: 8px; border: 1px solid #e5e7eb;">${propertyName}</td>
+            </tr>
+            ` : ''}
+          </table>
+          ${paymentLink ? `
+          <p>
+            <a href="${paymentLink}" 
+               style="background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Pay Now
+            </a>
+          </p>
+          ` : ''}
+          <p>Please complete your payment before the due date to avoid any late charges.</p>
+          <p>If you have already paid, please ignore this reminder.</p>
+          <p>Best regards,<br>The Indusun Team</p>
+        </div>
+      `,
+      text: `Dear ${customerName}, your payment of ${amount} for invoice ${invoiceNumber} is due on ${dueDate}. ${paymentLink ? `Pay here: ${paymentLink}` : ''}`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Error sending payment pending alert email:', error);
+    return false;
+  }
+}
+
 // Test email connection
 export async function testEmailConnection(): Promise<boolean> {
   try {

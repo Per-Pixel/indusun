@@ -38,6 +38,7 @@ const initForm = () => ({
   date:          today,
   notes:         '',
   status:        'Pending' as 'Pending' | 'Paid',
+  paymentMethod: 'Cash',
 });
 
 // ── InvoicePreview ───────────────────────────────────────────────────────────
@@ -113,6 +114,15 @@ function InvoicePreview({ form }: { form: ReturnType<typeof initForm> }) {
           {form.status}
         </span>
       </div>
+
+      {/* Payment method */}
+      {form.paymentMethod && (
+        <div className="mb-6">
+          <p className="text-sm text-gray-600">
+            <span className="font-semibold text-gray-700">Payment Method:</span> {form.paymentMethod}
+          </p>
+        </div>
+      )}
 
       {/* Notes */}
       {form.notes && (
@@ -357,6 +367,22 @@ export default function CreateInvoicePage() {
                   value={form.amount}
                   onChange={e => set('amount', e.target.value)}
                 />
+              </div>
+
+              <div>
+                <label className={labelCls}>Payment Method</label>
+                <select
+                  className={inputCls}
+                  value={form.paymentMethod}
+                  onChange={e => set('paymentMethod', e.target.value)}
+                >
+                  <option value="Cash">Cash</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Card">Card</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
               <div>

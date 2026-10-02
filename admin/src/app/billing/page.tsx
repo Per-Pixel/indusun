@@ -4,9 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
-  Filter,
   ChevronDown,
-  Calendar,
   DollarSign,
   CreditCard,
   TrendingUp,
@@ -14,9 +12,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Building,
-  User,
   Users,
-  Home
+  Home,
+  Eye,
+  X,
+  CheckCircle,
+  Clock,
+  XCircle,
+  User,
+  Hash,
+  Tag,
+  CalendarDays
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
 import ExportDropdown from '@/components/ui/ExportDropdown';
@@ -229,6 +235,19 @@ export default function BillingPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  // Billing detail drawer
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const openDrawer = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setIsDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    setTimeout(() => setSelectedTransaction(null), 300); // wait for animation
+  };
   
   // Define fetchBillingData function at the component level
   const fetchBillingData = async () => {
@@ -618,6 +637,7 @@ export default function BillingPage() {
                       <th className="px-6 py-3">Source</th>
                       <th className="px-6 py-3">Reference</th>
                       <th className="px-6 py-3">Client</th>
+                      <th className="px-6 py-3">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -700,6 +720,15 @@ export default function BillingPage() {
                               </div>
                             </div>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button
+                              onClick={() => openDrawer(transaction)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                            >
+                              <Eye size={13} />
+                              View
+                            </button>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -768,6 +797,157 @@ export default function BillingPage() {
             </div>
           </div>
         </div>
+
+      {/* ── Billing Detail Slide-over Drawer ─────────────────────────────── */}
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${
+          isDrawerOpen ? 'pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{ background: 'rgba(0,0,0,0.45)' }}
+        onClick={closeDrawer}
+      />
+
+      {/* Drawer Panel */}
+      <div
+        className={`fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-in-out ${
+          isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {selectedTransaction && (
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Transaction Details</h2>
+                <p className="text-xs text-gray-500 mt-0.5">{selectedTransaction.reference}</p>
+              </div>
+              <button
+                onClick={closeDrawer}
+                className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+
+              {/* Status Banner */}
+              <div className={`flex items-center gap-3 p-4 rounded-xl border ${
+                selectedTransaction.status === 'Completed'
+                  ? 'bg-green-50 border-green-200'
+                  : selectedTransaction.status === 'Pending'
+                  ? 'bg-yellow-50 border-yellow-200'
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                {selectedTransaction.status === 'Completed' ? (
+                  <CheckCircle size={24} className="text-green-600 flex-shrink-0" />
+                ) : selectedTransaction.status === 'Pending' ? (
+                  <Clock size={24} className="text-yellow-600 flex-shrink-0" />
+                ) : (
+                  <XCircle size={24} className="text-red-600 flex-shrink-0" />
+                )}
+                <div>
+                  <p className={`font-semibold text-sm ${
+                    selectedTransaction.status === 'Completed' ? 'text-green-800'
+                    : selectedTransaction.status === 'Pending' ? 'text-yellow-800'
+                    : 'text-red-800'
+                  }`}>{selectedTransaction.status}</p>
+                  <p className="text-xs text-gray-500">Payment status</p>
+                </div>
+                <div className="ml-auto text-right">
+                  <p className="text-xl font-bold text-gray-900">{selectedTransaction.amount}</p>
+                  <p className="text-xs text-gray-500">Total amount</p>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Transaction Info</h3>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {/* Description */}
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <FileText size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-500">Description</p>
+                      <p className="text-sm font-medium text-gray-900 mt-0.5">{selectedTransaction.description}</p>
+                    </div>
+                  </div>
+
+                  {/* Date */}
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <CalendarDays size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500">Transaction Date</p>
+                      <p className="text-sm font-medium text-gray-900 mt-0.5">
+                        {selectedTransaction.date || <span className="text-gray-400 italic">Not recorded</span>}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Reference */}
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <Hash size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500">Reference No.</p>
+                      <p className="text-sm font-medium text-gray-900 mt-0.5">{selectedTransaction.reference}</p>
+                    </div>
+                  </div>
+
+                  {/* Source */}
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <Tag size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500">Source</p>
+                      <p className="text-sm font-medium text-gray-900 mt-0.5">{selectedTransaction.source}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Client Info */}
+              {selectedTransaction.client && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Client</h3>
+                  <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                    <div className="h-10 w-10 rounded-full bg-blue-200 flex items-center justify-center flex-shrink-0">
+                      <User size={18} className="text-blue-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{selectedTransaction.client.name}</p>
+                      <p className="text-xs text-gray-500">{selectedTransaction.client.type}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 space-y-2">
+              {selectedTransaction.status === 'Pending' && (
+                <button
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                  onClick={() => {
+                    // Placeholder — wire to mark-as-paid API when available
+                    alert(`Mark transaction ${selectedTransaction.reference} as paid — API integration pending`);
+                  }}
+                >
+                  <CheckCircle size={16} />
+                  Mark as Paid
+                </button>
+              )}
+              <button
+                onClick={closeDrawer}
+                className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </CRMLayout>
   );
 }

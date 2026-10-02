@@ -42,6 +42,7 @@ interface Invoice {
   };
   generatedBy: 'System' | 'Admin' | 'Broker';
   generatorName?: string;
+  paymentMethod?: string;
   items: {
     description: string;
     quantity: number;
@@ -386,9 +387,13 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  title="Download / Save as PDF"
+                >
                   <Download size={16} />
-                  <span>Download</span>
+                  <span>Download PDF</span>
                 </button>
                 <button onClick={() => window.print()} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
                   <Printer size={16} />
@@ -574,7 +579,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-[#333] mb-2">Payment Method</h4>
-                    <p className="text-sm text-[#333]">Bank Transfer</p>
+                    <p className="text-sm text-[#333]">{invoice.paymentMethod || '—'}</p>
                   </div>
                 </div>
 

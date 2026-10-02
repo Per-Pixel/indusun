@@ -5,33 +5,12 @@ import { ChevronDown, Search, Phone, Mail, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@/utils/supabase/client';
 
 import { PropertyCard } from './components/PropertyCard';
 import { PropertyCardDesktop } from './components/PropertyCardDesktop';
 import { MobileSearchForm } from '@/app/(main)/components/MobileSearchForm';
-
-// Types
-interface Property {
-  id: number;
-  title: string;
-  type: 'Apartment' | 'Villa' | 'House' | 'Plot' | 'Commercial';
-  location: string;
-  price: string;
-  priceNumeric: number; // For sorting
-  beds?: number;
-  baths?: number;
-  area: string;
-  areaNumeric: number; // For sorting
-  featured: boolean;
-  new: boolean;
-  image?: string;
-  description: string;
-  amenities: string[];
-  postedDate: string;
-}
-
-// Mock data
-import { mockProperties } from './mockData';
+import type { Property } from './types';
 
 const searchSuggestions = [
   "2 BHK property near me",
@@ -66,12 +45,28 @@ const PropertiesPage = () => {
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>(mockProperties);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // New states
   const [, setIsSearchView] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Keep the listing in sync with admin changes without a manual refresh.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('public-property-listings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Master Data Of Gurukrupa' }, () => {
+        setRefreshKey((key) => key + 1);
+      })
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, []);
 
   // Mobile detection
   useEffect(() => {
@@ -95,22 +90,12 @@ const PropertiesPage = () => {
   }, []);
 
   // Handle search button click
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Search clicked!');
-    
     if (isMobile) {
-      // For mobile: redirect to search page
-      window.location.href = `/properties/search?q=${searchTerm}`;
+      window.location.href = `/properties/search?q=${encodeURIComponent(searchTerm)}`;
     } else {
-      // For desktop: show search results in current page
       setIsSearchView(true);
-      const filtered = mockProperties.filter(property =>
-        property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredProperties(filtered);
     }
   };
 
@@ -136,10 +121,10 @@ const PropertiesPage = () => {
   // Add these state variables at the top of your component
   const [visibleProperties, setVisibleProperties] = useState(6);
   const [visibleLandProperties, setVisibleLandProperties] = useState(6);
-  const [, setFavorites] = useState<number[]>([]);
+  const [, setFavorites] = useState<(string | number)[]>([]);
 
   // Add this function to handle favorite toggling
-  const handleFavoriteToggle = (propertyId: number) => {
+  const handleFavoriteToggle = (propertyId: string | number) => {
     setFavorites(prev => {
       if (prev.includes(propertyId)) {
         return prev.filter(id => id !== propertyId);
@@ -162,53 +147,37 @@ const PropertiesPage = () => {
     setVisibleLandProperties(prev => prev + 6);
   };
 
-  // Apply filters and sorting
+  // Load live listings from Supabase through the server route, then apply local sorting.
   useEffect(() => {
-    let result = [...mockProperties];
+    const controller = new AbortController();
+    setIsLoading(true);
+    setFetchError(null);
 
-    // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(property =>
-        property.title.toLowerCase().includes(term) ||
-        property.location.toLowerCase().includes(term) ||
-        property.description.toLowerCase().includes(term)
-      );
-    }
+    fetch(`/api/properties?q=${encodeURIComponent(searchTerm)}`, { signal: controller.signal, cache: 'no-store' })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Unable to load properties');
+        return payload.data as Property[];
+      })
+      .then((properties) => {
+        let result = properties.filter((property) =>
+          (!['House', 'Villa', 'Apartment', 'Plot'].includes(propertyType) || property.type.toLowerCase() === propertyType.toLowerCase()) &&
+          property.priceNumeric >= priceRange[0] && property.priceNumeric <= priceRange[1]
+        );
+        if (sortBy === 'price-asc') result = result.toSorted((a, b) => a.priceNumeric - b.priceNumeric);
+        if (sortBy === 'price-desc') result = result.toSorted((a, b) => b.priceNumeric - a.priceNumeric);
+        if (sortBy === 'area-asc') result = result.toSorted((a, b) => a.areaNumeric - b.areaNumeric);
+        if (sortBy === 'area-desc') result = result.toSorted((a, b) => b.areaNumeric - a.areaNumeric);
+        setFilteredProperties(result);
+        setCurrentPage(1);
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') setFetchError(error instanceof Error ? error.message : 'Unable to load properties');
+      })
+      .finally(() => setIsLoading(false));
 
-    // Apply property type filter
-    if (propertyType !== 'all') {
-      result = result.filter(property => property.type === propertyType);
-    }
-
-    // Apply price range filter
-    result = result.filter(property =>
-      property.priceNumeric >= priceRange[0] && property.priceNumeric <= priceRange[1]
-    );
-
-    // Apply sorting
-    switch (sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => a.priceNumeric - b.priceNumeric);
-        break;
-      case 'price-desc':
-        result.sort((a, b) => b.priceNumeric - a.priceNumeric);
-        break;
-      case 'area-asc':
-        result.sort((a, b) => a.areaNumeric - b.areaNumeric);
-        break;
-      case 'area-desc':
-        result.sort((a, b) => b.areaNumeric - a.areaNumeric);
-        break;
-      case 'newest':
-        // For mock data, we'll just use the original order
-        // In a real app, you would sort by date
-        break;
-    }
-
-    setFilteredProperties(result);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [searchTerm, propertyType, priceRange, sortBy]);
+    return () => controller.abort();
+  }, [searchTerm, propertyType, priceRange, sortBy, refreshKey]);
 
   // Get current properties for pagination
   const indexOfLastProperty = currentPage * propertiesPerPage;
@@ -487,12 +456,14 @@ const PropertiesPage = () => {
             </span>
           </h2>
           <p className="text-base text-gray-500 mb-8 max-w-3xl mx-auto line-clamp-2">
-            Explore a curated selection of stunning homes tailored to your lifestyle. From cozy city apartments to spacious family houses, our featured listings offer something for everyone. Start your journey to the perfect home with the best properties on the market right now.
+            Explore verified listings currently available through Indusun. Availability and pricing are refreshed from the master data source.
           </p>
+          {isLoading && <p className="text-sm text-gray-500 mb-6">Loading current listings…</p>}
+          {fetchError && <p role="alert" className="text-sm text-red-600 mb-6">{fetchError}</p>}
 
               {/* Properties Grid */}
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-                {mockProperties
+                {filteredProperties
                   .filter(property => property.type !== 'Plot') // Filter out plots for regular properties
                   .slice(0, visibleProperties)
                   .map((property) => (
@@ -505,7 +476,7 @@ const PropertiesPage = () => {
               </div>
 
           {/* Load More Button */}
-          {mockProperties.filter(property => property.type !== 'Plot').length > visibleProperties && (
+          {filteredProperties.filter(property => property.type !== 'Plot').length > visibleProperties && (
             <div className="text-center mt-6">
               <motion.button 
                 variants={buttonVariants}
@@ -544,7 +515,7 @@ const PropertiesPage = () => {
 
           {/* Properties Grid */}
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-            {mockProperties
+            {filteredProperties
               .filter(property => property.type === 'Plot') // Only show plots
               .slice(0, visibleLandProperties)
               .map((property) => (
@@ -557,7 +528,7 @@ const PropertiesPage = () => {
           </div>
 
           {/* Load More Button for Lands */}
-          {mockProperties.filter(property => property.type === 'Plot').length > visibleLandProperties && (
+          {filteredProperties.filter(property => property.type === 'Plot').length > visibleLandProperties && (
             <div className="text-center mt-6">
               <motion.button 
                 variants={buttonVariants}

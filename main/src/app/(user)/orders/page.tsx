@@ -6,8 +6,19 @@ import {
   Package, Search, Filter, ChevronDown, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 
+type OrderStatus = 'Delivered' | 'Processing' | 'Shipped' | 'Pending';
+
+interface Order {
+  id: string;
+  date: string;
+  product: string;
+  quantity: number;
+  status: OrderStatus;
+  total: string;
+}
+
 // Mock data for orders
-const mockOrders = [
+const mockOrders: Order[] = [
   { 
     id: 'ORD-2023-001', 
     date: '2023-11-15', 
@@ -51,8 +62,8 @@ const mockOrders = [
 ];
 
 // Status badge component
-const StatusBadge = ({ status }) => {
-  const getStatusColor = (status) => {
+const StatusBadge = ({ status }: { status: OrderStatus }) => {
+  const getStatusColor = (status: OrderStatus) => {
     switch(status) {
       case 'Delivered': return 'bg-green-100 text-green-800';
       case 'Shipped': return 'bg-blue-100 text-blue-800';

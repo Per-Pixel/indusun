@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/middleware/auth';
 import pool from '@/lib/db';
 import { z as zod } from "zod";
-import transporter from "@/lib/nodemailer";
+import { transporter } from "@/lib/nodemailer";
 
 const brokerApplicationSchema = zod.object({
   experience: zod.string(),

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Menu, Search, Bell, User, Settings, LogOut, ChevronDown,
   Activity, Shield, Crown, X, Home, Building2, Users, Calendar,
+  BookOpen, HelpCircle
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 
@@ -17,6 +18,7 @@ const QUICK_LINKS = [
   { icon: <Users size={14} />, label: 'Leads', path: '/leads' },
   { icon: <Building2 size={14} />, label: 'Properties', path: '/properties' },
   { icon: <Calendar size={14} />, label: 'Site Visits', path: '/site-visits' },
+  { icon: <BookOpen size={14} />, label: 'Docs', path: '/guide' },
 ];
 
 const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
@@ -139,21 +141,9 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
                     View all
                   </button>
                 </div>
-                <div className="py-2">
-                  {[
-                    { title: 'New lead registered', desc: 'Rahul Sharma — Website inquiry', time: '5 min ago', dot: 'var(--gold)' },
-                    { title: 'Site visit scheduled', desc: 'Priya Mehta — Gurukrupa Heights', time: '1 hour ago', dot: 'var(--success)' },
-                    { title: 'Payment received', desc: '₹5.5L from Vikram Patel', time: '3 hours ago', dot: 'var(--info)' },
-                  ].map((n, i) => (
-                    <div key={i} className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors">
-                      <span className="mt-1.5 h-2 w-2 rounded-full flex-shrink-0" style={{ background: n.dot }} />
-                      <div>
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{n.title}</p>
-                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{n.desc}</p>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-disabled)' }}>{n.time}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="px-4 py-5 text-center">
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>No new notifications</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Updates from your workspace will appear here.</p>
                 </div>
                 <div className="px-4 py-2 border-t text-center" style={{ borderColor: 'var(--border)' }}>
                   <button
@@ -224,6 +214,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
                   {[
                     { icon: <User size={15} />, label: 'My Profile', path: '/profile' },
                     { icon: <Settings size={15} />, label: 'Settings', path: '/settings' },
+                    { icon: <BookOpen size={15} />, label: 'Docs', path: '/guide' },
                     { icon: <Activity size={15} />, label: 'Activity Log', path: '/activity-logs' },
                   ].map((item) => (
                     <button

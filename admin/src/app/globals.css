@@ -15,7 +15,7 @@
   --gold-border:     rgba(201, 168, 76, 0.3);
 
   /* Sidebar */
-  --sidebar-bg:      linear-gradient(to right, #73B5EC, #D9D9D9);
+  --sidebar-bg:      #EAF2FA;
   --sidebar-text:    #1E293B;
   --sidebar-active:  #0F172A;
   --sidebar-hover:   rgba(15, 23, 42, 0.08);
@@ -78,6 +78,11 @@
 
 /* ── Global Reset ─────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
+
+:where(button, a, input, select, textarea, [role='button']):focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
 
 html { scroll-behavior: smooth; }
 
@@ -196,7 +201,7 @@ body {
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-primary {
-  background: var(--gold); color: var(--sidebar-bg);
+  background: var(--gold); color: #ffffff;
   border-color: var(--gold);
 }
 .btn-primary:hover { background: var(--gold-dark); border-color: var(--gold-dark); }
@@ -245,7 +250,7 @@ body {
 /* ── Sidebar ─────────────────────────────────────────────────── */
 .sidebar {
   position: fixed; left: 0; top: 0; bottom: 0;
-  width: 260px; background: linear-gradient(to right, #73B5EC, #D9D9D9);
+  width: 260px; background: var(--sidebar-bg);
   display: flex; flex-direction: column;
   border-radius: 0 1.25rem 1.25rem 0;
   border-right: none;

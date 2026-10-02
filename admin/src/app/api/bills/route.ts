@@ -13,6 +13,7 @@ import { createServiceClient } from '@/utils/supabase/service';
 //   amount         NUMERIC(15,2) NOT NULL DEFAULT 0,
 //   date           DATE          NOT NULL DEFAULT CURRENT_DATE,
 //   notes          TEXT,
+//   payment_method TEXT,
 //   status         TEXT          NOT NULL DEFAULT 'Pending'
 //                                CHECK (status IN ('Paid', 'Pending')),
 //   created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW()
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       billNumber, clientName, clientPhone, clientAddress,
-      description, amount, date, notes, status,
+      description, amount, date, notes, status, paymentMethod,
     } = body;
 
     if (!clientName?.trim()) {
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
         amount:         parsedAmount,
         date:           date || new Date().toISOString().split('T')[0],
         notes:          notes?.trim()         || null,
+        payment_method: paymentMethod?.trim() || null,
         status:         status === 'Paid' ? 'Paid' : 'Pending',
       })
       .select('id')

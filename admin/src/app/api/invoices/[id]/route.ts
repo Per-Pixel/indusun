@@ -51,6 +51,7 @@ export async function GET(
           generatedBy:   'Admin',
           generatorName: null,
           notes:         b.notes || null,
+          paymentMethod: b.payment_method || '—',
           items: [{
             description: b.description || b.bill_number,
             quantity:    1,

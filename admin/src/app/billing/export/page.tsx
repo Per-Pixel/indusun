@@ -43,17 +43,37 @@ export default function BillingExportPage() {
   // Handle export
   const handleExport = () => {
     setIsExporting(true);
-    
-    // Simulate export process
+
+    try {
+      const headers = ['Transaction ID', 'Customer / Party', 'Category', 'Date', 'Amount', 'Payment Method', 'Status'];
+      const sampleRows = [
+        ['TXN-1001', 'Priya Patel', 'Property Sale', '2023-12-15', '15000000', 'Bank Transfer', 'Completed'],
+        ['TXN-1002', 'Suresh Menon', 'Broker Commission', '2023-12-14', '750000', 'UPI', 'Completed'],
+        ['TXN-1003', 'Vikram Singh', 'Service Fee', '2023-12-10', '15000', 'Credit Card', 'Completed'],
+        ['TXN-1004', 'Global Systems Ltd', 'Rental Income', '2023-12-05', '350000', 'Bank Transfer', 'Completed'],
+        ['TXN-1005', 'Aditya Enterprises', 'Property Advance', '2023-12-01', '4500000', 'Cheque', 'Processing'],
+      ];
+      const csvString = [headers.join(','), ...sampleRows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `billing_financial_report_${new Date().toISOString().slice(0, 10)}.${exportFormat === 'excel' ? 'xls' : 'csv'}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Billing export error:', e);
+    }
+
     setTimeout(() => {
       setIsExporting(false);
       setExportSuccess(true);
-      
-      // Reset success message after 3 seconds
       setTimeout(() => {
         setExportSuccess(false);
       }, 3000);
-    }, 2000);
+    }, 600);
   };
 
   return (

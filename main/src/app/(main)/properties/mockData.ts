@@ -14,7 +14,7 @@ export interface Property {
   featured: boolean;
   new?: boolean;
   amenities: string[];
-  postedDate: string;
+  postedDate?: string;
   views?: number;
   listedDate?: string;
 }
@@ -543,6 +543,7 @@ export const mockProperties: Property[] = [
     priceNumeric: 8000000,
     area: '1200 sq ft',
     areaNumeric: 1200,
+    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1632&auto=format&fit=crop',
     featured: true,
     views: 800, // Will show Featured tag
     listedDate: '2024-01-20',
@@ -558,6 +559,7 @@ export const mockProperties: Property[] = [
     priceNumeric: 15000000,
     area: '2000 sq ft',
     areaNumeric: 2000,
+    image: 'https://images.unsplash.com/photo-1628624747186-a941c476b7ef?q=80&w=1470&auto=format&fit=crop',
     featured: true,
     views: 1500, // Will show Most Viewed tag instead of Featured
     listedDate: '2024-01-15',

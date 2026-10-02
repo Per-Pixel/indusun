@@ -46,19 +46,7 @@ interface MessageStats {
   replied: number;
 }
 
-// Mock admin data - Adding Sarika Singh as requested
-const mockAdminData: MessageRecipient[] = [
-  {
-    id: 'admin-1',
-    name: 'Sarika Singh',
-    email: 'sarika.singh@indusun.com',
-    phone: '+91 98765 43210',
-    type: 'admin',
-    status: 'active',
-    image: '/auth/Agents/admin-01.jpg',
-    lastActive: 'Just now'
-  }
-];
+// Admin data is now loaded dynamically from the API
 
 // Real message stats will be fetched from API
 
@@ -107,8 +95,10 @@ export default function MessagesPage() {
   // State for real clients and brokers data with pagination
   const [clients, setClients] = useState<MessageRecipient[]>([]);
   const [brokers, setBrokers] = useState<MessageRecipient[]>([]);
+  const [admins, setAdmins] = useState<MessageRecipient[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
   const [brokersLoading, setBrokersLoading] = useState(false); // Start as false since we load on demand
+  const [adminsLoading, setAdminsLoading] = useState(false);
   const [clientsPage, setClientsPage] = useState(1);
   const [brokersPage, setBrokersPage] = useState(1);
   const [hasMoreClients, setHasMoreClients] = useState(true);
@@ -254,6 +244,38 @@ export default function MessagesPage() {
     fetchBrokers();
   }, [activeTab, debouncedSearchTerm, brokersPage]);
 
+  // Fetch admin users from API when admins tab is active
+  useEffect(() => {
+    if (activeTab !== 'admins') return;
+
+    const fetchAdmins = async () => {
+      setAdminsLoading(true);
+      try {
+        const response = await fetch('/api/admin-users');
+        const data = await response.json();
+        if (data.success && data.users) {
+          const formattedAdmins: MessageRecipient[] = data.users.map((admin: any) => ({
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            phone: admin.phone || '',
+            type: 'admin' as const,
+            status: admin.status || 'active',
+            image: admin.avatar_url,
+            lastActive: admin.updated_at ? new Date(admin.updated_at).toLocaleDateString() : undefined,
+          }));
+          setAdmins(formattedAdmins);
+        }
+      } catch (error) {
+        console.error('Error fetching admins:', error);
+      } finally {
+        setAdminsLoading(false);
+      }
+    };
+
+    fetchAdmins();
+  }, [activeTab]);
+
   // Debounce search term and reset pagination when search changes
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -284,8 +306,10 @@ export default function MessagesPage() {
       allRecipients.push(...brokers);
     }
     
-    // Add admin data
-    allRecipients.push(...mockAdminData);
+    // Add admin data (from API)
+    if (!adminsLoading && admins.length > 0) {
+      allRecipients.push(...admins);
+    }
     
     return allRecipients;
   };
@@ -301,7 +325,7 @@ export default function MessagesPage() {
     } else if (activeTab === 'brokers') {
       filteredList = [...brokers];
     } else if (activeTab === 'admins') {
-      filteredList = [...mockAdminData];
+      filteredList = [...admins];
     }
     
     // Apply additional filters (type and status)
@@ -323,7 +347,7 @@ export default function MessagesPage() {
   // Filter recipients based on search term, type, and status
   const filteredRecipients = React.useMemo(() => {
     return getFilteredRecipients();
-  }, [debouncedSearchTerm, filterType, filterStatus, activeTab, clients, brokers, clientsLoading, brokersLoading]);
+  }, [debouncedSearchTerm, filterType, filterStatus, activeTab, clients, brokers, admins, clientsLoading, brokersLoading, adminsLoading]);
 
   // Toggle recipient selection
   const toggleRecipientSelection = (id: string) => {
@@ -353,7 +377,7 @@ export default function MessagesPage() {
   };
 
   // Send message
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (messageText.trim() === '') {
       toast.error('Please enter a message');
       return;
@@ -364,22 +388,69 @@ export default function MessagesPage() {
       return;
     }
 
+    if (messageType !== 'sms') {
+      toast.error(`${messageType === 'email' ? 'Email' : 'WhatsApp'} sending is not yet integrated. Please use SMS for now.`);
+      return;
+    }
+
+    // Collect phone numbers and names of selected recipients
+    const allRecipients = getAllRecipients();
+    const selected = selectedRecipients
+      .map(id => allRecipients.find(r => r.id === id))
+      .filter(Boolean) as typeof allRecipients;
+
+    const numbersWithNames = selected
+      .filter(r => r.phone && r.phone.trim())
+      .map(r => ({ phone: r.phone.trim(), name: r.name }));
+
+    if (numbersWithNames.length === 0) {
+      toast.error('None of the selected recipients have a phone number');
+      return;
+    }
+
     setIsSending(true);
+    const sendingToast = toast.loading(`Sending SMS to ${numbersWithNames.length} recipient(s)...`);
 
-    // Simulate sending message
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/sms/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          numbers: numbersWithNames.map(r => r.phone),
+          message: messageText.trim(),
+          recipientNames: numbersWithNames.map(r => r.name),
+        }),
+      });
+
+      const data = await response.json();
+      toast.dismiss(sendingToast);
+
+      if (data.success) {
+        const invalidMsg = data.invalidNumbers?.length
+          ? ` (${data.invalidNumbers.length} invalid number(s) skipped)`
+          : '';
+        toast.success(`SMS sent to ${data.count} recipient(s)${invalidMsg}`);
+
+        // Navigate to history with count info
+        router.push(`/messages/sent?count=${data.count}&type=sms`);
+
+        // Reset form
+        setMessageText('');
+        setSelectedRecipients([]);
+      } else {
+        // Partial or full failure
+        toast.error(`SMS failed: ${data.error || 'Unknown error'}`);
+        console.error('Fast2SMS error response:', data);
+      }
+    } catch (err: any) {
+      toast.dismiss(sendingToast);
+      toast.error(`Failed to send SMS: ${err.message || 'Network error'}`);
+      console.error('SMS send error:', err);
+    } finally {
       setIsSending(false);
-
-      // Use the messageType state for the redirect
-
-      // Navigate to the confirmation page with count and type parameters
-      router.push(`/messages/sent?count=${selectedRecipients.length}&type=${messageType}`);
-
-      // Reset form state
-      setMessageText('');
-      setSelectedRecipients([]);
-    }, 1500);
+    }
   };
+
 
   return (
     <CRMLayout>
@@ -636,7 +707,7 @@ export default function MessagesPage() {
                     )}
                     
                     {/* Loading Indicator */}
-                    {(activeTab === 'clients' && clientsLoading) || (activeTab === 'brokers' && brokersLoading) ? (
+                    {((activeTab === 'clients' && clientsLoading) || (activeTab === 'brokers' && brokersLoading) || (activeTab === 'admins' && adminsLoading)) ? (
                       <div className="p-4 text-center">
                         <div className="inline-block animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
                         <span className="text-gray-600">Loading...</span>

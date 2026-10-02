@@ -139,13 +139,13 @@ export async function GET(request: NextRequest) {
     // ── Broker list for the searchable dropdown ─────────────────────────
     const { data: brokerRows } = await supabase
       .from(TABLE_NAME)
-      .select("broker's_name")
-      .not("broker's_name", 'is', null)
-      .neq("broker's_name", '')
+      .select('*')
       .range(0, BROKER_FETCH_LIMIT - 1);
 
     const brokers = [...new Set(
-      (brokerRows || []).map((r: any) => r["broker's_name"] as string).filter(Boolean)
+      (brokerRows || [])
+        .map((r: any) => r["broker's_name"] as string)
+        .filter((v: any) => v != null && String(v).trim() !== '')
     )].sort().map(name => ({ id: name, name }));
 
     return NextResponse.json({

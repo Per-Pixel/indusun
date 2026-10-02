@@ -1,12 +1,49 @@
 // Authentication utilities for rate limiting and security
 
+import { randomBytes } from 'crypto';
+
 // In-memory storage for failed attempts (in production, use Redis)
 const failedAttempts = new Map<string, { count: number; lastAttempt: Date }>();
 
 // Configuration
 const MAX_ATTEMPTS = 5;
+export const MAX_VERIFICATION_ATTEMPTS = MAX_ATTEMPTS;
+export const VERIFICATION_EXPIRY = 10 * 60 * 1000;
+export const ATTEMPT_COOLDOWN = 30 * 1000;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
 const ATTEMPT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
+
+export interface PendingVerification {
+  code: string;
+  userData: {
+    name: string;
+    email: string;
+    hashedPassword: string;
+  };
+  expiresAt: number;
+  attempts: number;
+}
+
+export const pendingVerifications = new Map<string, PendingVerification>();
+
+export function generateSecureCode(): string {
+  return randomBytes(4).toString('hex');
+}
+
+export function getVerification(identifier: string): PendingVerification | null {
+  const verification = pendingVerifications.get(identifier);
+
+  if (!verification) {
+    return null;
+  }
+
+  if (verification.expiresAt <= Date.now()) {
+    pendingVerifications.delete(identifier);
+    return null;
+  }
+
+  return verification;
+}
 
 /**
  * Check if an identifier (email/phone) has too many failed attempts

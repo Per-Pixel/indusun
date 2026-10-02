@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from 'bcrypt'
 import pool from '@/lib/db'
 import { z as zod } from "zod";
-import transporter from "@/lib/nodemailer";
+import { transporter } from "@/lib/nodemailer";
 import { 
     generateSecureCode, 
     pendingVerifications, 

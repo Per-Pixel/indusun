@@ -46,7 +46,7 @@ export async function withAuth(
 // Role-based access control middleware
 export async function withRole(
   req: NextRequest,
-  allowedRoles: ('customer' | 'broker')[],
+  allowedRoles: ('customer' | 'broker' | 'admin')[],
   handler: (req: NextRequest, user: any) => Promise<NextResponse>
 ) {
   // TEMPORARY: Development bypass for role checks

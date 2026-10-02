@@ -14,12 +14,22 @@ export async function getPaginatedMasterData({
   page = 1,
   pageSize = 50,
   clientNameFilter = '',
+  search = '',
   societyFilter = '',
+  brokerFilter = '',
+  statusFilter = '',
+  sortBy = 'id',
+  sortOrder = 'asc',
 }: {
   page?: number;
   pageSize?: number;
   clientNameFilter?: string;
+  search?: string;
   societyFilter?: string;
+  brokerFilter?: string;
+  statusFilter?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }): Promise<{
   data: MasterDataOfGurukrupa[] | null;
   count: number | null;
@@ -27,7 +37,7 @@ export async function getPaginatedMasterData({
 }> {
   try {
     const supabase = createServiceClient();
-    
+
     // Calculate range for pagination
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -39,18 +49,56 @@ export async function getPaginatedMasterData({
       .from(TABLE_NAME)
       .select('*', { count: 'exact' });
 
-    // Apply filters if provided
+    // Backward-compatible single-field filter
     if (clientNameFilter) {
       query = query.ilike('client_name', `%${clientNameFilter}%`);
+    }
+
+    // Multi-field search across customer, contact, society, plot and broker
+    const searchTerm = search || clientNameFilter;
+    if (searchTerm) {
+      query = query.or(
+        `client_name.ilike.%${searchTerm}%,contact_no.ilike.%${searchTerm}%,society_name.ilike.%${searchTerm}%,plot_no.ilike.%${searchTerm}%,broker's_name.ilike.%${searchTerm}%`
+      );
     }
 
     if (societyFilter) {
       query = query.eq('society_name', societyFilter);
     }
 
+    if (brokerFilter) {
+      query = query.eq("broker's_name", brokerFilter);
+    }
+
+    if (statusFilter) {
+      if (statusFilter === 'active') {
+        query = query
+          .is('cancel_date', null)
+          .not('paid_amount', 'is', null)
+          .neq('paid_amount', '');
+      } else if (statusFilter === 'prospect') {
+        query = query
+          .is('cancel_date', null)
+          .or('paid_amount.is.null,paid_amount.eq.');
+      } else if (statusFilter === 'cancelled') {
+        query = query
+          .not('cancel_date', 'is', null)
+          .neq('cancel_date', '');
+      } else if (statusFilter === 'installment') {
+        query = query
+          .is('cancel_date', null)
+          .not('emi_amount', 'is', null)
+          .neq('emi_amount', '');
+      }
+    }
+
+    // Sorting
+    const orderColumn = ['id', 'client_name'].includes(sortBy) ? sortBy : 'id';
+    const ascending = sortOrder === 'desc' ? false : true;
+
     // Apply pagination and ordering - ensure no implicit limits
     const { data, error, count } = await query
-      .order('id', { ascending: true })
+      .order(orderColumn, { ascending })
       .range(from, to);
 
     if (error) {
@@ -60,10 +108,10 @@ export async function getPaginatedMasterData({
 
     console.log(`Fetched ${data?.length || 0} records, total count: ${count}`);
 
-    return { 
-      data: data as MasterDataOfGurukrupa[], 
-      count: count || 0, 
-      error: null 
+    return {
+      data: data as MasterDataOfGurukrupa[],
+      count: count || 0,
+      error: null,
     };
   } catch (err) {
     console.error('Unexpected error in getPaginatedMasterData:', err);
@@ -94,6 +142,68 @@ export async function getAllMasterData(): Promise<{
     return { data: data as MasterDataOfGurukrupa[], error: null };
   } catch (err) {
     console.error('Unexpected error in getAllMasterData:', err);
+    return { data: null, error: err as Error };
+  }
+}
+
+/**
+ * Get unique broker names (for filtering) - optimized for large datasets
+ */
+export async function getUniqueBrokers(): Promise<{
+  brokers: string[];
+  error: Error | null;
+}> {
+  try {
+    const supabase = createServiceClient();
+
+    const { data, error } = await supabase
+      .from(TABLE_NAME)
+      .select('*')
+      .range(0, 9999);
+
+    if (error) {
+      console.error('Error fetching brokers:', error);
+      return { brokers: [], error: new Error(error.message) };
+    }
+
+    const uniqueBrokers = Array.from(
+      new Set(
+        (data || [])
+          .map((item: any) => item["broker's_name"])
+          .filter((v: any) => v != null && String(v).trim() !== '')
+      )
+    ).sort() as string[];
+
+    return { brokers: uniqueBrokers as string[], error: null };
+  } catch (err) {
+    console.error('Unexpected error in getUniqueBrokers:', err);
+    return { brokers: [], error: err as Error };
+  }
+}
+
+/**
+ * Get all records matching a client name (used to show a customer's property portfolio)
+ */
+export async function getMasterDataByClientName(
+  clientName: string
+): Promise<{ data: MasterDataOfGurukrupa[] | null; error: Error | null }> {
+  try {
+    const supabase = createServiceClient();
+
+    const { data, error } = await supabase
+      .from(TABLE_NAME)
+      .select('*')
+      .ilike('client_name', clientName)
+      .order('id', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching master data by client name:', error);
+      return { data: null, error: new Error(error.message) };
+    }
+
+    return { data: data as MasterDataOfGurukrupa[], error: null };
+  } catch (err) {
+    console.error('Unexpected error in getMasterDataByClientName:', err);
     return { data: null, error: err as Error };
   }
 }

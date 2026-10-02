@@ -1,10 +1,13 @@
-// Mock OTP service for development and testing
+// OTP service – uses Message Central SMS API when configured, falls back to mock
+import { isMessageCentralConfigured, sendOTPviaSMS, validateOTPCode } from '@/lib/messageCentral';
+
 export interface OTPSession {
   phone: string;
   otp: string;
   expiresAt: Date;
   attempts: number;
   isVerified: boolean;
+  verificationId?: string; // Set when using Message Central; absent in mock mode
 }
 
 // In-memory storage for OTP sessions (in production, use Redis or database)
@@ -28,7 +31,7 @@ export const generateOTP = (length: number = OTP_CONFIG.length): string => {
   return otp;
 };
 
-// Send OTP to phone number (mock implementation)
+// Send OTP – uses Message Central if configured, otherwise mock
 export const sendOTP = async (phone: string): Promise<{ success: boolean; message: string; sessionId?: string }> => {
   try {
     // Clean phone number format
@@ -43,24 +46,35 @@ export const sendOTP = async (phone: string): Promise<{ success: boolean; messag
       };
     }
 
-    // Generate new OTP
-    const otp = generateOTP();
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + OTP_CONFIG.expiryMinutes);
 
-    // Create OTP session
-    const session: OTPSession = {
+    // --- Real SMS via Message Central ---
+    if (isMessageCentralConfigured()) {
+      const smsResult = await sendOTPviaSMS(cleanPhone);
+      if (smsResult.success && smsResult.verificationId) {
+        otpSessions.set(cleanPhone, {
+          phone: cleanPhone,
+          otp: '',
+          verificationId: smsResult.verificationId,
+          expiresAt,
+          attempts: 0,
+          isVerified: false,
+        });
+        return { success: true, message: 'OTP sent to your registered mobile number', sessionId: cleanPhone };
+      }
+      console.warn('MessageCentral SMS failed, falling back to mock OTP:', smsResult.message);
+    }
+
+    // --- Mock OTP (development / fallback) ---
+    const otp = generateOTP();
+    otpSessions.set(cleanPhone, {
       phone: cleanPhone,
       otp,
       expiresAt,
       attempts: 0,
-      isVerified: false
-    };
-
-    // Store session
-    otpSessions.set(cleanPhone, session);
-
-    // In a real implementation, you would send SMS here
+      isVerified: false,
+    });
     console.log(`📱 Mock OTP sent to ${cleanPhone}: ${otp}`);
     
     return {
@@ -111,7 +125,17 @@ export const verifyOTP = async (phone: string, otp: string): Promise<{ success: 
     // Increment attempts
     session.attempts++;
 
-    // Verify OTP
+    // --- Real validation via Message Central ---
+    if (session.verificationId) {
+      const result = await validateOTPCode(session.verificationId, otp);
+      if (result.success) {
+        session.isVerified = true;
+        return { success: true, message: 'OTP verified successfully' };
+      }
+      return { success: false, message: result.message };
+    }
+
+    // --- Mock validation ---
     if (session.otp !== otp) {
       return {
         success: false,

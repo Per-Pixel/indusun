@@ -100,6 +100,45 @@ export default function BrokerReports() {
     }).format(value);
   };
 
+  const chart = reportType === 'sales' ? (
+    <BarChart data={salesData}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" />
+      <YAxis />
+      <Tooltip formatter={(value) => [`${value} sales`]} />
+      <Legend />
+      <Bar dataKey="sales" fill="#4F46E5" name="Number of Sales" />
+    </BarChart>
+  ) : reportType === 'revenue' ? (
+    <LineChart data={salesData}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" />
+      <YAxis />
+      <Tooltip formatter={(value) => [formatCurrency(value as number)]} />
+      <Legend />
+      <Line type="monotone" dataKey="revenue" stroke="#4F46E5" name="Revenue" />
+    </LineChart>
+  ) : reportType === 'clients' ? (
+    <LineChart data={clientData}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" />
+      <YAxis />
+      <Tooltip />
+      <Legend />
+      <Line type="monotone" dataKey="newClients" stroke="#4F46E5" name="New Clients" />
+      <Line type="monotone" dataKey="activeClients" stroke="#10B981" name="Active Clients" />
+    </LineChart>
+  ) : (
+    <BarChart data={salesData}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" />
+      <YAxis />
+      <Tooltip formatter={(value, name) => [name === 'sales' ? `${value} properties` : formatCurrency(value as number)]} />
+      <Legend />
+      <Bar dataKey="sales" fill="#4F46E5" name="Properties Sold" />
+    </BarChart>
+  );
+
   return (
     <BrokerDashboardLayout>
       <div className="mb-6">
@@ -259,50 +298,7 @@ export default function BrokerReports() {
           
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              {reportType === 'sales' && (
-                <BarChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`${value} sales`]} />
-                  <Legend />
-                  <Bar dataKey="sales" fill="#4F46E5" name="Number of Sales" />
-                </BarChart>
-              )}
-              
-              {reportType === 'revenue' && (
-                <LineChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [formatCurrency(value as number)]} />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#4F46E5" name="Revenue" />
-                </LineChart>
-              )}
-              
-              {reportType === 'clients' && (
-                <LineChart data={clientData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="newClients" stroke="#4F46E5" name="New Clients" />
-                  <Line type="monotone" dataKey="activeClients" stroke="#10B981" name="Active Clients" />
-                </LineChart>
-              )}
-              
-              {reportType === 'properties' && (
-                <BarChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value, name) => [name === 'sales' ? `${value} properties` : formatCurrency(value as number)]} />
-                  <Legend />
-                  <Bar dataKey="sales" fill="#4F46E5" name="Properties Sold" />
-                </BarChart>
-              )}
+              {chart}
             </ResponsiveContainer>
           </div>
         </div>

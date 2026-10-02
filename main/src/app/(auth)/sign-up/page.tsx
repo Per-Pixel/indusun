@@ -88,7 +88,7 @@ const SignUp = () => {
     }
   };
 
-  const successfulVerify = async (data: { user: unknown }) => {
+  const successfulVerify = async (data: { user: Parameters<typeof login>[0] }) => {
     try {
       // Update auth context with user data
       login(data.user);

@@ -31,8 +31,8 @@ export default function SearchResultsPage() {
   // Hide footer when this component mounts
   useEffect(() => {
     // Hide footer
-    const footer = document.querySelector('footer');
-    const bottomNav = document.querySelector('nav.fixed.bottom-0');
+    const footer = document.querySelector<HTMLElement>('footer');
+    const bottomNav = document.querySelector<HTMLElement>('nav.fixed.bottom-0');
     
     if (footer) {
       footer.style.display = 'none';

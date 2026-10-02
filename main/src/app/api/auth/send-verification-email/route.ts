@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 import pool from "@/lib/db";
-import transporter from "@/lib/nodemailer";
+import { transporter } from "@/lib/nodemailer";
 import { sub } from "framer-motion/client";
 
 // generate jwt for email verification
