@@ -47,12 +47,14 @@ export async function getLeads({
   search = '',
   societyFilter = '',
   statusFilter = '',
+  order = 'desc',
 }: {
   page?: number;
   pageSize?: number;
   search?: string;
   societyFilter?: string;
   statusFilter?: string;
+  order?: 'asc' | 'desc';
 }): Promise<{ data: LeadRecord[]; count: number; error: Error | null }> {
   try {
     const supabase = createServiceClient();
@@ -71,7 +73,7 @@ export async function getLeads({
     }
 
     const { data, count, error } = await query
-      .order('id', { ascending: false })
+      .order('id', { ascending: order === 'asc' })
       .range(from, to);
 
     if (error) return { data: [], count: 0, error: new Error(error.message) };

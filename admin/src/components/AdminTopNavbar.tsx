@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Menu, Search, Bell, User, Settings, LogOut, ChevronDown,
   Activity, Shield, Crown, X, Home, Building2, Users, Calendar,
-  BookOpen, HelpCircle
+  BookOpen
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 
@@ -87,12 +87,13 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
           {/* Search Trigger */}
           <button
             onClick={() => { setSearchOpen(true); setTimeout(() => searchRef.current?.focus(), 50); }}
-            className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-            style={{ minWidth: '220px' }}
+            className="command-trigger hidden md:flex"
+            aria-label="Open global search"
+            aria-keyshortcuts="Control+K Meta+K"
           >
             <Search size={15} />
-            <span>Search anything...</span>
-            <span className="ml-auto text-xs bg-gray-200 px-1.5 py-0.5 rounded text-gray-500 font-mono">⌘K</span>
+            <span className="text-sm">Search clients, plots, societies...</span>
+            <span className="command-kbd">⌘K</span>
           </button>
         </div>
 
@@ -118,6 +119,8 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
               onClick={() => setShowNotifications(!showNotifications)}
               className="btn btn-ghost btn-icon relative"
               aria-label="Notifications"
+              aria-haspopup="menu"
+              aria-expanded={showNotifications}
             >
               <Bell size={19} />
               <span
@@ -136,7 +139,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
                   <button
                     onClick={() => { setShowNotifications(false); router.push('/notifications'); }}
                     className="text-xs font-medium"
-                    style={{ color: 'var(--gold)' }}
+                    style={{ color: 'var(--primary)' }}
                   >
                     View all
                   </button>
@@ -162,11 +165,16 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
           <div className="relative ml-1" ref={profileRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg transition-colors"
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              aria-haspopup="menu"
+              aria-expanded={showProfileMenu}
+              aria-label="Account menu"
             >
               <div
                 className="avatar avatar-sm font-bold text-sm"
-                style={{ background: 'var(--gold-muted)', color: 'var(--gold-dark)', border: '2px solid var(--gold-border)' }}
+                style={{ background: 'var(--primary-muted)', color: 'var(--primary-strong)', border: '2px solid var(--primary-border)' }}
               >
                 {initials}
               </div>
@@ -191,7 +199,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
                   <div className="flex items-center gap-3">
                     <div
                       className="avatar avatar-lg font-bold"
-                      style={{ background: 'var(--gold-muted)', color: 'var(--gold-dark)', border: '2px solid var(--gold-border)' }}
+                      style={{ background: 'var(--primary-muted)', color: 'var(--primary-strong)', border: '2px solid var(--primary-border)' }}
                     >
                       {initials}
                     </div>
