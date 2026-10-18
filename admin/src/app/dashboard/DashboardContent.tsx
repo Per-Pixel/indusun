@@ -34,8 +34,13 @@ const GREEN = '#059669';
 const RED = '#DC2626';
 const STATUS_COLORS = [BLUE, GREEN, RED];
 
-const fmt = (n: number) => n.toLocaleString('en-IN');
-const fmtLakh = (n: number) => `₹${(n / 100_000).toFixed(1)}L`;
+const fmt = (n: number) => (Number(n) || 0).toLocaleString('en-IN');
+const fmtLakh = (n: number) => {
+  const v = Number(n) || 0;
+  if (v >= 1_00_00_000) return `₹${(v / 1_00_00_000).toFixed(2)} Cr`;
+  if (v >= 1_00_000) return `₹${(v / 1_00_000).toFixed(2)} L`;
+  return `₹${v.toLocaleString('en-IN')}`;
+};
 
 function recordAge(row: LeadRecord): string {
   const iso = normalizeDate(row.created_at ?? row.date ?? row.date_of_form);
@@ -576,17 +581,18 @@ export default function DashboardContent({ summary, societies, leads, pipelineCo
                 <BarChart2 size={18} style={{ color: 'var(--text-muted)' }} />
               </div>
               {societyBar.length > 0 ? (
-                <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={societyBar} margin={{ top: 4, right: 4, left: -20, bottom: 40 }}>
+                <ResponsiveContainer width="100%" height={230}>
+                  <BarChart data={societyBar} margin={{ top: 4, right: 8, left: -12, bottom: 52 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis
                       dataKey="name"
-                      tick={{ fontSize: 9, fill: 'var(--text-muted)' }}
-                      angle={-35}
+                      tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                      angle={-30}
                       textAnchor="end"
                       interval={0}
+                      tickFormatter={(v: string) => (v && v.length > 14 ? `${v.slice(0, 13)}…` : v)}
                     />
-                    <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
+                    <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v: number) => fmt(v)} />
                     <Tooltip
                       contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)' }}
                       formatter={(v: number) => [fmt(v), 'Records']}

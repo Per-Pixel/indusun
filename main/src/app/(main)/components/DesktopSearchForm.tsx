@@ -22,20 +22,21 @@ export function DesktopSearchForm({
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [propertyType, setPropertyType] = useState(initialPropertyType);
   const [isFocused, setIsFocused] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
 
 
   const searchSuggestions = [
-    "2 BHK property near me",
-    "Big bungalow in Mumbai",
-    "3 BHK apartment in Pune",
-    "Villa with swimming pool",
-    "Commercial space for rent",
-    "1 BHK flat under 50 lakhs",
-    "Luxury apartments in Delhi",
-    "Property near metro station",
-    "4 BHK penthouse",
-    "Ready to move property"
+    "Royal City Block B",
+    "Avadh Residancy",
+    "Om Villa plot",
+    "Shiv Sai Nagar",
+    "Mahadev Nagar",
+    "Satguru Park",
+    "Gurukrupa Park",
+    "Sai Nagar",
+    "Sai Shrushti Residancy",
+    "Dream City"
   ];
 
   // Animation effect for search suggestions
@@ -60,9 +61,11 @@ export function DesktopSearchForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     if (onSearch) {
       onSearch(searchTerm, propertyType);
+      setTimeout(() => setIsSubmitting(false), 600);
     } else {
       // Default behavior - redirect to search page
       const params = new URLSearchParams();
@@ -176,9 +179,10 @@ export function DesktopSearchForm({
         {/* Search Button */}
         <button
           type="submit"
-          className="px-6 py-2 bg-blue-400 text-white text-base font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
+          disabled={isSubmitting}
+          className="px-6 py-2 bg-blue-600 text-white text-base font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors rounded-md cursor-pointer"
         >
-          Search
+          {isSubmitting ? 'Searching…' : 'Search'}
         </button>
       </form>
     </div>

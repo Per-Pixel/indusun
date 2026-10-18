@@ -4,8 +4,10 @@
  */
 import { createServiceClient } from '@/utils/supabase/service';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
+import { withServerCache } from '@/utils/serverCache';
 
 const TABLE = 'Master Data Of Gurukrupa';
+const BOOKING_COLS = 'id,client_name,contact_no,society_name,plot_no,plot_size,plot_amount,paid_amount,emi_amount,emi_time,"broker\'s_name",date_of_form,date,cancel_date,cheque_cash,policy_number,remarks';
 
 export type BookingStatus = 'token' | 'agreement' | 'registered' | 'possession' | 'cancelled';
 
@@ -57,17 +59,30 @@ export async function getBookings({
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let query = supabase
-      .from(TABLE)
-      .select('*', { count: 'exact' })
-      .not('paid_amount', 'is', null);
+    const applyFilters = (q: any) => {
+      q = q.not('paid_amount', 'is', null);
+      if (search) {
+        q = q.or(
+          `client_name.ilike.%${search}%,contact_no.ilike.%${search}%,society_name.ilike.%${search}%,project_name.ilike.%${search}%,plot_no.ilike.%${search}%,"broker's_name".ilike.%${search}%,broker_code.ilike.%${search}%,broker_name_clean.ilike.%${search}%`
+        );
+      }
+      if (societyFilter) q = q.eq('society_name', societyFilter);
+      return q;
+    };
 
-    if (search) query = query.ilike('client_name', `%${search}%`);
-    if (societyFilter) query = query.eq('society_name', societyFilter);
-
-    const { data, count, error } = await query
-      .order('id', { ascending: false })
-      .range(from, to);
+    const countCacheKey = `count:bookings:${search}|${societyFilter}`;
+    const [{ data, error }, count] = await Promise.all([
+      applyFilters(supabase.from(TABLE).select(BOOKING_COLS))
+        .order('id', { ascending: false })
+        .range(from, to),
+      withServerCache(countCacheKey, async () => {
+        const { count: c, error: cErr } = await applyFilters(
+          supabase.from(TABLE).select('*', { count: 'exact', head: true })
+        );
+        if (cErr) throw new Error(cErr.message);
+        return c || 0;
+      }),
+    ]);
 
     if (error) return { data: [], count: 0, error: new Error(error.message) };
 
@@ -107,25 +122,17 @@ export async function getBookingSummary(): Promise<{
   totalBookings: number; totalRevenue: number; totalPaid: number; totalBalance: number; error: Error | null;
 }> {
   try {
-    const supabase = createServiceClient();
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select('plot_amount,paid_amount')
-      .not('paid_amount', 'is', null);
-
-    if (error) throw new Error(error.message);
-
-    let totalRevenue = 0, totalPaid = 0;
-    (data as { plot_amount: string | null; paid_amount: string | null }[]).forEach((r) => {
-      totalRevenue += parseAmt(r.plot_amount);
-      totalPaid    += parseAmt(r.paid_amount);
+    const s = await withServerCache('rpc:get_booking_summary_rpc', async () => {
+      const supabase = createServiceClient();
+      const { data, error } = await supabase.rpc('get_booking_summary_rpc');
+      if (error || !data) throw new Error(error?.message || 'Failed to fetch booking summary');
+      return data as { totalBookings: number; totalRevenue: number; totalPaid: number; totalBalance: number };
     });
-
     return {
-      totalBookings: data.length,
-      totalRevenue,
-      totalPaid,
-      totalBalance: Math.max(0, totalRevenue - totalPaid),
+      totalBookings: s.totalBookings || 0,
+      totalRevenue: s.totalRevenue || 0,
+      totalPaid: s.totalPaid || 0,
+      totalBalance: s.totalBalance || 0,
       error: null,
     };
   } catch (err) {

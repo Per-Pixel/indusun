@@ -117,7 +117,7 @@ async function fetchAll(table, select = '*') {
   for (let b = 0; b < pages; b += 10) {
     const end = Math.min(b + 10, pages);
     const results = await Promise.all(
-      Array.from({ length: end - b }, (_, i) => supa.from(table).select(select).range((b + i) * 1000, (b + i) * 1000 + 999))
+      Array.from({ length: end - b }, (_, i) => supa.from(table).select(select).order('id', { ascending: true }).range((b + i) * 1000, (b + i) * 1000 + 999))
     );
     for (const { data, error } of results) {
       if (error) throw new Error(`${table} fetch: ${error.message}`);
@@ -327,7 +327,7 @@ if (cookie) {
   if (props.json) check('properties.count', totalRows, props.json.count);
 
   if (brokerList.json?.summary) {
-    check('brokers.recordsCount', truth.uniqueBrokers, brokerList.json.summary.recordsCount);
+    check('brokers.totalBrokers', truth.uniqueBrokers, brokerList.json.summary.totalBrokers);
     check('brokers.directoryCount', aux.brokers.error === null ? aux.brokers.count : 0, brokerList.json.summary.directoryCount);
   } else console.log('brokers: no summary in payload');
 

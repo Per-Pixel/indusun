@@ -30,7 +30,7 @@ interface Props {
 export default function SiteVisitsContent({ visits, totalCount, page, stats, societies, filters, error }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const [localSearch, setLocalSearch] = useState(filters.search);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -88,14 +88,19 @@ export default function SiteVisitsContent({ visits, totalCount, page, stats, soc
       <div className="card p-4 flex items-center gap-3 flex-wrap">
         <form
           onSubmit={(e) => { e.preventDefault(); updateUrl({ search: localSearch, page: '1' }); }}
-          className="search-wrapper flex-1 min-w-[200px]"
+          className="search-wrapper flex-1 min-w-[200px] flex items-center gap-2"
         >
-          <Search size={16} className="search-icon" />
-          <input
-            type="text" placeholder="Search client name..."
-            className="input input-sm" value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-          />
+          <div className="relative flex-1">
+            <Search size={16} className="search-icon" />
+            <input
+              type="text" placeholder="Search client, phone, society, or plot..."
+              className="input input-sm pl-9" value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+            />
+          </div>
+          <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">
+            {isPending ? 'Searching…' : 'Search'}
+          </button>
         </form>
         <select
           className="input input-sm select w-auto"

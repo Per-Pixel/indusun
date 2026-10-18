@@ -33,8 +33,6 @@ function parseArea(value: string | null) {
 }
 
 function formatPrice(amount: number) {
-  if (amount >= 10_000_000) return `₹${(amount / 10_000_000).toFixed(1)} Cr`;
-  if (amount >= 100_000) return `₹${(amount / 100_000).toFixed(1)} Lac`;
   return amount ? `₹${amount.toLocaleString('en-IN')}` : 'Price on request';
 }
 
@@ -68,6 +66,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('q')?.trim() || '';
   const type = searchParams.get('type')?.trim() || '';
+  const limitParam = searchParams.get('limit');
+  const pageParam = searchParams.get('page');
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -75,10 +75,35 @@ export async function GET(request: Request) {
   const applyFilters = (q: any) => {
     q = q.is('cancel_date', null);
     if (search) {
-      q = q.or(`society_name.ilike.%${search}%,client_name.ilike.%${search}%,plot_no.ilike.%${search}%`);
+      q = q.or(`society_name.ilike.%${search}%,client_name.ilike.%${search}%,plot_no.ilike.%${search}%,project_name.ilike.%${search}%`);
     }
     return q;
   };
+
+  // Default to fast paginated mode (limit=60) unless explicitly requesting limit=all
+  if (limitParam !== 'all') {
+    const limit = Math.max(1, Math.min(1000, parseInt(limitParam || '60', 10) || 60));
+    const page = Math.max(1, parseInt(pageParam || '1', 10) || 1);
+    const from = (page - 1) * limit;
+
+    const { data, count, error } = await applyFilters(
+      supabase.from('Master Data Of Gurukrupa').select(COLS, { count: 'exact' })
+    )
+      .order('id', { ascending: false })
+      .range(from, from + limit - 1);
+
+    if (error) {
+      return NextResponse.json({ error: 'Property listings are temporarily unavailable.' }, { status: 503 });
+    }
+
+    const properties = ((data || []) as MasterProperty[])
+      .map(toProperty)
+      .filter((property) => !type || property.type.toLowerCase() === type.toLowerCase());
+
+    return NextResponse.json({ data: properties, count: count ?? properties.length }, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  }
 
   const { count, error: countErr } = await applyFilters(
     supabase.from('Master Data Of Gurukrupa').select('*', { count: 'exact', head: true })

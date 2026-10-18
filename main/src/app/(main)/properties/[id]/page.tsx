@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 import {
   MapPin,
@@ -110,7 +112,60 @@ const mockProperties: Property[] = [
 const PropertyDetailPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   const resolvedParams = await params;
   const propertyId = parseInt(resolvedParams.id);
-  const property = mockProperties.find(p => p.id === propertyId);
+  let property = mockProperties.find(p => p.id === propertyId);
+
+  if (!property && !isNaN(propertyId)) {
+    try {
+      const cookieStore = await cookies();
+      const supabase = createClient(cookieStore);
+      const { data: row } = await supabase
+        .from('Master Data Of Gurukrupa')
+        .select('*')
+        .eq('id', propertyId)
+        .single();
+
+      if (row) {
+        const priceNum = Number(row.plot_amount_num ?? String(row.plot_amount || '').replace(/[^\d.]/g, '')) || 0;
+        const areaNum = Number(String(row.plot_size || '').replace(/[^\d.]/g, '')) || 0;
+        const priceFormatted = priceNum >= 10_000_000
+          ? `₹${(priceNum / 10_000_000).toFixed(1)} Cr`
+          : priceNum >= 100_000
+          ? `₹${(priceNum / 100_000).toFixed(1)} Lac`
+          : priceNum > 0
+          ? `₹${priceNum.toLocaleString('en-IN')}`
+          : 'Price on request';
+
+        property = {
+          id: row.id,
+          title: [row.society_name, row.plot_no && `Plot ${row.plot_no}`].filter(Boolean).join(' — ') || `Plot #${row.id}`,
+          type: 'Plot',
+          location: row.society_name || 'Gujarat',
+          price: priceFormatted,
+          priceNumeric: priceNum,
+          area: row.plot_size ? `${row.plot_size} sq ft` : 'Area on request',
+          areaNumeric: areaNum,
+          featured: !row.cancel_date,
+          new: false,
+          description: row.remarks || `Verified plot in ${row.society_name || 'Indusun Project'}.`,
+          fullDescription: `Verified property record in ${row.project_name || row.society_name || 'Indusun'}${row.block_name && row.block_name !== 'Main' ? ` (${row.block_name})` : ''}. Plot No: ${row.plot_no || 'N/A'}, Plot Size: ${row.plot_size || 'Standard'}.`,
+          amenities: ['Verified Title', 'Road Access', 'Water & Electricity', 'Gated Layout'],
+          postedDate: row.form_date_iso || row.emi_paid_date_iso || 'Verified',
+          specifications: {
+            'Project': row.project_name || row.society_name || '—',
+            'Block / Phase': row.block_name || 'Main',
+            'Society Name': row.society_name || '—',
+            'Plot Number': row.plot_no || '—',
+            'Plot Dimensions': row.plot_size || '—',
+            'Total Plot Value': priceFormatted,
+            'EMI Term': row.emi_time ? `${row.emi_time} months` : '—',
+            'Status': row.cancel_date ? 'Cancelled' : 'Available / Active',
+          },
+        };
+      }
+    } catch {
+      // Fallback to not found if query fails
+    }
+  }
 
 
   // If property not found

@@ -17,10 +17,13 @@ const STATUS_MAP: Record<BookingStatus, { label: string; class: string }> = {
 };
 
 function fmtINR(n: number) {
-  if (n >= 1_00_00_000) return `₹${(n / 1_00_00_000).toFixed(2)}Cr`;
-  if (n >= 1_00_000)    return `₹${(n / 1_00_000).toFixed(1)}L`;
-  if (n >= 1_000)       return `₹${(n / 1_000).toFixed(0)}K`;
-  return `₹${n.toLocaleString('en-IN')}`;
+  if (n >= 1_00_00_000) return `₹${(n / 1_00_00_000).toFixed(2)} Cr`;
+  if (n >= 1_00_000)    return `₹${(n / 1_00_000).toFixed(2)} L`;
+  return `₹${(Number(n) || 0).toLocaleString('en-IN')}`;
+}
+
+function fmtCommaINR(n: number) {
+  return `₹${(Number(n) || 0).toLocaleString('en-IN')}`;
 }
 
 const PAGE_SIZE = 25;
@@ -38,7 +41,7 @@ interface Props {
 export default function BookingsContent({ bookings, totalCount, page, summary, societies, filters, error }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const [localSearch, setLocalSearch] = useState(filters.search);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -87,14 +90,19 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
       <div className="card p-4 flex items-center gap-3 flex-wrap">
         <form
           onSubmit={(e) => { e.preventDefault(); updateUrl({ search: localSearch, page: '1' }); }}
-          className="search-wrapper flex-1 min-w-[200px]"
+          className="search-wrapper flex-1 min-w-[200px] flex items-center gap-2"
         >
-          <Search size={16} className="search-icon" />
-          <input
-            type="text" placeholder="Search client name..."
-            className="input input-sm" value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-          />
+          <div className="relative flex-1">
+            <Search size={16} className="search-icon" />
+            <input
+              type="text" placeholder="Search client, society, plot, or broker..."
+              className="input input-sm pl-9" value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+            />
+          </div>
+          <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">
+            {isPending ? 'Searching…' : 'Search'}
+          </button>
         </form>
         <select
           className="input input-sm select w-auto"
@@ -160,14 +168,14 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
                           <span className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Plot: {b.plot_no || '—'}</span>
                         </div>
                       </td>
-                      <td className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>
-                        {b.plot_amount > 0 ? fmtINR(b.plot_amount) : '—'}
+                      <td className="text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--gold)' }}>
+                        {b.plot_amount > 0 ? fmtCommaINR(b.plot_amount) : '—'}
                       </td>
-                      <td className="text-sm font-semibold" style={{ color: 'var(--success)' }}>
-                        {b.paid_amount > 0 ? fmtINR(b.paid_amount) : '—'}
+                      <td className="text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--success)' }}>
+                        {b.paid_amount > 0 ? fmtCommaINR(b.paid_amount) : '—'}
                       </td>
-                      <td className="text-sm font-semibold" style={{ color: 'var(--warning)' }}>
-                        {b.balance_amount > 0 ? fmtINR(b.balance_amount) : '—'}
+                      <td className="text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--warning)' }}>
+                        {b.balance_amount > 0 ? fmtCommaINR(b.balance_amount) : '—'}
                       </td>
                       <td style={{ minWidth: '100px' }}>
                         <div className="flex items-center gap-2">
@@ -183,8 +191,8 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
                           <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{b.payment_pct}%</span>
                         </div>
                       </td>
-                      <td className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                        {b.emi_amount > 0 ? fmtINR(b.emi_amount) : '—'}
+                      <td className="text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+                        {b.emi_amount > 0 ? fmtCommaINR(b.emi_amount) : '—'}
                         {b.emi_time ? <span className="block" style={{ color: 'var(--text-muted)' }}>{b.emi_time}</span> : null}
                       </td>
                       <td className="text-sm" style={{ color: 'var(--text-secondary)' }}>{b.broker || '—'}</td>

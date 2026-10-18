@@ -19,7 +19,7 @@ function fmtINR(n: number) {
 
 interface Props {
   summary: MasterDataSummary | null;
-  topBrokers: { name: string; deals: number; revenue: number; paid: number }[];
+  topBrokers: { name: string; brokerCode?: string | null; cleanName?: string | null; deals: number; revenue: number; paid: number }[];
   error: Error | null;
 }
 
@@ -114,19 +114,22 @@ export default function ReportsContent({ summary, topBrokers, error }: Props) {
                 <PieChart>
                   <Pie
                     data={[
-                      { name: 'Available', value: summary.listedProperties - summary.soldProperties },
+                      { name: 'Available', value: Math.max(0, summary.listedProperties - summary.soldProperties) },
                       { name: 'Sold/Paid', value: summary.soldProperties },
                       { name: 'Cancelled', value: summary.cancelledProperties },
                     ]}
-                    cx="50%" cy="50%"
-                    innerRadius={60} outerRadius={90}
+                    cx="50%" cy="46%"
+                    innerRadius={52} outerRadius={78}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     labelLine={false}
                   >
                     {COLORS.slice(0, 3).map((c, i) => <Cell key={i} fill={c} />)}
                   </Pie>
-                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                    formatter={(v: number) => [(Number(v) || 0).toLocaleString('en-IN'), 'Properties']}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '6px' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -200,13 +203,28 @@ export default function ReportsContent({ summary, topBrokers, error }: Props) {
                     </td>
                     <td>
                       <div className="flex items-center gap-2.5">
-                        <div className="avatar avatar-sm">{(broker.name || 'B').charAt(0).toUpperCase()}</div>
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{broker.name}</p>
+                        <div className="avatar avatar-sm">{(broker.cleanName || broker.name || 'B').charAt(0).toUpperCase()}</div>
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                            {broker.cleanName || broker.name}
+                          </p>
+                          {broker.brokerCode && (
+                            <span className="inline-block text-[11px] font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 mt-0.5">
+                              {broker.brokerCode}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
-                    <td className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{broker.deals}</td>
-                    <td className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>{fmtINR(broker.revenue)}</td>
-                    <td className="text-sm font-semibold" style={{ color: 'var(--success)' }}>{fmtINR(broker.paid)}</td>
+                    <td className="text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+                      {(broker.deals || 0).toLocaleString('en-IN')}
+                    </td>
+                    <td className="text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--gold)' }}>
+                      ₹{(broker.revenue || 0).toLocaleString('en-IN')}
+                    </td>
+                    <td className="text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--success)' }}>
+                      ₹{(broker.paid || 0).toLocaleString('en-IN')}
+                    </td>
                     <td>
                       <div className="flex items-center gap-2">
                         <div className="progress-bar" style={{ width: '80px' }}>
@@ -228,15 +246,25 @@ export default function ReportsContent({ summary, topBrokers, error }: Props) {
       {/* Society Analysis Tab */}
       {activeTab === 'Society Analysis' && summary && (
         <div className="card p-5">
-          <h3 className="text-h3 mb-4">Properties by Society / Project</h3>
-          <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={summary.propertiesBySociety} margin={{ top: 4, right: 4, left: -20, bottom: 60 }}>
+          <h3 className="text-h3 mb-1">Top 15 Societies by Property Count</h3>
+          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+            Showing top 15 of {summary.propertiesBySociety.length.toLocaleString('en-IN')} societies
+          </p>
+          <ResponsiveContainer width="100%" height={340}>
+            <BarChart data={summary.propertiesBySociety.slice(0, 15)} margin={{ top: 8, right: 12, left: 0, bottom: 72 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'var(--text-muted)' }} angle={-40} textAnchor="end" interval={0} />
-              <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [v, 'Properties']} />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                angle={-35}
+                textAnchor="end"
+                interval={0}
+                tickFormatter={(v: string) => (v && v.length > 16 ? `${v.slice(0, 15)}…` : v)}
+              />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickFormatter={(v: number) => (Number(v) || 0).toLocaleString('en-IN')} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [(Number(v) || 0).toLocaleString('en-IN'), 'Properties']} />
               <Bar dataKey="count" radius={[5, 5, 0, 0]}>
-                {summary.propertiesBySociety.map((_, i) => (
+                {summary.propertiesBySociety.slice(0, 15).map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
               </Bar>
@@ -245,10 +273,10 @@ export default function ReportsContent({ summary, topBrokers, error }: Props) {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
             {[
-              { label: 'Total Societies', value: summary.uniqueSocieties, icon: <Building2 size={16} /> },
-              { label: 'Avg per Society', value: Math.round(summary.totalRecords / summary.uniqueSocieties), icon: <BarChart3 size={16} /> },
-              { label: 'Total Brokers', value: summary.uniqueBrokers, icon: <Users size={16} /> },
-              { label: 'Total Clients', value: summary.totalClients, icon: <Users size={16} /> },
+              { label: 'Total Societies', value: summary.uniqueSocieties.toLocaleString('en-IN'), icon: <Building2 size={16} /> },
+              { label: 'Avg per Society', value: Math.round(summary.totalRecords / summary.uniqueSocieties).toLocaleString('en-IN'), icon: <BarChart3 size={16} /> },
+              { label: 'Total Brokers', value: summary.uniqueBrokers.toLocaleString('en-IN'), icon: <Users size={16} /> },
+              { label: 'Total Clients', value: summary.totalClients.toLocaleString('en-IN'), icon: <Users size={16} /> },
             ].map((s) => (
               <div key={s.label} className="card p-3 flex items-center gap-2">
                 <span style={{ color: GOLD }}>{s.icon}</span>

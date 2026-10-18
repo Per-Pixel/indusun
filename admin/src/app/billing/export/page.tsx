@@ -82,7 +82,7 @@ export default function BillingExportPage() {
       <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
+      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[260px]' : 'ml-0'}`}>
         {/* Top Navbar */}
         <div className="sticky top-0 z-10">
           <AdminTopNavbar toggleSidebar={toggleSidebar} />

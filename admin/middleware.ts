@@ -6,6 +6,16 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/auth/login') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next();
+  }
+
   // Always allow through if Supabase credentials are not configured
   // (prevents hard lockout during initial setup)
   if (!supabaseUrl || !supabaseKey) {
@@ -46,12 +56,12 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Run middleware on all routes EXCEPT:
+     * Run middleware on page routes EXCEPT:
      * - /auth/login (the login page itself)
-     * - /api/auth/* (auth API endpoints)
+     * - /api/* (API endpoints handle their own auth/service client)
      * - /_next/* (Next.js internals)
      * - /favicon.ico and static image files
      */
-    '/((?!auth/login|api/auth|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!auth/login|api|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

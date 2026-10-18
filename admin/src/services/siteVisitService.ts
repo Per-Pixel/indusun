@@ -4,6 +4,7 @@
  */
 import { createServiceClient } from '@/utils/supabase/service';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
+import { withServerCache } from '@/utils/serverCache';
 
 const TABLE = 'Master Data Of Gurukrupa';
 
@@ -40,19 +41,31 @@ export async function getSiteVisits({
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let query = supabase
-      .from(TABLE)
-      .select('id,client_name,contact_no,society_name,plot_no,emi_paid_date,date_of_form,date,paid_amount,cancel_date,"broker\'s_name",remarks', { count: 'exact' });
+    const COLS = 'id,client_name,contact_no,society_name,plot_no,emi_paid_date,date_of_form,date,paid_amount,cancel_date,"broker\'s_name",remarks';
+    const applyFilters = (q: any) => {
+      q = q.not('date_of_form', 'is', null);
+      if (search) {
+        q = q.or(
+          `client_name.ilike.%${search}%,contact_no.ilike.%${search}%,society_name.ilike.%${search}%,plot_no.ilike.%${search}%,"broker's_name".ilike.%${search}%`
+        );
+      }
+      if (societyFilter) q = q.eq('society_name', societyFilter);
+      return q;
+    };
 
-    if (search) query = query.ilike('client_name', `%${search}%`);
-    if (societyFilter) query = query.eq('society_name', societyFilter);
-
-    // Only include records that have a date to represent a visit
-    query = query.not('date_of_form', 'is', null);
-
-    const { data, count, error } = await query
-      .order('date_of_form', { ascending: false })
-      .range(from, to);
+    const countCacheKey = `count:visits:${search}|${societyFilter}`;
+    const [{ data, error }, count] = await Promise.all([
+      applyFilters(supabase.from(TABLE).select(COLS))
+        .order('date_of_form', { ascending: false })
+        .range(from, to),
+      withServerCache(countCacheKey, async () => {
+        const { count: c, error: cErr } = await applyFilters(
+          supabase.from(TABLE).select('*', { count: 'exact', head: true })
+        );
+        if (cErr) throw new Error(cErr.message);
+        return c || 0;
+      }),
+    ]);
 
     if (error) return { data: [], count: 0, error: new Error(error.message) };
 
@@ -78,22 +91,20 @@ export async function getVisitStatsSummary(): Promise<{
   total: number; scheduled: number; completed: number; cancelled: number; noShow: number; error: Error | null;
 }> {
   try {
-    const supabase = createServiceClient();
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select('cancel_date,paid_amount,date_of_form,date,emi_paid_date');
-
-    if (error) throw new Error(error.message);
-
-    let scheduled = 0, completed = 0, cancelled = 0;
-    (data as Partial<MasterDataOfGurukrupa>[]).forEach((row) => {
-      const status = deriveVisitStatus(row as MasterDataOfGurukrupa);
-      if (status === 'scheduled') scheduled++;
-      else if (status === 'completed') completed++;
-      else if (status === 'cancelled') cancelled++;
+    const s = await withServerCache('rpc:get_visit_stats_summary_rpc', async () => {
+      const supabase = createServiceClient();
+      const { data, error } = await supabase.rpc('get_visit_stats_summary_rpc');
+      if (error || !data) throw new Error(error?.message || 'Failed to fetch visit summary');
+      return data as { total: number; scheduled: number; completed: number; cancelled: number; noShow: number };
     });
-
-    return { total: data.length, scheduled, completed, cancelled, noShow: 0, error: null };
+    return {
+      total: s.total || 0,
+      scheduled: s.scheduled || 0,
+      completed: s.completed || 0,
+      cancelled: s.cancelled || 0,
+      noShow: s.noShow || 0,
+      error: null,
+    };
   } catch (err) {
     return { total: 0, scheduled: 0, completed: 0, cancelled: 0, noShow: 0, error: err as Error };
   }

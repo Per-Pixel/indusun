@@ -12,8 +12,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function SearchResultsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const searchQuery = searchParams.get('q') || '';
+  const searchQuery = searchParams.get('q') || searchParams.get('location') || '';
+  const searchType = searchParams.get('type') || '';
   const [properties, setProperties] = useState<Property[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isPageReady, setIsPageReady] = useState(false);
@@ -76,23 +78,43 @@ export default function SearchResultsPage() {
     };
   }, []);
 
-  // Filter properties based on search query
+  // Fetch live properties from Supabase API based on search query
   useEffect(() => {
-    if (!mockProperties) return;
-    
+    const controller = new AbortController();
     setIsLoading(true);
-    
-    // Simulate loading delay
-    setTimeout(() => {
-      const filtered = mockProperties.filter(property =>
-        property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setProperties(filtered);
-      setIsLoading(false);
-    }, 800); // Add a slight delay to show loading state
-  }, [searchQuery]);
+
+    const params = new URLSearchParams({
+      q: searchQuery,
+      limit: '60',
+    });
+    if (searchType && searchType !== 'all') {
+      params.set('type', searchType);
+    }
+
+    fetch(`/api/properties?${params.toString()}`, { signal: controller.signal, cache: 'no-store' })
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to search properties');
+        const list = (json.data || []) as Property[];
+        setProperties(list);
+        setTotalCount(json.count ?? list.length);
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        const filtered = (mockProperties || []).filter((property) =>
+          property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          property.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          property.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setProperties(filtered);
+        setTotalCount(filtered.length);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [searchQuery, searchType]);
 
   // Go back to previous page
   const handleGoBack = () => {
@@ -155,7 +177,7 @@ export default function SearchResultsPage() {
                 <p className="text-gray-600">
                   {properties.length === 0 
                     ? 'No properties found' 
-                    : `Found ${properties.length} ${properties.length === 1 ? 'property' : 'properties'} for "${searchQuery}"`}
+                    : `Found ${totalCount.toLocaleString('en-IN')} ${totalCount === 1 ? 'property' : 'properties'}${searchQuery ? ` for "${searchQuery}"` : ''}`}
                 </p>
               )}
             </div>

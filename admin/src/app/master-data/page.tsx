@@ -145,12 +145,15 @@ export default function MasterDataPage() {
   const exportColumns = [
     { header: 'ID',          key: 'id' },
     { header: 'Client Name', key: 'client_name' },
+    { header: 'Project',     key: 'project_name' },
+    { header: 'Block',       key: 'block_name' },
     { header: 'Society',     key: 'society_name' },
     { header: 'Plot No',     key: 'plot_no' },
     { header: 'Plot Size',   key: 'plot_size' },
     { header: 'Plot Amount', key: 'plot_amount' },
     { header: 'Paid Amount', key: 'paid_amount' },
-    { header: 'Broker',      key: "broker's_name" },
+    { header: 'Broker Code', key: 'broker_code' },
+    { header: 'Broker Name', key: 'broker_name_clean' },
     { header: 'Contact',     key: 'contact_no' },
   ];
 
@@ -292,7 +295,7 @@ export default function MasterDataPage() {
             />
             <StatCard
               title="Total Pages"
-              value={totalPages}
+              value={totalPages.toLocaleString('en-IN')}
               icon={<Hash className="h-5 w-5 text-white" />}
               gradient="bg-gradient-to-br from-cyan-500 to-cyan-700"
               badge={`${pageSize} / page`}
@@ -329,17 +332,36 @@ export default function MasterDataPage() {
                   type="text"
                   value={searchInput}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search by client name…"
-                  className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-10 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (debounceRef.current) clearTimeout(debounceRef.current);
+                      setClientNameFilter(searchInput);
+                      setCurrentPage(1);
+                    }
+                  }}
+                  placeholder="Search by client name, society, plot, broker code, or phone…"
+                  className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-24 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
                 {searchInput && (
                   <button
                     onClick={clearSearch}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-16 flex items-center pr-2 text-gray-400 hover:text-gray-600"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (debounceRef.current) clearTimeout(debounceRef.current);
+                    setClientNameFilter(searchInput);
+                    setCurrentPage(1);
+                  }}
+                  disabled={isLoading}
+                  className="absolute inset-y-1.5 right-1.5 px-3 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 disabled:opacity-60 flex items-center gap-1"
+                >
+                  {isLoading ? <RefreshCw className="h-3 w-3 animate-spin" /> : 'Search'}
+                </button>
               </div>
 
               {/* Society select */}

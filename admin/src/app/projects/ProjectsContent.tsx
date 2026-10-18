@@ -11,6 +11,8 @@ function fmtINR(n: number) {
 
 interface Project {
   name: string;
+  projectName?: string;
+  blockName?: string;
   totalUnits: number;
   soldUnits: number;
   cancelledUnits: number;
@@ -31,10 +33,55 @@ const STATUS_COLORS = ['#C9A84C', '#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#
 
 export default function ProjectsContent({ projects, totalSocieties, error }: Props) {
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'societies' | 'projects'>('societies');
 
-  const filtered = projects.filter((p) =>
-    !search || p.name.toLowerCase().includes(search.toLowerCase())
+  const displayItems = React.useMemo(() => {
+    if (viewMode === 'societies') return projects;
+    const grouped: Record<string, Project & { blocksCount: number }> = {};
+    for (const p of projects) {
+      const key = p.projectName || p.name;
+      if (!grouped[key]) {
+        grouped[key] = {
+          name: key,
+          projectName: key,
+          blockName: undefined,
+          totalUnits: 0,
+          soldUnits: 0,
+          cancelledUnits: 0,
+          availableUnits: 0,
+          totalRevenue: 0,
+          paidRevenue: 0,
+          brokerCount: 0,
+          clientCount: 0,
+          blocksCount: 0,
+        };
+      }
+      grouped[key].totalUnits += p.totalUnits;
+      grouped[key].soldUnits += p.soldUnits;
+      grouped[key].cancelledUnits += p.cancelledUnits;
+      grouped[key].availableUnits += p.availableUnits;
+      grouped[key].totalRevenue += p.totalRevenue;
+      grouped[key].paidRevenue += p.paidRevenue;
+      grouped[key].brokerCount = Math.max(grouped[key].brokerCount, p.brokerCount);
+      grouped[key].clientCount += p.clientCount;
+      grouped[key].blocksCount += 1;
+    }
+    return Object.values(grouped)
+      .sort((a, b) => b.totalUnits - a.totalUnits)
+      .map((g) => ({
+        ...g,
+        blockName: g.blocksCount > 1 ? `${g.blocksCount} Blocks / Phases` : 'Main Project',
+      }));
+  }, [projects, viewMode]);
+
+  const filtered = displayItems.filter((p) =>
+    !search ||
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    (p.projectName && p.projectName.toLowerCase().includes(search.toLowerCase())) ||
+    (p.blockName && p.blockName.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const uniqueParentProjects = new Set(projects.map((p) => p.projectName || p.name)).size;
 
   const totalRevenue = projects.reduce((sum, p) => sum + p.totalRevenue, 0);
   const totalPaid    = projects.reduce((sum, p) => sum + p.paidRevenue, 0);
@@ -47,7 +94,21 @@ export default function ProjectsContent({ projects, totalSocieties, error }: Pro
         <div>
           <p className="breadcrumb"><span>Properties</span><span className="sep">/</span><span className="current">Projects</span></p>
           <h1 className="page-title">Projects Management</h1>
-          <p className="page-subtitle">{totalSocieties} active projects / societies</p>
+          <p className="page-subtitle">{uniqueParentProjects} parent projects · {totalSocieties} blocks / societies</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('societies')}
+            className={`btn btn-sm ${viewMode === 'societies' ? 'btn-primary' : 'btn-secondary'}`}
+          >
+            All Blocks & Societies ({totalSocieties})
+          </button>
+          <button
+            onClick={() => setViewMode('projects')}
+            className={`btn btn-sm ${viewMode === 'projects' ? 'btn-primary' : 'btn-secondary'}`}
+          >
+            Parent Projects ({uniqueParentProjects})
+          </button>
         </div>
       </div>
 
@@ -113,43 +174,54 @@ export default function ProjectsContent({ projects, totalSocieties, error }: Pro
               <div className="h-2" style={{ background: color }} />
 
               <div className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm flex-shrink-0"
                       style={{ background: color }}
                     >
                       {project.name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <h3 className="text-sm font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{project.name}</h3>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{project.totalUnits} total units</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-bold leading-tight break-words" style={{ color: 'var(--text-primary)' }}>
+                        {viewMode === 'societies' && project.projectName && project.projectName !== project.name
+                          ? project.projectName
+                          : project.name}
+                      </h3>
+                      <p className="text-xs mt-0.5 flex items-center gap-1.5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
+                        {project.blockName && (
+                          <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium text-[11px]">
+                            {project.blockName}
+                          </span>
+                        )}
+                        <span>{project.totalUnits.toLocaleString('en-IN')} records</span>
+                      </p>
                     </div>
                   </div>
-                  <span className="badge badge-gold text-xs">{soldPct}% sold</span>
+                  <span className="badge badge-gold text-xs shrink-0">{soldPct}% sold</span>
                 </div>
 
                 {/* Unit breakdown */}
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   <div className="text-center p-2 rounded-lg bg-emerald-50">
-                    <p className="text-base font-bold" style={{ color: 'var(--success)' }}>{project.soldUnits}</p>
+                    <p className="text-base font-bold" style={{ color: 'var(--success)' }}>{project.soldUnits.toLocaleString('en-IN')}</p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Sold</p>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-blue-50">
-                    <p className="text-base font-bold" style={{ color: '#3B82F6' }}>{project.availableUnits}</p>
+                    <p className="text-base font-bold" style={{ color: '#3B82F6' }}>{project.availableUnits.toLocaleString('en-IN')}</p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Available</p>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-red-50">
-                    <p className="text-base font-bold" style={{ color: 'var(--danger)' }}>{project.cancelledUnits}</p>
+                    <p className="text-base font-bold" style={{ color: 'var(--danger)' }}>{project.cancelledUnits.toLocaleString('en-IN')}</p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Cancelled</p>
                   </div>
                 </div>
 
                 {/* Revenue */}
                 <div className="space-y-2 mb-3">
-                  <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center justify-between gap-2 text-xs">
                     <span style={{ color: 'var(--text-muted)' }}>Revenue Collection</span>
-                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    <span className="font-semibold text-right" style={{ color: 'var(--text-primary)' }}>
                       {fmtINR(project.paidRevenue)} / {fmtINR(project.totalRevenue)}
                     </span>
                   </div>
@@ -159,14 +231,14 @@ export default function ProjectsContent({ projects, totalSocieties, error }: Pro
                 </div>
 
                 {/* Meta */}
-                <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
-                  <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <Users size={12} />{project.clientCount} clients
+                <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+                  <span className="flex items-center gap-1 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                    <Users size={12} />{project.clientCount.toLocaleString('en-IN')} clients
                   </span>
-                  <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <TrendingUp size={12} />{project.brokerCount} brokers
+                  <span className="flex items-center gap-1 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                    <TrendingUp size={12} />{project.brokerCount.toLocaleString('en-IN')} brokers
                   </span>
-                  <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--success)' }}>
+                  <span className="flex items-center gap-1 text-xs whitespace-nowrap" style={{ color: 'var(--success)' }}>
                     <CheckCircle size={12} />{soldPct}% conversion
                   </span>
                 </div>

@@ -3,6 +3,7 @@ import { getPaginatedMasterData } from '@/services/masterDataService';
 import { createServiceClient } from '@/utils/supabase/service';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import { formatIndianNumber } from '@/utils/format';
+import { normalizeDate } from '@/utils/dataUtils';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
 
@@ -21,12 +22,13 @@ function toProperty(r: MasterDataOfGurukrupa) {
     r.cancel_date ? 'Unlisted' : 'Listed';
 
   // Broker or admin?
-  const brokerName = r["broker's_name"];
+  const brokerName = (r as any).broker_name_clean || r["broker's_name"];
   const listedBy = brokerName
     ? { id: `broker-${r.id}`, name: brokerName, type: 'Broker' as const, email: '', phone: r.contact_no ?? '' }
     : { id: 'admin', name: 'Admin', type: 'Admin' as const, email: '', phone: '' };
 
-  const dateAdded = r.date_of_form ?? r.date ?? r.emi_paid_date ?? r.created_at ?? '';
+  const rawDate = (r as any).form_date_iso ?? (r as any).emi_paid_date_iso ?? normalizeDate(r.date_of_form ?? r.date ?? r.emi_paid_date) ?? '';
+  const priceFmt = formatIndianNumber(r.plot_amount);
 
   return {
     id: String(r.id),
@@ -37,8 +39,8 @@ function toProperty(r: MasterDataOfGurukrupa) {
       r.plot_size && `Size: ${r.plot_size}`,
       r.emi_time && `EMI Term: ${r.emi_time}`,
       r.remarks && `Remarks: ${r.remarks}`,
-    ].filter(Boolean).join(' · ') || 'No description available.',
-    price: formatIndianNumber(r.plot_amount),
+    ].filter(Boolean).join(', ') || 'No description available.',
+    price: priceFmt !== '—' ? `₹${priceFmt}` : '—',
     status,
     isDraft: false,
     images: [],
@@ -56,7 +58,7 @@ function toProperty(r: MasterDataOfGurukrupa) {
       { page: 'homepage' as const, enabled: false },
       { page: 'category' as const, enabled: false },
     ],
-    dateAdded: dateAdded ? dateAdded.split('T')[0] : '',
+    dateAdded: rawDate ? String(rawDate).split('T')[0] : '',
     dateModified: r.updated_at ? r.updated_at.split('T')[0] : '',
     // Extra master-data fields surfaced for display
     _clientName: r.client_name ?? '',
@@ -80,8 +82,9 @@ export async function GET(request: NextRequest) {
   const result = await getPaginatedMasterData({
     page,
     pageSize,
-    clientNameFilter: search,
+    search,
     societyFilter: society,
+    statusFilter: status === 'Listed' ? 'active' : status === 'Unlisted' ? 'cancelled' : '',
   });
 
   if (result.error) {

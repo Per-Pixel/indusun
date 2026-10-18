@@ -138,28 +138,28 @@ interface PropertyFormData {
 
 
 // Summary data for property management
-const getSummaryData = (properties: Property[]) => [
+const getSummaryData = (properties: Property[], totalCount: number) => [
   {
     title: 'Total Properties',
-    value: properties.length.toString(),
+    value: (totalCount || properties.length).toLocaleString('en-IN'),
     icon: <Building size={20} className="text-blue-600" />,
     bgColor: 'bg-blue-50'
   },
   {
-    title: 'Listed Properties',
-    value: properties.filter(p => p.status === 'Listed').length.toString(),
+    title: 'Listed (Current Page)',
+    value: properties.filter(p => p.status === 'Listed').length.toLocaleString('en-IN'),
     icon: <Eye size={20} className="text-green-600" />,
     bgColor: 'bg-green-50'
   },
   {
-    title: 'Unlisted Properties',
-    value: properties.filter(p => p.status === 'Unlisted').length.toString(),
+    title: 'Unlisted (Current Page)',
+    value: properties.filter(p => p.status === 'Unlisted').length.toLocaleString('en-IN'),
     icon: <EyeOff size={20} className="text-gray-600" />,
     bgColor: 'bg-gray-50'
   },
   {
-    title: 'Sold Properties',
-    value: properties.filter(p => p.status === 'Sold').length.toString(),
+    title: 'Sold (Current Page)',
+    value: properties.filter(p => p.status === 'Sold').length.toLocaleString('en-IN'),
     icon: <CheckCircle size={20} className="text-purple-600" />,
     bgColor: 'bg-purple-50'
   }
@@ -385,7 +385,7 @@ export default function PropertiesPage() {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {getSummaryData(properties).map((item, index) => (
+              {getSummaryData(properties, totalCount).map((item, index) => (
                 <div key={index} className={`p-4 rounded-lg border border-gray-200 ${item.bgColor}`}>
                   <div className="flex justify-between items-center">
                     <div>
@@ -562,20 +562,22 @@ export default function PropertiesPage() {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100">
+                      <div className="flex items-center min-w-0 flex-1">
+                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-2 shrink-0">
                           <User size={16} className="text-blue-600" />
                         </div>
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <p className="text-xs text-gray-500">{property.listedBy.type}</p>
-                          <p className="text-sm font-medium text-black">{property.listedBy.name}</p>
+                          <p className="text-sm font-medium text-black truncate">{property.listedBy.name}</p>
                         </div>
                       </div>
-                      <div className="text-xs text-gray-500 flex items-center">
-                        <Calendar size={14} className="mr-1" />
-                        {property.dateAdded}
-                      </div>
+                      {property.dateAdded && (
+                        <div className="text-xs text-gray-500 flex items-center shrink-0 whitespace-nowrap">
+                          <Calendar size={14} className="mr-1" />
+                          {property.dateAdded}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -622,7 +624,7 @@ export default function PropertiesPage() {
             {!loading && totalPages > 1 && (
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-600">
-                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} properties
+                  Showing {((currentPage - 1) * PAGE_SIZE + 1).toLocaleString('en-IN')}–{Math.min(currentPage * PAGE_SIZE, totalCount).toLocaleString('en-IN')} of {totalCount.toLocaleString('en-IN')} properties
                 </p>
                 <div className="flex items-center gap-2">
                   <button
@@ -632,7 +634,7 @@ export default function PropertiesPage() {
                   >
                     Previous
                   </button>
-                  <span className="text-sm text-gray-600">Page {currentPage} of {totalPages}</span>
+                  <span className="text-sm text-gray-600">Page {currentPage.toLocaleString('en-IN')} of {totalPages.toLocaleString('en-IN')}</span>
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}

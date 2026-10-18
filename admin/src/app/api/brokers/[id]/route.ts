@@ -77,6 +77,7 @@ export async function PUT(
 
     const record = {
       name:            body.name.trim(),
+      broker_code:     body.broker_code?.trim() || null,
       phone:           body.phone?.trim()    || null,
       email:           body.email?.trim()    || null,
       location:        body.location?.trim() || null,

@@ -215,6 +215,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function BillingPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
   // State for real data from API
@@ -277,7 +278,7 @@ export default function BillingPage() {
       const searchParams = new URLSearchParams();
       searchParams.append('page', currentPage.toString());
       searchParams.append('limit', transactionsPerPage.toString());
-      if (searchTerm) searchParams.append('search', searchTerm);
+      if (debouncedSearch) searchParams.append('search', debouncedSearch);
       if (filterStatus !== 'All') searchParams.append('status', filterStatus);
       
       const response = await fetch(`/api/billing?${searchParams.toString()}`);
@@ -307,21 +308,21 @@ export default function BillingPage() {
           },
           {
             title: 'Total Transactions',
-            value: `${data.summary.totalTransactions || 0}`,
+            value: (data.summary.totalTransactions || 0).toLocaleString('en-IN'),
             icon: <TrendingUp size={20} className="text-green-600" />,
             bgColor: 'bg-green-50',
             change: ''
           },
           {
             title: 'Completed Transactions',
-            value: `${data.summary.completedTransactions || 0}`,
+            value: (data.summary.completedTransactions || 0).toLocaleString('en-IN'),
             icon: <FileText size={20} className="text-purple-600" />,
             bgColor: 'bg-purple-50',
             change: ''
           },
           {
             title: 'Cancelled Deals',
-            value: `${data.summary.cancelledCount || 0}`,
+            value: (data.summary.cancelledCount || 0).toLocaleString('en-IN'),
             icon: <XCircle size={20} className="text-red-600" />,
             bgColor: 'bg-red-50',
             change: `₹${formatAmount(data.summary.cancelledAmount || 0)} written off`
@@ -385,16 +386,21 @@ export default function BillingPage() {
 
   const transactionsPerPage = 25;
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   // Use server-side filtering - this will trigger a refetch when search params change
   useEffect(() => {
     // Reset to page 1 when filters change
     setCurrentPage(1);
-  }, [searchTerm, filterStatus]);
+  }, [debouncedSearch, filterStatus]);
 
   // When page changes, refetch data
   useEffect(() => {
     fetchBillingData();
-  }, [currentPage, searchTerm, filterStatus]);
+  }, [currentPage, debouncedSearch, filterStatus]);
   
   // Calculate display indexes for UI
   const indexOfFirstTransaction = (currentPage - 1) * transactionsPerPage + 1;
@@ -593,20 +599,28 @@ export default function BillingPage() {
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={billingSourcesData}
+                              data={billingSourcesData.slice(0, 6)}
                               cx="50%"
-                              cy="50%"
+                              cy="45%"
                               labelLine={false}
-                              outerRadius={80}
+                              innerRadius={45}
+                              outerRadius={72}
                               fill="#8884d8"
                               dataKey="value"
-                              label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
                             >
-                              {billingSourcesData.map((entry, index: number) => (
+                              {billingSourcesData.slice(0, 6).map((entry, index: number) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                               ))}
                             </Pie>
-                            <Legend />
+                            <Tooltip
+                              formatter={(val: number) => [`₹${formatAmount(Number(val) || 0)}`, 'Revenue']}
+                            />
+                            <Legend
+                              wrapperStyle={{ fontSize: '11px', paddingTop: '6px' }}
+                              formatter={(value: string) =>
+                                value && value.length > 18 ? `${value.slice(0, 17)}…` : value
+                              }
+                            />
                           </PieChart>
                         </ResponsiveContainer>
                       ) : (
@@ -802,9 +816,9 @@ export default function BillingPage() {
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Showing <span className="font-medium">{transactions.length > 0 ? indexOfFirstTransaction : 0}</span> to{' '}
-                        <span className="font-medium">{indexOfLastTransaction}</span>{' '}
-                        of <span className="font-medium">{totalItems}</span> results
+                        Showing <span className="font-medium">{(transactions.length > 0 ? indexOfFirstTransaction : 0).toLocaleString('en-IN')}</span> to{' '}
+                        <span className="font-medium">{indexOfLastTransaction.toLocaleString('en-IN')}</span>{' '}
+                        of <span className="font-medium">{totalItems.toLocaleString('en-IN')}</span> results
                       </p>
                     </div>
                     <div>

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
+import { withServerCache } from '@/utils/serverCache';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
+const INVOICE_COLS = 'id,client_name,society_name,plot_no,emi_amount,emi_paid_date,r_no,emi_no,"broker\'s_name"';
 
 const inr = (n: number) =>
   `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`;
@@ -65,10 +67,16 @@ export async function GET(request: NextRequest) {
     // Missing/empty bills table → master data still works.
 
     // ── Master-data invoices ───────────────────────────────────────────────
-    let query = supabase.from(TABLE_NAME).select('*', { count: 'exact' });
-    if (search) query = query.or(`client_name.ilike.%${search}%,society_name.ilike.%${search}%`);
-    if (status === 'Paid')    query = query.not('emi_paid_date', 'is', null).neq('emi_paid_date', '');
-    if (status === 'Pending') query = query.or('emi_paid_date.is.null,emi_paid_date.eq.');
+    const applyMasterFilters = (q: any) => {
+      if (search) {
+        q = q.or(
+          `client_name.ilike.%${search}%,society_name.ilike.%${search}%,plot_no.ilike.%${search}%,"broker's_name".ilike.%${search}%,r_no.ilike.%${search}%`
+        );
+      }
+      if (status === 'Paid')    q = q.not('emi_paid_date', 'is', null).neq('emi_paid_date', '');
+      if (status === 'Pending') q = q.or('emi_paid_date.is.null,emi_paid_date.eq.');
+      return q;
+    };
 
     // Bills occupy positions [0, billsCount); master rows continue after.
     const billsCount = bills.length;
@@ -81,14 +89,24 @@ export async function GET(request: NextRequest) {
     let masterCount = 0;
 
     {
-      // When bills fill the whole page we still need the filtered master count —
-      // a zero-width range returns at most one row but preserves count:'exact'.
       const rangeEnd = remaining > 0 ? masterFrom + remaining - 1 : masterFrom;
-      const { data, error, count } = await query
-        .order('id', { ascending: false })
-        .range(masterFrom, rangeEnd);
+      const countCacheKey = `count:invoices:${search}|${status}`;
+      const [{ data, error }, cachedCount] = await Promise.all([
+        remaining > 0
+          ? applyMasterFilters(supabase.from(TABLE_NAME).select(INVOICE_COLS))
+              .order('id', { ascending: false })
+              .range(masterFrom, rangeEnd)
+          : Promise.resolve({ data: [], error: null }),
+        withServerCache(countCacheKey, async () => {
+          const { count: c, error: cErr } = await applyMasterFilters(
+            supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
+          );
+          if (cErr) throw new Error(cErr.message);
+          return c || 0;
+        }),
+      ]);
       if (error) throw new Error(error.message);
-      masterCount = count || 0;
+      masterCount = cachedCount || 0;
       const rows = remaining > 0 ? (data || []) : [];
 
       masterInvoices = rows.map((row: any) => {
@@ -115,13 +133,19 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ── Summary counts ─────────────────────────────────────────────────────
-    const [paidRes, pendingRes] = await Promise.all([
-      supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
-        .not('emi_paid_date', 'is', null).neq('emi_paid_date', ''),
-      supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
-        .or('emi_paid_date.is.null,emi_paid_date.eq.'),
-    ]);
+    // ── Summary counts (cached so pagination/search stays fast) ────────────
+    const masterCounts = await withServerCache('invoices:master_status_counts', async () => {
+      const [paidRes, pendingRes] = await Promise.all([
+        supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
+          .not('emi_paid_date', 'is', null).neq('emi_paid_date', ''),
+        supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
+          .or('emi_paid_date.is.null,emi_paid_date.eq.'),
+      ]);
+      return {
+        paid: paidRes.count || 0,
+        pending: pendingRes.count || 0,
+      };
+    });
 
     const billsPaid    = bills.filter((b) => b.status === 'Paid').length;
     const billsPending = billsCount - billsPaid;
@@ -131,9 +155,9 @@ export async function GET(request: NextRequest) {
       invoices: [...billSlice, ...masterInvoices],
       pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) },
       summary: {
-        paidCount:    (paidRes.count || 0) + billsPaid,
-        pendingCount: (pendingRes.count || 0) + billsPending,
-        totalCount:   (paidRes.count || 0) + (pendingRes.count || 0) + billsCount,
+        paidCount:    masterCounts.paid + billsPaid,
+        pendingCount: masterCounts.pending + billsPending,
+        totalCount:   masterCounts.paid + masterCounts.pending + billsCount,
       },
     });
 

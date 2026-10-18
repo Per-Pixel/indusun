@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import {
   LayoutDashboard,
@@ -202,22 +203,16 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
 
                 return (
                   <div key={item.label}>
-                    <div
-                      className={`sidebar-item ${parentActive && !hasChildren ? 'active' : ''} ${parentActive && hasChildren ? 'font-semibold' : ''}`}
-                      onClick={() => {
-                        if (hasChildren) {
-                          toggleExpand(item.label);
-                        } else if (item.path) {
-                          navigate(item.path);
-                        }
-                      }}
-                    >
-                      <span className="item-icon">{item.icon}</span>
-                      <span className="item-label">{item.label}</span>
-                      {item.badge && (
-                        <span className="item-badge">{item.badge}</span>
-                      )}
-                      {hasChildren && (
+                    {hasChildren ? (
+                      <div
+                        className={`sidebar-item ${parentActive ? 'font-semibold' : ''}`}
+                        onClick={() => toggleExpand(item.label)}
+                      >
+                        <span className="item-icon">{item.icon}</span>
+                        <span className="item-label">{item.label}</span>
+                        {item.badge && (
+                          <span className="item-badge">{item.badge}</span>
+                        )}
                         <ChevronDown
                           size={15}
                           style={{
@@ -227,8 +222,25 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                             flexShrink: 0,
                           }}
                         />
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <Link
+                        href={item.path || '/dashboard'}
+                        prefetch={true}
+                        onClick={() => {
+                          if (closeSidebar && typeof window !== 'undefined' && window.innerWidth < 1024) {
+                            closeSidebar();
+                          }
+                        }}
+                        className={`sidebar-item ${parentActive ? 'active' : ''}`}
+                      >
+                        <span className="item-icon">{item.icon}</span>
+                        <span className="item-label">{item.label}</span>
+                        {item.badge && (
+                          <span className="item-badge">{item.badge}</span>
+                        )}
+                      </Link>
+                    )}
 
                     {/* Sub-menu */}
                     {hasChildren && (
@@ -239,13 +251,19 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                         }}
                       >
                         {item.children!.map((child) => (
-                          <div
+                          <Link
                             key={child.path}
+                            href={child.path}
+                            prefetch={true}
+                            onClick={() => {
+                              if (closeSidebar && typeof window !== 'undefined' && window.innerWidth < 1024) {
+                                closeSidebar();
+                              }
+                            }}
                             className={`sidebar-item ${isActive(child.path) ? 'active' : ''}`}
-                            onClick={() => navigate(child.path)}
                           >
                             <span className="item-label">{child.label}</span>
-                          </div>
+                          </Link>
                         ))}
                       </div>
                     )}

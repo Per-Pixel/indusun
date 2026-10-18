@@ -1,31 +1,20 @@
 import CRMLayout from '@/components/CRMLayout';
 import ReportsContent from './ReportsContent';
-import { getMasterDataSummary, getAllMasterData } from '@/services/masterDataService';
+import { getMasterDataSummary } from '@/services/masterDataService';
+import { createServiceClient } from '@/utils/supabase/service';
+import { withServerCache } from '@/utils/serverCache';
 
 export const metadata = { title: 'Reports & Analytics | Indusun CRM' };
 
 export default async function ReportsPage() {
-  const [summaryResult, allDataResult] = await Promise.all([
+  const [summaryResult, topBrokers] = await Promise.all([
     getMasterDataSummary(),
-    getAllMasterData(),
+    withServerCache('rpc:get_top_brokers_rpc:10', async () => {
+      const supabase = createServiceClient();
+      const { data } = await supabase.rpc('get_top_brokers_rpc', { p_limit: 10 });
+      return Array.isArray(data) ? data : [];
+    }).catch(() => []),
   ]);
-
-  // Build broker performance from all data
-  const brokerStats: Record<string, { deals: number; revenue: number; paid: number }> = {};
-  if (allDataResult.data) {
-    allDataResult.data.forEach((row) => {
-      const broker = row["broker's_name"] || 'Direct';
-      if (!brokerStats[broker]) brokerStats[broker] = { deals: 0, revenue: 0, paid: 0 };
-      brokerStats[broker].deals++;
-      brokerStats[broker].revenue += parseFloat(row.plot_amount?.replace(/[^0-9.]/g, '') || '0') || 0;
-      brokerStats[broker].paid    += parseFloat(row.paid_amount?.replace(/[^0-9.]/g, '') || '0') || 0;
-    });
-  }
-
-  const topBrokers = Object.entries(brokerStats)
-    .sort((a, b) => b[1].deals - a[1].deals)
-    .slice(0, 10)
-    .map(([name, stats]) => ({ name, ...stats }));
 
   return (
     <CRMLayout>

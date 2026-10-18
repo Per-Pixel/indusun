@@ -59,7 +59,7 @@ export default function PropertiesExportPage() {
     <div className="flex h-screen bg-gray-50">
       <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
 
-      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
+      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[260px]' : 'ml-0'}`}>
         <div className="sticky top-0 z-10">
           <AdminTopNavbar toggleSidebar={toggleSidebar} />
         </div>

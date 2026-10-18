@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
+import { withServerCache } from '@/utils/serverCache';
 
 const MASTER_TABLE = 'Master Data Of Gurukrupa';
 const CLIENTS_TABLE = 'clients';
@@ -33,46 +34,26 @@ export async function GET(req: NextRequest) {
 
     const supabase = createServiceClient();
 
-    // ── 1. Fetch from master data table ───────────────────────────────────────
-    const { count: totalRows } = await supabase
-      .from(MASTER_TABLE)
-      .select('*', { count: 'exact', head: true });
+    // ── 1. Fetch unique clients from master data via fast cached RPC ───────────
+    const [masterClientsData, { data: customClients, error: customErr }] = await Promise.all([
+      withServerCache('rpc:get_unique_clients_rpc', async () => {
+        const { data, error } = await supabase.rpc('get_unique_clients_rpc');
+        if (error) throw new Error(error.message);
+        return data;
+      }),
+      supabase
+        .from(CLIENTS_TABLE)
+        .select('id,name,phone,email,status,location,created_at')
+        .order('created_at', { ascending: false }),
+    ]);
 
-    const batches = Math.ceil((totalRows || 0) / PAGE_SIZE);
-    let allRows: { client_name: string | null; contact_no: string | null }[] = [];
+    const masterList = Array.isArray(masterClientsData)
+      ? (masterClientsData as { display: string; phone: string | null }[])
+      : [];
 
-    for (let b = 0; b < batches; b += 10) {
-      const end = Math.min(b + 10, batches);
-      const results = await Promise.all(
-        Array.from({ length: end - b }, (_, i) => {
-          const from = (b + i) * PAGE_SIZE;
-          return supabase
-            .from(MASTER_TABLE)
-            .select('client_name,contact_no')
-            .range(from, from + PAGE_SIZE - 1);
-        })
-      );
-      for (const { data } of results) allRows = allRows.concat(data || []);
-    }
+    let clients = masterList.map(({ display, phone }, idx) => rowToClient(display, phone, idx, 'master'));
 
-    // Deduplicate by client_name (case-insensitive)
-    const seen = new Map<string, { display: string; phone: string | null }>();
-    for (const r of allRows) {
-      if (!r.client_name) continue;
-      const key = r.client_name.trim().toLowerCase();
-      if (!seen.has(key)) seen.set(key, { display: r.client_name.trim(), phone: r.contact_no });
-    }
-
-    let clients = Array.from(seen.values())
-      .sort((a, b) => a.display.localeCompare(b.display))
-      .map(({ display, phone }, idx) => rowToClient(display, phone, idx, 'master'));
-
-    // ── 2. Fetch from writable clients table ──────────────────────────────────
-    const { data: customClients, error: customErr } = await supabase
-      .from(CLIENTS_TABLE)
-      .select('id,name,phone,email,status,location,created_at')
-      .order('created_at', { ascending: false });
-
+    // ── 2. Merge writable clients table ────────────────────────────────────────
     if (!customErr && customClients && customClients.length > 0) {
       const customFormatted = customClients.map((c: any, idx: number) => ({
         id:         `c-${c.id}`,

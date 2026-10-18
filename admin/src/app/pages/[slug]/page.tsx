@@ -17,7 +17,7 @@ export default function CmsPage({ params }: { params: Promise<{ slug: string }> 
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-      <div className={`transition-all duration-300 ${isSidebarOpen ? 'ml-[200px]' : 'ml-0'}`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? 'ml-[260px]' : 'ml-0'}`}>
         <AdminTopNavbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         <main className="p-6 max-w-5xl mx-auto">
           <PageEditor page={def} />

@@ -3,6 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 
+function formatCommaINR(val: string | number | null | undefined): string {
+  if (val == null || val === '') return '-';
+  const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^0-9.-]/g, ''));
+  if (!Number.isFinite(num) || num === 0) return String(val).trim() || '-';
+  return `₹${num.toLocaleString('en-IN')}`;
+}
+
 interface DataTableProps {
   data: MasterDataOfGurukrupa[];
   totalCount: number;
@@ -89,10 +96,10 @@ export default function DataTable({
       <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-700">
-            Showing {startRecord} to {endRecord} of {totalCount} entries
+            Showing {startRecord.toLocaleString('en-IN')} to {endRecord.toLocaleString('en-IN')} of {totalCount.toLocaleString('en-IN')} entries
           </p>
           <p className="text-sm text-gray-500">
-            Page {currentPage} of {totalPages}
+            Page {currentPage.toLocaleString('en-IN')} of {totalPages.toLocaleString('en-IN')}
           </p>
         </div>
       </div>
@@ -124,7 +131,10 @@ export default function DataTable({
                 Paid Amount
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Broker
+                Broker Code
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Broker Name
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Contact
@@ -134,7 +144,7 @@ export default function DataTable({
           <tbody className="bg-white divide-y divide-gray-200">
             {isLoading ? (
               <tr>
-                <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={10} className="px-6 py-12 text-center text-gray-500">
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mr-3"></div>
                     Loading data...
@@ -151,7 +161,10 @@ export default function DataTable({
                     {record.client_name || '-'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                    {record.society_name || '-'}
+                    <div className="font-medium text-gray-800">{record.project_name || record.society_name || '-'}</div>
+                    {record.block_name && record.block_name !== 'Main' && (
+                      <div className="text-xs text-blue-600">{record.block_name}</div>
+                    )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                     {record.plot_no || '-'}
@@ -160,13 +173,20 @@ export default function DataTable({
                     {record.plot_size || '-'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
-                    {record.plot_amount || '-'}
+                    {formatCommaINR((record as any).plot_amount_num ?? record.plot_amount)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">
-                    {record.paid_amount || '-'}
+                    {formatCommaINR((record as any).paid_amount_num ?? record.paid_amount)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                    {record["broker's_name"] || '-'}
+                    {record.broker_code ? (
+                      <span className="inline-block px-2 py-0.5 rounded text-xs font-mono bg-amber-50 text-amber-800 border border-amber-200">
+                        {record.broker_code}
+                      </span>
+                    ) : '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-medium">
+                    {record.broker_name_clean || record["broker's_name"] || '-'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                     {record.contact_no || '-'}
@@ -175,7 +195,7 @@ export default function DataTable({
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={10} className="px-6 py-12 text-center text-gray-500">
                   No records found matching your filters.
                 </td>
               </tr>

@@ -13,6 +13,10 @@ import { toast } from 'react-hot-toast';
 interface Broker {
   id: string;
   name: string;
+  broker_code?: string | null;
+  raw_identifier?: string | null;
+  deal_count?: number;
+  total_revenue?: number;
   email: string | null;
   phone: string | null;
   location: string | null;
@@ -24,6 +28,7 @@ interface Broker {
 
 interface BrokerFormData {
   name: string;
+  broker_code: string;
   phone: string;
   email: string;
   location: string;
@@ -32,7 +37,7 @@ interface BrokerFormData {
 }
 
 const emptyForm: BrokerFormData = {
-  name: '', phone: '', email: '', location: '', commission_rate: '', rera_number: '',
+  name: '', broker_code: '', phone: '', email: '', location: '', commission_rate: '', rera_number: '',
 };
 
 interface PaginationData {
@@ -60,15 +65,27 @@ function BrokerFormFields({ form, setForm }: {
   const set = (k: keyof BrokerFormData, v: string) => setForm({ ...form, [k]: v });
   return (
     <div className="space-y-4">
-      <div>
-        <label className={labelCls}>Name <span className="text-red-500">*</span></label>
-        <input
-          type="text"
-          value={form.name}
-          onChange={(e) => set('name', e.target.value)}
-          className={inputCls}
-          placeholder="e.g. Sunil Broker"
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelCls}>Broker Name <span className="text-red-500">*</span></label>
+          <input
+            type="text"
+            value={form.name}
+            onChange={(e) => set('name', e.target.value)}
+            className={inputCls}
+            placeholder="e.g. Juber / Sunil"
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Broker Code</label>
+          <input
+            type="text"
+            value={form.broker_code}
+            onChange={(e) => set('broker_code', e.target.value)}
+            className={inputCls}
+            placeholder="e.g. GKC/0029/FLY"
+          />
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -276,6 +293,7 @@ export default function BrokersPage() {
     setSelectedBroker(broker);
     setFormData({
       name: broker.name,
+      broker_code: broker.broker_code || '',
       phone: broker.phone || '',
       email: broker.email || '',
       location: broker.location || '',
@@ -298,10 +316,10 @@ export default function BrokersPage() {
   }, [fetchBrokers]);
 
   const summaryCards = [
-    { title: 'Total Brokers', value: summaryData.totalBrokers, icon: <Users size={20} className="text-blue-600" />, bg: 'bg-blue-50' },
-    { title: 'In Directory', value: summaryData.directoryCount, icon: <ShieldCheck size={20} className="text-green-600" />, bg: 'bg-green-50' },
-    { title: 'From Records', value: summaryData.recordsCount, icon: <Briefcase size={20} className="text-amber-600" />, bg: 'bg-amber-50' },
-    { title: 'New This Month', value: summaryData.newThisMonth, icon: <Users size={20} className="text-purple-600" />, bg: 'bg-purple-50' },
+    { title: 'Total Brokers', value: (summaryData.totalBrokers || 0).toLocaleString('en-IN'), icon: <Users size={20} className="text-blue-600" />, bg: 'bg-blue-50' },
+    { title: 'In Directory', value: (summaryData.directoryCount || 0).toLocaleString('en-IN'), icon: <ShieldCheck size={20} className="text-green-600" />, bg: 'bg-green-50' },
+    { title: 'Active in Records', value: (summaryData.recordsCount || 0).toLocaleString('en-IN'), icon: <Briefcase size={20} className="text-amber-600" />, bg: 'bg-amber-50' },
+    { title: 'With GKC Code', value: (summaryData.newThisMonth || 0).toLocaleString('en-IN'), icon: <Users size={20} className="text-purple-600" />, bg: 'bg-purple-50' },
   ];
 
   return (
@@ -357,7 +375,7 @@ export default function BrokersPage() {
               </div>
               <input
                 type="text"
-                placeholder="Search by name, phone, or email..."
+                placeholder="Search by broker name, GKC code (e.g. GKC/0013/FLY), phone, or email..."
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -385,7 +403,9 @@ export default function BrokersPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <th className="px-6 py-3">Broker</th>
+                      <th className="px-6 py-3">Broker Name</th>
+                      <th className="px-6 py-3">Broker Code</th>
+                      <th className="px-6 py-3">Deals</th>
                       <th className="px-6 py-3">Contact</th>
                       <th className="px-6 py-3">Commission</th>
                       <th className="px-6 py-3">Source</th>
@@ -404,7 +424,12 @@ export default function BrokersPage() {
                               {broker.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                             </div>
                             <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900">{broker.name}</div>
+                              <div className="text-sm font-semibold text-gray-900">{broker.name}</div>
+                              {broker.raw_identifier && broker.raw_identifier !== broker.name && (
+                                <div className="text-xs text-gray-400 mt-0.5">
+                                  Record: {broker.raw_identifier}
+                                </div>
+                              )}
                               {broker.location && (
                                 <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                                   <MapPin size={11} /> {broker.location}
@@ -412,6 +437,20 @@ export default function BrokersPage() {
                               )}
                             </div>
                           </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {broker.broker_code ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                              {broker.broker_code}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">Direct / Named</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {(broker.deal_count || 0).toLocaleString('en-IN')}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                           {broker.phone && (
@@ -483,9 +522,9 @@ export default function BrokersPage() {
             {pagination.totalPages > 1 && !loading && (
               <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
                 <p className="text-sm text-gray-700">
-                  Page <span className="font-medium">{currentPage}</span> of{' '}
-                  <span className="font-medium">{pagination.totalPages}</span> —{' '}
-                  <span className="font-medium">{pagination.totalItems}</span> brokers
+                  Page <span className="font-medium">{currentPage.toLocaleString('en-IN')}</span> of{' '}
+                  <span className="font-medium">{pagination.totalPages.toLocaleString('en-IN')}</span> —{' '}
+                  <span className="font-medium">{pagination.totalItems.toLocaleString('en-IN')}</span> brokers
                 </p>
                 <nav className="inline-flex rounded-md shadow-sm -space-x-px">
                   <button

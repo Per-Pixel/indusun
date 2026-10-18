@@ -16,20 +16,21 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
   const [propertyType, setPropertyType] = useState('all');
   const [activeTab, setActiveTab] = useState('Buy');
   const [isFocused, setIsFocused] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
 
 
   const searchSuggestions = [
-    "2 BHK property near me",
-    "Big bungalow in Mumbai",
-    "3 BHK apartment in Pune",
-    "Villa with swimming pool",
-    "Commercial space for rent",
-    "1 BHK flat under 50 lakhs",
-    "Luxury apartments in Delhi",
-    "Property near metro station",
-    "4 BHK penthouse",
-    "Ready to move property"
+    "Royal City Block B",
+    "Avadh Residancy",
+    "Om Villa plot",
+    "Shiv Sai Nagar",
+    "Mahadev Nagar",
+    "Satguru Park",
+    "Gurukrupa Park",
+    "Sai Nagar",
+    "Sai Shrushti Residancy",
+    "Dream City"
   ];
 
   // Remove or comment out the useEffect for cycling through search suggestions
@@ -57,10 +58,11 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchTerm.trim()) return;
+    setIsSubmitting(true);
 
     if (onSearch) {
       onSearch(searchTerm, propertyType, activeTab);
+      setTimeout(() => setIsSubmitting(false), 600);
     } else {
       // Default behavior - redirect to search page
       const params = new URLSearchParams();
@@ -177,9 +179,10 @@ export function MobileSearchForm({ onSearch, className = '' }: MobileSearchFormP
           {/* Search Button */}
           <button
             type="submit"
-            className="px-3 py-1.5 bg-blue-400 text-white text-xs font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
+            disabled={isSubmitting}
+            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors rounded-md cursor-pointer"
           >
-            Search
+            {isSubmitting ? 'Searching…' : 'Search'}
           </button>
         </form>
       </div>

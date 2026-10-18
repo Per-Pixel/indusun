@@ -46,6 +46,7 @@ const PropertiesPage = () => {
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+  const [totalAvailableCount, setTotalAvailableCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -96,6 +97,8 @@ const PropertiesPage = () => {
       window.location.href = `/properties/search?q=${encodeURIComponent(searchTerm)}`;
     } else {
       setIsSearchView(true);
+      const el = document.getElementById('property-listings-results');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -153,10 +156,12 @@ const PropertiesPage = () => {
     setIsLoading(true);
     setFetchError(null);
 
-    fetch(`/api/properties?q=${encodeURIComponent(searchTerm)}`, { signal: controller.signal, cache: 'no-store' })
+    const limit = Math.max(48, visibleProperties + visibleLandProperties + 24);
+    fetch(`/api/properties?q=${encodeURIComponent(searchTerm)}&limit=${limit}`, { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'Unable to load properties');
+        setTotalAvailableCount(payload.count ?? (payload.data?.length || 0));
         return payload.data as Property[];
       })
       .then((properties) => {
@@ -177,7 +182,7 @@ const PropertiesPage = () => {
       .finally(() => setIsLoading(false));
 
     return () => controller.abort();
-  }, [searchTerm, propertyType, priceRange, sortBy, refreshKey]);
+  }, [searchTerm, propertyType, priceRange, sortBy, refreshKey, visibleProperties, visibleLandProperties]);
 
   // Get current properties for pagination
   const indexOfLastProperty = currentPage * propertiesPerPage;
@@ -417,9 +422,10 @@ const PropertiesPage = () => {
           {/* Search Button */}
           <button 
             type="submit"
-            className="px-3 md:px-6 py-1.5 md:py-2 bg-blue-400 text-white text-xs md:text-base font-medium hover:bg-blue-500 transition-colors rounded-md cursor-pointer"
+            disabled={isLoading}
+            className="px-3 md:px-6 py-1.5 md:py-2 bg-blue-600 text-white text-xs md:text-base font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors rounded-md cursor-pointer flex items-center gap-2"
           >
-            Search
+            {isLoading ? 'Searching…' : 'Search'}
           </button>
         </form>
       </div>
@@ -440,7 +446,7 @@ const PropertiesPage = () => {
       </AnimatePresence>
 
       {/* Featured Properties Section */}
-      <section className="py-8 bg-white">
+      <section id="property-listings-results" className="py-8 bg-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-5xl font-bold mb-4 text-black">
             Featured Properties 
@@ -455,16 +461,27 @@ const PropertiesPage = () => {
               </svg>
             </span>
           </h2>
-          <p className="text-base text-gray-500 mb-8 max-w-3xl mx-auto line-clamp-2">
+          <p className="text-base text-gray-500 mb-4 max-w-3xl mx-auto line-clamp-2">
             Explore verified listings currently available through Indusun. Availability and pricing are refreshed from the master data source.
           </p>
-          {isLoading && <p className="text-sm text-gray-500 mb-6">Loading current listings…</p>}
+          {!isLoading && !fetchError && (
+            <p className="text-sm font-medium text-blue-600 mb-6">
+              {searchTerm
+                ? `Found ${totalAvailableCount.toLocaleString('en-IN')} matching properties for "${searchTerm}"`
+                : `Showing ${Math.min(visibleProperties, filteredProperties.length)} of ${totalAvailableCount.toLocaleString('en-IN')} verified properties`}
+            </p>
+          )}
+          {isLoading && (
+            <div className="flex items-center justify-center gap-2 text-sm text-blue-600 font-medium mb-6">
+              <div className="h-4 w-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+              <span>Loading current listings…</span>
+            </div>
+          )}
           {fetchError && <p role="alert" className="text-sm text-red-600 mb-6">{fetchError}</p>}
 
               {/* Properties Grid */}
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
                 {filteredProperties
-                  .filter(property => property.type !== 'Plot') // Filter out plots for regular properties
                   .slice(0, visibleProperties)
                   .map((property) => (
                     isDesktop ? (
@@ -476,7 +493,7 @@ const PropertiesPage = () => {
               </div>
 
           {/* Load More Button */}
-          {filteredProperties.filter(property => property.type !== 'Plot').length > visibleProperties && (
+          {filteredProperties.length > visibleProperties && (
             <div className="text-center mt-6">
               <motion.button 
                 variants={buttonVariants}

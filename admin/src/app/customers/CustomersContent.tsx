@@ -54,8 +54,7 @@ function classNames(...c: (string | false | undefined)[]) {
 }
 
 function fmtINR(n: number) {
-  if (n >= 1_00_000) return `₹${(n / 1_00_000).toFixed(1)}L`;
-  return `₹${n.toLocaleString('en-IN')}`;
+  return `₹${(Number(n) || 0).toLocaleString('en-IN')}`;
 }
 
 function deriveStatus(row: MasterDataOfGurukrupa) {
@@ -108,7 +107,7 @@ export default function CustomersContent({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const [localSearch, setLocalSearch] = useState(filters.search);
 
   useEffect(() => {
@@ -267,28 +266,33 @@ export default function CustomersContent({
               e.preventDefault();
               updateUrl({ search: localSearch, page: '1' });
             }}
-            className="search-wrapper flex-1 min-w-[220px]"
+            className="search-wrapper flex-1 min-w-[220px] flex items-center gap-2"
           >
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by name, phone, society, plot or broker…"
-              className="input input-sm"
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-            />
-            {localSearch && (
-              <button
-                type="button"
-                onClick={() => {
-                  setLocalSearch('');
-                  updateUrl({ search: '', page: '1' });
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={14} />
-              </button>
-            )}
+            <div className="relative flex-1">
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search by name, phone, society, plot or broker…"
+                className="input input-sm pl-9 pr-8"
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+              />
+              {localSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalSearch('');
+                    updateUrl({ search: '', page: '1' });
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">
+              {isPending ? 'Searching…' : 'Search'}
+            </button>
           </form>
 
           {/* Society */}
@@ -451,37 +455,37 @@ export default function CustomersContent({
                 {/* subtle gold accent on hover */}
                 <div className="absolute inset-y-0 left-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'var(--gold)' }} />
 
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="avatar avatar-md font-bold">
+                <div className="flex items-start justify-between gap-2 mb-4">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="avatar avatar-md font-bold shrink-0">
                       {(c.client_name || 'U').charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold break-words" style={{ color: 'var(--text-primary)' }}>
                         {c.client_name || '—'}
                       </p>
                       <span
-                        className="flex items-center gap-1 text-xs mt-0.5"
+                        className="flex items-center gap-1 text-xs mt-0.5 truncate"
                         style={{ color: 'var(--text-muted)' }}
                       >
-                        <Phone size={10} />
+                        <Phone size={10} className="shrink-0" />
                         {c.contact_no || '—'}
                       </span>
                     </div>
                   </div>
-                  <span className={classNames('badge', `badge-${status.tone}`)}>
+                  <span className={classNames('badge shrink-0', `badge-${status.tone}`)}>
                     {status.icon}
                     {status.label}
                   </span>
                 </div>
 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-                      <Building2 size={13} />
-                      {c.society_name || '—'}
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="flex items-center gap-1.5 min-w-0 truncate" style={{ color: 'var(--text-muted)' }}>
+                      <Building2 size={13} className="shrink-0" />
+                      <span className="truncate">{c.society_name || '—'}</span>
                     </span>
-                    <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="font-medium shrink-0 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                       Plot {c.plot_no || '—'}
                     </span>
                   </div>
@@ -527,10 +531,17 @@ export default function CustomersContent({
                   )}
 
                   {c["broker's_name"] && (
-                    <p className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-xs flex items-center gap-1.5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
                       <User size={11} />
                       Broker:{' '}
-                      <span style={{ color: 'var(--text-secondary)' }}>{c["broker's_name"]}</span>
+                      <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>
+                        {c.broker_name_clean || c["broker's_name"]}
+                      </span>
+                      {c.broker_code && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-50 text-amber-800 border border-amber-200">
+                          {c.broker_code}
+                        </span>
+                      )}
                     </p>
                   )}
                 </div>

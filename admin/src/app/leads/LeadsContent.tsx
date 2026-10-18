@@ -33,10 +33,7 @@ function parseAmt(val: string | null): number {
 }
 
 function fmtINR(n: number): string {
-  if (n >= 10_00_000) return `₹${(n / 10_00_000).toFixed(2)}Cr`;
-  if (n >= 1_00_000)  return `₹${(n / 1_00_000).toFixed(1)}L`;
-  if (n >= 1000)      return `₹${(n / 1000).toFixed(0)}K`;
-  return `₹${n}`;
+  return `₹${(Number(n) || 0).toLocaleString('en-IN')}`;
 }
 
 const PIPELINE_STAGES: { key: LeadStatus; label: string; color: string }[] = [
@@ -64,7 +61,7 @@ export default function LeadsContent({
 }: LeadsContentProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const [localSearch, setLocalSearch] = useState(filters.search);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -130,7 +127,7 @@ export default function LeadsContent({
       )}
 
       {/* Pipeline Stage Summary */}
-      <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
         {PIPELINE_STAGES.map((stage) => (
           <button
             key={stage.key}
@@ -174,15 +171,20 @@ export default function LeadsContent({
       {/* Toolbar */}
       <div className="card p-4">
         <div className="flex items-center gap-3 flex-wrap">
-          <form onSubmit={handleSearch} className="search-wrapper flex-1 min-w-[220px]">
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by client name or contact..."
-              className="input input-sm"
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-            />
+          <form onSubmit={handleSearch} className="search-wrapper flex-1 min-w-[220px] flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search by client, phone, society, plot, or broker..."
+                className="input input-sm pl-9"
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+              />
+            </div>
+            <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">
+              {isPending ? 'Searching…' : 'Search'}
+            </button>
           </form>
 
           <select
@@ -276,25 +278,25 @@ export default function LeadsContent({
                           </div>
                         </div>
                       </td>
-                      <td>
+                      <td className="whitespace-nowrap">
                         <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                          <Phone size={12} />
+                          <Phone size={12} className="shrink-0" />
                           {lead.contact_no || '—'}
                         </div>
                       </td>
                       <td>
                         <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                          <Building2 size={12} />
-                          {lead.society_name || '—'}
+                          <Building2 size={12} className="shrink-0" />
+                          <span className="break-words">{lead.society_name || '—'}</span>
                         </div>
                       </td>
-                      <td className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      <td className="text-sm font-medium whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
                         {lead.plot_no || '—'}
                       </td>
-                      <td className="text-sm font-semibold" style={{ color: '#C9A84C' }}>
+                      <td className="text-sm font-semibold whitespace-nowrap" style={{ color: '#C9A84C' }}>
                         {plotAmt > 0 ? fmtINR(plotAmt) : '—'}
                       </td>
-                      <td>
+                      <td className="whitespace-nowrap">
                         {paidAmt > 0 ? (
                           <div>
                             <p className="text-sm font-semibold" style={{ color: 'var(--success)' }}>{fmtINR(paidAmt)}</p>
@@ -307,7 +309,12 @@ export default function LeadsContent({
                         ) : '—'}
                       </td>
                       <td className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        {lead["broker's_name"] || '—'}
+                        <div>{lead.broker_name_clean || lead["broker's_name"] || '—'}</div>
+                        {lead.broker_code && (
+                          <span className="inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 mt-0.5">
+                            {lead.broker_code}
+                          </span>
+                        )}
                       </td>
                       <td>
                         <span className={`badge ${score.class}`}>

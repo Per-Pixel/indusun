@@ -9,7 +9,7 @@ export default async function DashboardPage() {
     getMasterDataSummary(),
     getUniqueSocieties(),
     // Oldest records first — derived "new" enquiries surface longest-waiting first.
-    getLeads({ page: 1, pageSize: 400, order: 'asc' }),
+    getLeads({ page: 1, pageSize: 20, statusFilter: 'new', order: 'asc' }),
     getLeadPipelineCounts(),
   ]);
 

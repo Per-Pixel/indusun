@@ -12,8 +12,15 @@ import { randomUUID } from 'node:crypto';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']);
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_MIME = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+  'application/pdf',
+]);
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
 function extFromMime(mime: string): string {
   switch (mime) {
@@ -22,6 +29,7 @@ function extFromMime(mime: string): string {
     case 'image/webp': return '.webp';
     case 'image/gif': return '.gif';
     case 'image/svg+xml': return '.svg';
+    case 'application/pdf': return '.pdf';
     default: return '';
   }
 }
@@ -43,14 +51,22 @@ export async function POST(req: NextRequest) {
     const ext = extFromMime(file.type) || path.extname(file.name) || '';
     const filename = `${randomUUID()}${ext}`;
 
-    // Sibling path: admin/ -> ../main/public/uploads
-    const uploadsDir = path.join(process.cwd(), '..', 'main', 'public', 'uploads');
-    await mkdir(uploadsDir, { recursive: true });
+    // Save to both admin/public/uploads (so admin can view it directly on :3001)
+    // and ../main/public/uploads (so public site can also serve it)
+    const adminUploadsDir = path.join(process.cwd(), 'public', 'uploads');
+    const mainUploadsDir = path.join(process.cwd(), '..', 'main', 'public', 'uploads');
+    await mkdir(adminUploadsDir, { recursive: true });
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(uploadsDir, filename), buffer);
+    await writeFile(path.join(adminUploadsDir, filename), buffer);
+    try {
+      await mkdir(mainUploadsDir, { recursive: true });
+      await writeFile(path.join(mainUploadsDir, filename), buffer);
+    } catch {
+      // Ignore if sibling main dir is not writable in standalone deploy
+    }
 
-    return NextResponse.json({ url: `/uploads/${filename}` });
+    return NextResponse.json({ url: `/uploads/${filename}`, name: file.name, type: file.type });
   } catch (err) {
     console.error('Upload failed:', err);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
