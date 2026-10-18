@@ -1,27 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckSquare,
   Plus,
-  Calendar,
-  Clock,
   User,
-  Home,
   Building,
-  MoreHorizontal,
   Search,
-  Filter,
   ChevronDown,
   CheckCircle,
   Circle,
   X,
   Edit,
-  Trash2
+  Trash2,
+  RefreshCw,
+  AlertTriangle,
+  Clock,
 } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
+import toast from 'react-hot-toast';
 
 // Types for tasks
 interface Task {
@@ -47,410 +46,318 @@ interface Task {
   createdAt: string;
 }
 
-// Mock data for tasks
-const mockTasks: Task[] = [
-  {
-    id: '1',
-    title: 'Follow up with Priya Patel about property viewing',
-    description: 'Call to confirm the viewing appointment for the Luxury Villa in Whitefield',
-    dueDate: '2023-12-16',
-    priority: 'high',
-    status: 'todo',
-    category: 'client',
-    assignedTo: {
-      id: 'a1',
-      name: 'Rajesh Admin'
-    },
-    client: {
-      id: 'c1',
-      name: 'Priya Patel'
-    },
-    property: {
-      id: '1',
-      title: 'Luxury Villa in Whitefield'
-    },
-    createdAt: '2023-12-14'
-  },
-  {
-    id: '2',
-    title: 'Collect property documents from owner',
-    description: 'Need to collect all legal documents for the Commercial Space in Tech Park',
-    dueDate: '2023-12-18',
-    priority: 'medium',
-    status: 'todo',
-    category: 'property',
-    assignedTo: {
-      id: 'a2',
-      name: 'Neha Gupta'
-    },
-    property: {
-      id: '2',
-      title: 'Commercial Space in Tech Park'
-    },
-    createdAt: '2023-12-13'
-  },
-  {
-    id: '3',
-    title: 'Prepare sales report for Q4',
-    description: 'Compile all sales data and prepare quarterly report for management',
-    dueDate: '2023-12-25',
-    priority: 'medium',
-    status: 'in-progress',
-    category: 'admin',
-    assignedTo: {
-      id: 'a1',
-      name: 'Rajesh Admin'
-    },
-    createdAt: '2023-12-10'
-  },
-  {
-    id: '4',
-    title: 'Update property listing photos',
-    description: 'Take new photos of the Residential Plot in Sarjapur and update the listing',
-    dueDate: '2023-12-17',
-    priority: 'low',
-    status: 'todo',
-    category: 'property',
-    assignedTo: {
-      id: 'a3',
-      name: 'Suresh Menon'
-    },
-    property: {
-      id: '3',
-      title: 'Residential Plot in Sarjapur'
-    },
-    createdAt: '2023-12-12'
-  },
-  {
-    id: '5',
-    title: 'Send contract to TechSoft Solutions',
-    description: 'Finalize and send the rental contract for the Office Space',
-    dueDate: '2023-12-15',
-    priority: 'high',
-    status: 'completed',
-    category: 'client',
-    assignedTo: {
-      id: 'a1',
-      name: 'Rajesh Admin'
-    },
-    client: {
-      id: 'c3',
-      name: 'TechSoft Solutions'
-    },
-    property: {
-      id: '5',
-      title: 'Office Space in Central Business District'
-    },
-    createdAt: '2023-12-08'
-  },
-  {
-    id: '6',
-    title: 'Schedule property inspection',
-    description: 'Arrange for property inspection of the Retail Space in Commercial Complex',
-    dueDate: '2023-12-19',
-    priority: 'medium',
-    status: 'todo',
-    category: 'property',
-    assignedTo: {
-      id: 'a2',
-      name: 'Neha Gupta'
-    },
-    property: {
-      id: '8',
-      title: 'Retail Space in Commercial Complex'
-    },
-    createdAt: '2023-12-14'
-  },
-  {
-    id: '7',
-    title: 'Follow up on pending payment',
-    description: 'Contact Ananya Reddy regarding the pending payment for Residential Plot',
-    dueDate: '2023-12-16',
-    priority: 'high',
-    status: 'in-progress',
-    category: 'client',
-    assignedTo: {
-      id: 'a1',
-      name: 'Rajesh Admin'
-    },
-    client: {
-      id: 'c5',
-      name: 'Ananya Reddy'
-    },
-    property: {
-      id: '3',
-      title: 'Residential Plot in Sarjapur'
-    },
-    createdAt: '2023-12-11'
-  },
-  {
-    id: '8',
-    title: 'Update CRM with new client details',
-    description: 'Add new client Vikram Singh to the CRM system with all contact details',
-    dueDate: '2023-12-15',
-    priority: 'low',
-    status: 'completed',
-    category: 'admin',
-    assignedTo: {
-      id: 'a3',
-      name: 'Suresh Menon'
-    },
-    client: {
-      id: 'c2',
-      name: 'Vikram Singh'
-    },
-    createdAt: '2023-12-09'
-  }
+const TASK_CATEGORIES = [
+  { value: 'client',   label: 'Client' },
+  { value: 'property', label: 'Property' },
+  { value: 'admin',    label: 'Admin' },
+  { value: 'other',    label: 'Other' },
 ];
 
-// Helper function to get priority color
-const getPriorityColor = (priority: Task['priority']) => {
-  switch (priority) {
-    case 'high':
-      return 'bg-red-100 text-red-800 border-red-200';
-    case 'medium':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'low':
-      return 'bg-green-100 text-green-800 border-green-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
+const formatDate = (dateString?: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return dateString;
+  return date.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-// Helper function to get category color
-const getCategoryColor = (category: Task['category']) => {
-  switch (category) {
-    case 'client':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
-    case 'property':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'admin':
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'other':
-      return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
+const isOverdue = (task: Task) => {
+  if (task.status === 'completed' || !task.dueDate) return false;
+  return new Date(task.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
 };
 
-// Helper function to get status icon
-const getStatusIcon = (status: Task['status']) => {
-  switch (status) {
-    case 'todo':
-      return <Circle size={16} className="text-gray-400" />;
-    case 'in-progress':
-      return <Circle size={16} className="text-blue-500" />;
-    case 'completed':
-      return <CheckCircle size={16} className="text-green-500" />;
-    default:
-      return null;
-  }
+const PRIORITY_STYLES: Record<Task['priority'], string> = {
+  high:   'bg-red-100 text-red-800',
+  medium: 'bg-yellow-100 text-yellow-800',
+  low:    'bg-blue-100 text-blue-800',
+};
+
+const STATUS_STYLES: Record<Task['status'], { label: string; color: string }> = {
+  'todo':        { label: 'To Do',       color: 'bg-gray-100 text-gray-800' },
+  'in-progress': { label: 'In Progress', color: 'bg-blue-100 text-blue-800' },
+  'completed':   { label: 'Completed',   color: 'bg-green-100 text-green-800' },
 };
 
 export default function TasksPage() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterPriority, setFilterPriority] = useState<string>('all');
-  const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [showTaskModal, setShowTaskModal] = useState(false);
-  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  const [showEditTaskModal, setShowEditTaskModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-
-  // New task state
-  const [newTask, setNewTask] = useState<Partial<Task>>({
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
-    dueDate: new Date().toISOString().split('T')[0],
-    priority: 'medium',
-    status: 'todo',
-    category: 'client'
+    dueDate: '',
+    priority: 'medium' as Task['priority'],
+    status: 'todo' as Task['status'],
+    category: 'other' as Task['category'],
+    clientName: '',
+    propertyTitle: '',
   });
+  
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  // Toggle sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/workspace?type=tasks');
+      if (!res.ok) throw new Error('Failed to load tasks');
+      const json = await res.json();
+      setTasks(json.tasks || []);
+    } catch (err) {
+      console.error('Tasks fetch error:', err);
+      toast.error('Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // Filter tasks based on search term and filters
-  const filteredTasks = mockTasks.filter(task => {
-    const matchesSearch =
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (task.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (task.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (task.property?.title.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
-    const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
-    const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
-    const matchesCategory = filterCategory === 'all' || task.category === filterCategory;
-
-    return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
-  });
-
-  // Group tasks by status
-  const todoTasks = filteredTasks.filter(task => task.status === 'todo');
-  const inProgressTasks = filteredTasks.filter(task => task.status === 'in-progress');
-  const completedTasks = filteredTasks.filter(task => task.status === 'completed');
-
-  // Open task modal
-  const openTaskModal = (task: Task) => {
-    setSelectedTask(task);
-    setShowTaskModal(true);
-  };
-
-  // Close task modal
-  const closeTaskModal = () => {
-    setSelectedTask(null);
-    setShowTaskModal(false);
-  };
-
-  // Open add task modal
-  const openAddTaskModal = (initialStatus: Task['status'] = 'todo') => {
-    setNewTask({
-      title: '',
-      description: '',
-      dueDate: new Date().toISOString().split('T')[0],
-      priority: 'medium',
-      status: initialStatus,
-      category: 'client'
-    });
-    setShowAddTaskModal(true);
-  };
-
-  // Close add task modal
-  const closeAddTaskModal = () => {
-    setShowAddTaskModal(false);
-  };
-
-  // Handle new task input change
-  const handleNewTaskChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewTask(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Save new task
-  const saveNewTask = () => {
-    // In a real app, this would save to a database
-    // For now, we'll just close the modal
-    // You would typically generate a unique ID and add to the tasks array
-
-    // Mock adding to the array (this won't persist on refresh)
-    const newTaskWithId = {
-      ...newTask,
-      id: `task-${Date.now()}`,
-      createdAt: new Date().toISOString().split('T')[0]
-    } as Task;
-
-    // In a real app: mockTasks.push(newTaskWithId);
-
-    closeAddTaskModal();
-    // You might want to show a success message here
-  };
-
-  // Open edit task modal
-  const openEditTaskModal = () => {
-    if (selectedTask) {
-      setNewTask({
-        ...selectedTask
+  const persist = async (items: Task[]) => {
+    setSaving(true);
+    try {
+      await fetch('/api/workspace', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section: 'tasks', items }),
       });
-      setShowEditTaskModal(true);
-      setShowTaskModal(false);
+    } catch {
+      toast.error('Failed to persist tasks to Supabase');
+    } finally {
+      setSaving(false);
     }
   };
-
-  // Close edit task modal
-  const closeEditTaskModal = () => {
-    setShowEditTaskModal(false);
+  
+  // Filter tasks
+  const filteredTasks = tasks.filter(task => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      task.title.toLowerCase().includes(q) ||
+      (task.description?.toLowerCase().includes(q) ?? false) ||
+      task.client?.name.toLowerCase().includes(q) ||
+      task.property?.title.toLowerCase().includes(q);
+    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+    const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
+  
+  const todoTasks       = filteredTasks.filter(t => t.status === 'todo');
+  const inProgressTasks = filteredTasks.filter(t => t.status === 'in-progress');
+  const completedTasks  = filteredTasks.filter(t => t.status === 'completed');
+  
+  const handleStatusChange = async (id: string, status: Task['status']) => {
+    const updated = tasks.map(task => (task.id === id ? { ...task, status } : task));
+    setTasks(updated);
+    await persist(updated);
   };
-
-  // Save edited task
-  const saveEditedTask = () => {
-    // In a real app, this would update the database
-    // For now, we'll just close the modal
-
-    // Mock updating the array (this won't persist on refresh)
-    // In a real app: update the task in mockTasks
-
-    closeEditTaskModal();
-    // You might want to show a success message here
+  
+  const handleDeleteTask = async (id: string) => {
+    const updated = tasks.filter(task => task.id !== id);
+    setTasks(updated);
+    await persist(updated);
+    toast.success('Task deleted');
   };
-
-  // Mark task as completed
-  const markTaskAsCompleted = () => {
-    if (selectedTask) {
-      // In a real app, this would update the database
-      // For now, we'll just close the modal
-
-      // Mock updating the task status
-      // In a real app: update the task status in mockTasks
-
-      closeTaskModal();
-      // You might want to show a success message here
-    }
-  };
-
-  // Reopen task
-  const reopenTask = () => {
-    if (selectedTask) {
-      // In a real app, this would update the database
-      // For now, we'll just close the modal
-
-      // Mock updating the task status
-      // In a real app: update the task status in mockTasks
-
-      closeTaskModal();
-      // You might want to show a success message here
-    }
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+  
+  const handleEditClick = (task: Task) => {
+    setCurrentTask(task);
+    setFormData({
+      title: task.title,
+      description: task.description || '',
+      dueDate: task.dueDate || '',
+      priority: task.priority,
+      status: task.status,
+      category: task.category,
+      clientName: task.client?.name || '',
+      propertyTitle: task.property?.title || '',
     });
+    setIsEditModalOpen(true);
   };
+  
+  const handleAddTask = async () => {
+    if (!formData.title) {
+      toast.error('Please enter a task title');
+      return;
+    }
+    const newTask: Task = {
+      id: `task-${Date.now()}`,
+      title: formData.title,
+      description: formData.description,
+      dueDate: formData.dueDate,
+      priority: formData.priority,
+      status: formData.status,
+      category: formData.category,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    if (formData.clientName) newTask.client = { id: `c-${Date.now()}`, name: formData.clientName };
+    if (formData.propertyTitle) newTask.property = { id: `p-${Date.now()}`, title: formData.propertyTitle };
 
+    const updated = [newTask, ...tasks];
+    setTasks(updated);
+    setIsAddModalOpen(false);
+    setFormData({ title: '', description: '', dueDate: '', priority: 'medium', status: 'todo', category: 'other', clientName: '', propertyTitle: '' });
+    await persist(updated);
+    toast.success('Task saved to database');
+  };
+  
+  const handleUpdateTask = async () => {
+    if (!currentTask || !formData.title) {
+      toast.error('Please enter a task title');
+      return;
+    }
+    const updated = tasks.map(task =>
+      task.id === currentTask.id
+        ? {
+            ...task,
+            title: formData.title,
+            description: formData.description,
+            dueDate: formData.dueDate,
+            priority: formData.priority,
+            status: formData.status,
+            category: formData.category,
+            client: formData.clientName ? { id: task.client?.id || `c-${Date.now()}`, name: formData.clientName } : undefined,
+            property: formData.propertyTitle ? { id: task.property?.id || `p-${Date.now()}`, title: formData.propertyTitle } : undefined,
+          }
+        : task
+    );
+    setTasks(updated);
+    setIsEditModalOpen(false);
+    setCurrentTask(null);
+    await persist(updated);
+    toast.success('Task updated');
+  };
+  
+  const TaskCard = ({ task }: { task: Task }) => (
+    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div className="flex justify-between items-start mb-2">
+        <h3 className={`font-medium text-gray-900 ${task.status === 'completed' ? 'line-through opacity-60' : ''}`}>
+          {task.title}
+        </h3>
+        <div className="flex space-x-1">
+          <button onClick={() => handleEditClick(task)} className="p-1 text-gray-400 hover:text-blue-600" title="Edit">
+            <Edit size={15} />
+          </button>
+          <button onClick={() => handleDeleteTask(task.id)} className="p-1 text-gray-400 hover:text-red-600" title="Delete">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </div>
+      
+      {task.description && (
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{task.description}</p>
+      )}
+      
+      <div className="flex flex-wrap gap-2 mb-3">
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PRIORITY_STYLES[task.priority]}`}>
+          {task.priority}
+        </span>
+        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+          {task.category}
+        </span>
+        {isOverdue(task) && (
+          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1">
+            <AlertTriangle size={10} /> Overdue
+          </span>
+        )}
+      </div>
+      
+      {task.client && (
+        <div className="flex items-center text-xs text-gray-600 mb-1">
+          <User size={12} className="mr-1" />
+          <span>{task.client.name}</span>
+        </div>
+      )}
+      
+      {task.property && (
+        <div className="flex items-center text-xs text-gray-600 mb-1">
+          <Building size={12} className="mr-1" />
+          <span className="truncate">{task.property.title}</span>
+        </div>
+      )}
+      
+      <div className="flex items-center justify-between mt-3 pt-3 border-t">
+        <div className="flex items-center text-xs text-gray-500">
+          <Clock size={12} className="mr-1" />
+          <span>{task.dueDate ? `Due ${formatDate(task.dueDate)}` : 'No due date'}</span>
+        </div>
+        <div className="relative">
+          <select
+            value={task.status}
+            onChange={(e) => handleStatusChange(task.id, e.target.value as Task['status'])}
+            className="text-xs px-2 py-1 border border-gray-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="todo">To Do</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+  
+  const TaskColumn = ({ title, status, list, icon }: { title: string; status: Task['status']; list: Task[]; icon: React.ReactNode }) => (
+    <div className="bg-gray-50 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h3 className="font-semibold text-gray-900">{title}</h3>
+          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+            {list.length.toLocaleString('en-IN')}
+          </span>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {list.map(task => <TaskCard key={task.id} task={task} />)}
+        {list.length === 0 && (
+          <div className="text-center py-8 text-sm text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+            No tasks here
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
+    <div className="flex h-screen bg-gray-50">
       <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
-
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[260px]' : 'ml-0'}`}>
-        {/* Top Navbar */}
+      
+      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[260px]' : 'ml-0'}`}>
         <div className="sticky top-0 z-10">
           <AdminTopNavbar toggleSidebar={toggleSidebar} />
         </div>
-
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
-            {/* Task Manager Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Task Manager</h1>
-                <p className="text-gray-500">Manage your tasks and to-do lists</p>
-              </div>
-
-              <div className="flex items-center mt-4 md:mt-0">
-                <button
-                  onClick={() => openAddTaskModal()}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                >
-                  <Plus size={16} />
-                  <span>Add Task</span>
-                </button>
-              </div>
+        
+        <div className="p-6 overflow-y-auto h-[calc(100vh-64px)]">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Persistent task board — seeded from live master-data records, stored in Supabase
+              </p>
             </div>
-
-            {/* Filters and Search */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex gap-2">
+              <button onClick={fetchTasks} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> Refresh
+              </button>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Plus size={18} />
+                <span>New Task</span>
+              </button>
+            </div>
+          </div>
+          
+          {/* Filters */}
+          <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search size={18} className="text-gray-400" />
@@ -458,18 +365,18 @@ export default function TasksPage() {
                 <input
                   type="text"
                   placeholder="Search tasks..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-
+              
               <div className="flex gap-4">
                 <div className="relative">
                   <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-8"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
                   >
                     <option value="all">All Status</option>
                     <option value="todo">To Do</option>
@@ -480,34 +387,17 @@ export default function TasksPage() {
                     <ChevronDown size={16} />
                   </div>
                 </div>
-
+                
                 <div className="relative">
                   <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
-                    value={filterPriority}
-                    onChange={(e) => setFilterPriority(e.target.value)}
-                  >
-                    <option value="all">All Priorities</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <ChevronDown size={16} />
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-8"
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
                   >
                     <option value="all">All Categories</option>
-                    <option value="client">Client</option>
-                    <option value="property">Property</option>
-                    <option value="admin">Admin</option>
-                    <option value="other">Other</option>
+                    {TASK_CATEGORIES.map(cat => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                     <ChevronDown size={16} />
@@ -515,647 +405,272 @@ export default function TasksPage() {
                 </div>
               </div>
             </div>
-
-            {/* Task Boards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* To Do Column */}
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-gray-200 bg-gray-50">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium flex items-center">
-                      <Circle size={16} className="mr-2 text-gray-400" />
-                      To Do
-                      <span className="ml-2 text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-0.5">
-                        {todoTasks.length}
-                      </span>
-                    </h3>
-                    <button
-                      onClick={() => openAddTaskModal('todo')}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-2 max-h-[calc(100vh-280px)] overflow-y-auto">
-                  {todoTasks.length > 0 ? (
-                    <div className="space-y-2">
-                      {todoTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow cursor-pointer"
-                          onClick={() => openTaskModal(task)}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-medium text-sm">{task.title}</h4>
-                            <button className="text-gray-400 hover:text-gray-600">
-                              <MoreHorizontal size={16} />
-                            </button>
-                          </div>
-
-                          {task.description && (
-                            <p className="text-xs text-gray-500 mb-3 line-clamp-2">
-                              {task.description}
-                            </p>
-                          )}
-
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
-                              {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                            </span>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getCategoryColor(task.category)}`}>
-                              {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between items-center text-xs text-gray-500">
-                            {task.dueDate && (
-                              <div className="flex items-center">
-                                <Calendar size={12} className="mr-1" />
-                                <span>{formatDate(task.dueDate)}</span>
-                              </div>
-                            )}
-                            {task.assignedTo && (
-                              <div className="flex items-center">
-                                <User size={12} className="mr-1" />
-                                <span>{task.assignedTo.name}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-gray-500">
-                      <p>No tasks to do</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* In Progress Column */}
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-gray-200 bg-gray-50">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium flex items-center">
-                      <Circle size={16} className="mr-2 text-blue-500" />
-                      In Progress
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5">
-                        {inProgressTasks.length}
-                      </span>
-                    </h3>
-                    <button
-                      onClick={() => openAddTaskModal('in-progress')}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-2 max-h-[calc(100vh-280px)] overflow-y-auto">
-                  {inProgressTasks.length > 0 ? (
-                    <div className="space-y-2">
-                      {inProgressTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow cursor-pointer"
-                          onClick={() => openTaskModal(task)}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-medium text-sm">{task.title}</h4>
-                            <button className="text-gray-400 hover:text-gray-600">
-                              <MoreHorizontal size={16} />
-                            </button>
-                          </div>
-
-                          {task.description && (
-                            <p className="text-xs text-gray-500 mb-3 line-clamp-2">
-                              {task.description}
-                            </p>
-                          )}
-
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
-                              {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                            </span>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getCategoryColor(task.category)}`}>
-                              {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between items-center text-xs text-gray-500">
-                            {task.dueDate && (
-                              <div className="flex items-center">
-                                <Calendar size={12} className="mr-1" />
-                                <span>{formatDate(task.dueDate)}</span>
-                              </div>
-                            )}
-                            {task.assignedTo && (
-                              <div className="flex items-center">
-                                <User size={12} className="mr-1" />
-                                <span>{task.assignedTo.name}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-gray-500">
-                      <p>No tasks in progress</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Completed Column */}
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-gray-200 bg-gray-50">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium flex items-center">
-                      <CheckCircle size={16} className="mr-2 text-green-500" />
-                      Completed
-                      <span className="ml-2 text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5">
-                        {completedTasks.length}
-                      </span>
-                    </h3>
-                    <button
-                      onClick={() => openAddTaskModal('completed')}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-2 max-h-[calc(100vh-280px)] overflow-y-auto">
-                  {completedTasks.length > 0 ? (
-                    <div className="space-y-2">
-                      {completedTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow cursor-pointer"
-                          onClick={() => openTaskModal(task)}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-medium text-sm">{task.title}</h4>
-                            <button className="text-gray-400 hover:text-gray-600">
-                              <MoreHorizontal size={16} />
-                            </button>
-                          </div>
-
-                          {task.description && (
-                            <p className="text-xs text-gray-500 mb-3 line-clamp-2">
-                              {task.description}
-                            </p>
-                          )}
-
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
-                              {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                            </span>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getCategoryColor(task.category)}`}>
-                              {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between items-center text-xs text-gray-500">
-                            {task.dueDate && (
-                              <div className="flex items-center">
-                                <Calendar size={12} className="mr-1" />
-                                <span>{formatDate(task.dueDate)}</span>
-                              </div>
-                            )}
-                            {task.assignedTo && (
-                              <div className="flex items-center">
-                                <User size={12} className="mr-1" />
-                                <span>{task.assignedTo.name}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-gray-500">
-                      <p>No completed tasks</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Task Modal */}
-            {showTaskModal && selectedTask && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
-                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 className="font-medium">Task Details</h3>
-                    <button
-                      onClick={closeTaskModal}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  <div className="p-4">
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-medium">{selectedTask.title}</h2>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={openEditTaskModal}
-                            className="text-gray-500 hover:text-gray-700"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button className="text-gray-500 hover:text-red-500">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(selectedTask.priority)}`}>
-                          {selectedTask.priority.charAt(0).toUpperCase() + selectedTask.priority.slice(1)} Priority
-                        </span>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getCategoryColor(selectedTask.category)}`}>
-                          {selectedTask.category.charAt(0).toUpperCase() + selectedTask.category.slice(1)}
-                        </span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                          {getStatusIcon(selectedTask.status)}
-                          <span className="ml-1">
-                            {selectedTask.status === 'todo' ? 'To Do' :
-                             selectedTask.status === 'in-progress' ? 'In Progress' : 'Completed'}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {selectedTask.description && (
-                      <div className="mb-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Description</h4>
-                        <p className="text-sm text-gray-600">{selectedTask.description}</p>
-                      </div>
-                    )}
-
-                    <div className="space-y-3">
-                      {selectedTask.dueDate && (
-                        <div className="flex items-center">
-                          <Calendar size={16} className="mr-2 text-gray-400" />
-                          <div>
-                            <p className="text-xs text-gray-500">Due Date</p>
-                            <p className="text-sm">{formatDate(selectedTask.dueDate)}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedTask.assignedTo && (
-                        <div className="flex items-center">
-                          <User size={16} className="mr-2 text-gray-400" />
-                          <div>
-                            <p className="text-xs text-gray-500">Assigned To</p>
-                            <p className="text-sm">{selectedTask.assignedTo.name}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedTask.client && (
-                        <div className="flex items-center">
-                          <User size={16} className="mr-2 text-gray-400" />
-                          <div>
-                            <p className="text-xs text-gray-500">Client</p>
-                            <p className="text-sm">{selectedTask.client.name}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedTask.property && (
-                        <div className="flex items-center">
-                          <Home size={16} className="mr-2 text-gray-400" />
-                          <div>
-                            <p className="text-xs text-gray-500">Property</p>
-                            <p className="text-sm">{selectedTask.property.title}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center">
-                        <Clock size={16} className="mr-2 text-gray-400" />
-                        <div>
-                          <p className="text-xs text-gray-500">Created</p>
-                          <p className="text-sm">{formatDate(selectedTask.createdAt)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
-                    <button
-                      onClick={closeTaskModal}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Close
-                    </button>
-                    {selectedTask.status !== 'completed' ? (
-                      <button
-                        onClick={markTaskAsCompleted}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
-                      >
-                        Mark as Completed
-                      </button>
-                    ) : (
-                      <button
-                        onClick={reopenTask}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                      >
-                        Reopen Task
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Add Task Modal */}
-            {showAddTaskModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
-                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 className="font-medium">Add New Task</h3>
-                    <button
-                      onClick={closeAddTaskModal}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  <div className="p-4">
-                    <form className="space-y-4">
-                      <div>
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                          Task Title*
-                        </label>
-                        <input
-                          type="text"
-                          id="title"
-                          name="title"
-                          value={newTask.title}
-                          onChange={handleNewTaskChange}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                          Description
-                        </label>
-                        <textarea
-                          id="description"
-                          name="description"
-                          value={newTask.description}
-                          onChange={handleNewTaskChange}
-                          rows={3}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
-                          Due Date*
-                        </label>
-                        <input
-                          type="date"
-                          id="dueDate"
-                          name="dueDate"
-                          value={newTask.dueDate}
-                          onChange={handleNewTaskChange}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                          required
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-                            Priority*
-                          </label>
-                          <select
-                            id="priority"
-                            name="priority"
-                            value={newTask.priority}
-                            onChange={handleNewTaskChange}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                            required
-                          >
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                            Category*
-                          </label>
-                          <select
-                            id="category"
-                            name="category"
-                            value={newTask.category}
-                            onChange={handleNewTaskChange}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                            required
-                          >
-                            <option value="client">Client</option>
-                            <option value="property">Property</option>
-                            <option value="admin">Admin</option>
-                            <option value="other">Other</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                          Status*
-                        </label>
-                        <select
-                          id="status"
-                          name="status"
-                          value={newTask.status}
-                          onChange={handleNewTaskChange}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                          required
-                        >
-                          <option value="todo">To Do</option>
-                          <option value="in-progress">In Progress</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </div>
-                    </form>
-                  </div>
-
-                  <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
-                    <button
-                      onClick={closeAddTaskModal}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={saveNewTask}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                    >
-                      Save Task
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Edit Task Modal */}
-            {showEditTaskModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
-                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 className="font-medium">Edit Task</h3>
-                    <button
-                      onClick={closeEditTaskModal}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  <div className="p-4">
-                    <form className="space-y-4">
-                      <div>
-                        <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">
-                          Task Title*
-                        </label>
-                        <input
-                          type="text"
-                          id="edit-title"
-                          name="title"
-                          value={newTask.title}
-                          onChange={handleNewTaskChange}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-1">
-                          Description
-                        </label>
-                        <textarea
-                          id="edit-description"
-                          name="description"
-                          value={newTask.description}
-                          onChange={handleNewTaskChange}
-                          rows={3}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="edit-dueDate" className="block text-sm font-medium text-gray-700 mb-1">
-                          Due Date*
-                        </label>
-                        <input
-                          type="date"
-                          id="edit-dueDate"
-                          name="dueDate"
-                          value={newTask.dueDate}
-                          onChange={handleNewTaskChange}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                          required
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label htmlFor="edit-priority" className="block text-sm font-medium text-gray-700 mb-1">
-                            Priority*
-                          </label>
-                          <select
-                            id="edit-priority"
-                            name="priority"
-                            value={newTask.priority}
-                            onChange={handleNewTaskChange}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                            required
-                          >
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label htmlFor="edit-category" className="block text-sm font-medium text-gray-700 mb-1">
-                            Category*
-                          </label>
-                          <select
-                            id="edit-category"
-                            name="category"
-                            value={newTask.category}
-                            onChange={handleNewTaskChange}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                            required
-                          >
-                            <option value="client">Client</option>
-                            <option value="property">Property</option>
-                            <option value="admin">Admin</option>
-                            <option value="other">Other</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700 mb-1">
-                          Status*
-                        </label>
-                        <select
-                          id="edit-status"
-                          name="status"
-                          value={newTask.status}
-                          onChange={handleNewTaskChange}
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-black"
-                          required
-                        >
-                          <option value="todo">To Do</option>
-                          <option value="in-progress">In Progress</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </div>
-                    </form>
-                  </div>
-
-                  <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
-                    <button
-                      onClick={closeEditTaskModal}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={saveEditedTask}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                    >
-                      Save Changes
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
+          
+          {/* Task columns */}
+          {loading && tasks.length === 0 ? (
+            <div className="bg-white p-16 rounded-lg shadow-sm text-center text-sm text-gray-500">Loading tasks…</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <TaskColumn title="To Do" status="todo" list={todoTasks} icon={<Circle size={16} className="text-gray-500" />} />
+              <TaskColumn title="In Progress" status="in-progress" list={inProgressTasks} icon={<Clock size={16} className="text-blue-500" />} />
+              <TaskColumn title="Completed" status="completed" list={completedTasks} icon={<CheckCircle size={16} className="text-green-500" />} />
+            </div>
+          )}
         </div>
       </div>
+      
+      {/* Add Task Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setIsAddModalOpen(false)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Add New Task</h2>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Task title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  rows={3}
+                  placeholder="Task description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.dueDate}
+                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value as Task['priority'] })}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as Task['status'] })}
+                  >
+                    <option value="todo">To Do</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as Task['category'] })}
+                  >
+                    {TASK_CATEGORIES.map(cat => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client (optional)</label>
+                <input
+                  type="text"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Client name"
+                  value={formData.clientName}
+                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Property (optional)</label>
+                <input
+                  type="text"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g. SAI SHRUSHTI RESIDENCY – Plot 45"
+                  value={formData.propertyTitle}
+                  onChange={(e) => setFormData({ ...formData, propertyTitle: e.target.value })}
+                />
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddTask}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center disabled:opacity-60"
+              >
+                <CheckSquare size={16} className="mr-2" />
+                {saving ? 'Saving…' : 'Save Task'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Edit Task Modal */}
+      {isEditModalOpen && currentTask && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setIsEditModalOpen(false)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Edit Task</h2>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.dueDate}
+                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value as Task['priority'] })}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as Task['status'] })}
+                  >
+                    <option value="todo">To Do</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as Task['category'] })}
+                  >
+                    {TASK_CATEGORIES.map(cat => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client (optional)</label>
+                <input
+                  type="text"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.clientName}
+                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Property (optional)</label>
+                <input
+                  type="text"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.propertyTitle}
+                  onChange={(e) => setFormData({ ...formData, propertyTitle: e.target.value })}
+                />
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateTask}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center disabled:opacity-60"
+              >
+                <CheckSquare size={16} className="mr-2" />
+                {saving ? 'Saving…' : 'Update Task'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Menu, Search, Bell, User, Settings, LogOut, ChevronDown,
   Activity, Shield, Crown, X, Home, Building2, Users, Calendar,
-  BookOpen
+  BookOpen, Briefcase
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 
@@ -16,6 +16,7 @@ interface AdminTopNavbarProps {
 const QUICK_LINKS = [
   { icon: <Home size={14} />, label: 'Dashboard', path: '/dashboard' },
   { icon: <Users size={14} />, label: 'Leads', path: '/leads' },
+  { icon: <Briefcase size={14} />, label: 'Brokers', path: '/brokers' },
   { icon: <Building2 size={14} />, label: 'Properties', path: '/properties' },
   { icon: <Calendar size={14} />, label: 'Site Visits', path: '/site-visits' },
   { icon: <BookOpen size={14} />, label: 'Docs', path: '/guide' },
@@ -25,6 +26,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
   const { user, logout } = useAdminAuth();
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [liveNotifs, setLiveNotifs] = useState<Array<{ id: string; title: string; description: string; time: string; read: boolean; action?: { label: string; href: string } }>>([]);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,6 +61,17 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Load live notifications whenever the dropdown opens
+  useEffect(() => {
+    if (!showNotifications) return;
+    fetch('/api/notifications')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.notifications) setLiveNotifs(d.notifications); })
+      .catch(() => {});
+  }, [showNotifications]);
+
+  const unreadNotifCount = liveNotifs.filter((n) => !n.read).length;
+
   const initials = (user?.name || 'IU').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -92,7 +105,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
             aria-keyshortcuts="Control+K Meta+K"
           >
             <Search size={15} />
-            <span className="text-sm">Search clients, plots, societies...</span>
+            <span className="text-sm">Search clients, brokers, codes, plots...</span>
             <span className="command-kbd">⌘K</span>
           </button>
         </div>
@@ -123,10 +136,19 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
               aria-expanded={showNotifications}
             >
               <Bell size={19} />
-              <span
-                className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full"
-                style={{ background: 'var(--danger)' }}
-              />
+              {unreadNotifCount > 0 ? (
+                <span
+                  className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-0.5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                  style={{ background: 'var(--danger)' }}
+                >
+                  {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                </span>
+              ) : (
+                <span
+                  className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full"
+                  style={{ background: 'var(--danger)' }}
+                />
+              )}
             </button>
 
             {showNotifications && (
@@ -144,10 +166,31 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
                     View all
                   </button>
                 </div>
-                <div className="px-4 py-5 text-center">
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>No new notifications</p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Updates from your workspace will appear here.</p>
-                </div>
+                {liveNotifs.length === 0 ? (
+                  <div className="px-4 py-5 text-center">
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>No new notifications</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Updates from your workspace will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {liveNotifs.slice(0, 6).map((n) => (
+                      <button
+                        key={n.id}
+                        onClick={() => { setShowNotifications(false); if (n.action) router.push(n.action.href); else router.push('/notifications'); }}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-start gap-2">
+                          {!n.read && <span className="mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--primary)' }} />}
+                          <div className="min-w-0">
+                            <p className={`text-xs font-semibold truncate ${n.read ? 'opacity-70' : ''}`} style={{ color: 'var(--text-primary)' }}>{n.title}</p>
+                            <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{n.description}</p>
+                            <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-disabled)' }}>{n.time}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="px-4 py-2 border-t text-center" style={{ borderColor: 'var(--border)' }}>
                   <button
                     onClick={() => router.push('/notifications')}
@@ -264,7 +307,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
               <input
                 ref={searchRef}
                 type="text"
-                placeholder="Search clients, properties, societies..."
+                placeholder="Search clients, broker codes (GKC/...), properties, societies..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 bg-transparent text-base outline-none"
@@ -291,15 +334,30 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
                 ))}
               </div>
               {searchTerm && (
-                <button
-                  type="submit"
-                  form="search-form"
-                  onClick={handleSearch as unknown as React.MouseEventHandler}
-                  className="btn btn-primary w-full mt-3"
-                >
-                  <Search size={15} />
-                  Search for &ldquo;{searchTerm}&rdquo;
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={handleSearch as unknown as React.MouseEventHandler}
+                    className="btn btn-primary w-full"
+                  >
+                    <Search size={15} />
+                    Search Master Data for &ldquo;{searchTerm}&rdquo;
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (searchTerm.trim()) {
+                        router.push(`/brokers?search=${encodeURIComponent(searchTerm.trim())}`);
+                        setSearchOpen(false);
+                        setSearchTerm('');
+                      }
+                    }}
+                    className="btn btn-secondary w-full"
+                  >
+                    <Briefcase size={15} />
+                    Search Brokers for &ldquo;{searchTerm}&rdquo;
+                  </button>
+                </div>
               )}
             </div>
           </div>

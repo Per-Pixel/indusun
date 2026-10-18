@@ -1,59 +1,155 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Calendar, ChevronDown, RefreshCw } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 import ExportDropdown from '@/components/ui/ExportDropdown';
+import toast from 'react-hot-toast';
 
-// Matches the mock data in properties/page.tsx — in a real app this would be fetched
-const MOCK_PROPERTIES = [
-  { title: 'Luxury Villa in Whitefield',        price: '₹1.5 Cr',  status: 'Listed',   propertyType: 'Villa',       actualLocation: '123 Palm Avenue, Whitefield, Bangalore',        listedBy: 'Admin User',   bedrooms: 4, bathrooms: 3, squareFootage: '3500 sq ft', dateAdded: '2023-12-15' },
-  { title: 'Commercial Space in Tech Park',     price: '₹2.8 Cr',  status: 'Listed',   propertyType: 'Commercial',  actualLocation: '456 Tech Avenue, Electronic City, Bangalore',   listedBy: 'Amit Kumar',   bedrooms: 0, bathrooms: 4, squareFootage: '5000 sq ft', dateAdded: '2023-11-20' },
-  { title: 'Residential Plot in Sarjapur',      price: '₹85 Lakhs',status: 'Listed',   propertyType: 'Plot',        actualLocation: '789 Green Valley, Sarjapur Road, Bangalore',    listedBy: 'Admin User',   bedrooms: 0, bathrooms: 0, squareFootage: '2400 sq ft', dateAdded: '2023-12-05' },
-  { title: 'Modern Apartment in Indiranagar',   price: '₹95 Lakhs',status: 'Unlisted', propertyType: 'Apartment',   actualLocation: '456 Metro Heights, Indiranagar, Bangalore',     listedBy: 'Admin User',   bedrooms: 2, bathrooms: 2, squareFootage: '1200 sq ft', dateAdded: '2023-12-10' },
-];
+interface ExportRow {
+  title: string;
+  client: string;
+  society: string;
+  plotNo: string;
+  size: string;
+  plotAmount: string;
+  paidAmount: string;
+  emi: string;
+  status: string;
+  regNo: string;
+  broker: string;
+  dateAdded: string;
+}
 
 const PROPERTY_COLUMNS = [
-  { header: 'Title',      key: 'title' },
-  { header: 'Price',      key: 'price' },
-  { header: 'Status',     key: 'status' },
-  { header: 'Type',       key: 'propertyType' },
-  { header: 'Location',   key: 'actualLocation' },
-  { header: 'Listed By',  key: 'listedBy' },
-  { header: 'Bedrooms',   key: 'bedrooms' },
-  { header: 'Bathrooms',  key: 'bathrooms' },
-  { header: 'Size',       key: 'squareFootage' },
-  { header: 'Date Added', key: 'dateAdded' },
+  { header: 'Property',       key: 'title' },
+  { header: 'Client',         key: 'client' },
+  { header: 'Society',        key: 'society' },
+  { header: 'Plot No',        key: 'plotNo' },
+  { header: 'Plot Size',      key: 'size' },
+  { header: 'Plot Amount',    key: 'plotAmount' },
+  { header: 'Paid Amount',    key: 'paidAmount' },
+  { header: 'EMI',            key: 'emi' },
+  { header: 'Status',         key: 'status' },
+  { header: 'Reg/R. No.',     key: 'regNo' },
+  { header: 'Broker',         key: 'broker' },
+  { header: 'Form Date',      key: 'dateAdded' },
 ];
+
+function toIsoDate(val: string | undefined): string | null {
+  if (!val) return null;
+  const s = val.trim();
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+  return null;
+}
 
 export default function PropertiesExportPage() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [dateRange, setDateRange] = useState('last30days');
+  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState<ExportRow[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [societies, setSocieties] = useState<string[]>([]);
+  const [dateRange, setDateRange] = useState('all');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [societyFilter, setSocietyFilter] = useState('');
   const [includeOptions, setIncludeOptions] = useState({
-    sold: true,
-    onInstallment: true,
-    pending: true,
-    cancelled: true,
-  });
-  const [propertyTypes, setPropertyTypes] = useState({
-    residential: true,
-    commercial: true,
-    plot: true,
+    active: true,
+    cancelled: false,
   });
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const handleStatusChange = (option: keyof typeof includeOptions) =>
-    setIncludeOptions({ ...includeOptions, [option]: !includeOptions[option] });
+  const fetchProperties = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: '1', pageSize: '500' });
+      if (societyFilter) params.set('society', societyFilter);
+      const res = await fetch(`/api/properties?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch properties');
+      const json = await res.json();
+      const mapped: ExportRow[] = (json.data || []).map((p: any) => ({
+        title: p.title || '',
+        client: p._clientName || '',
+        society: p.targetedLocation || '',
+        plotNo: p._plotNo || '',
+        size: p.squareFootage || '',
+        plotAmount: p.price || '',
+        paidAmount: p._paidAmount && p._paidAmount !== '—' ? `₹${p._paidAmount}` : '',
+        emi: p._emiAmount && p._emiAmount !== '—' ? `₹${p._emiAmount}` : '',
+        status: p.status === 'Unlisted' ? 'Cancelled' : 'Active',
+        regNo: p._rNo || '',
+        broker: p.listedBy?.name || '',
+        dateAdded: p.dateAdded || '',
+      }));
+      setRows(mapped);
+      setTotalCount(json.count ?? mapped.length);
+    } catch (err: any) {
+      console.error('Export fetch error:', err);
+      toast.error(err.message || 'Failed to load properties');
+    } finally {
+      setLoading(false);
+    }
+  }, [societyFilter]);
 
-  const handleTypeChange = (option: keyof typeof propertyTypes) =>
-    setPropertyTypes({ ...propertyTypes, [option]: !propertyTypes[option] });
+  const fetchSocieties = useCallback(async () => {
+    try {
+      const res = await fetch('/api/master-data/societies');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (Array.isArray(json)) setSocieties(json);
+      else if (Array.isArray(json.societies)) setSocieties(json.societies);
+    } catch { /* optional */ }
+  }, []);
 
-  // Build a filtered label suffix for the filename
-  const filenameSuffix = dateRange.replace(/([A-Z])/g, '-$1').toLowerCase();
+  useEffect(() => {
+    fetchSocieties();
+  }, [fetchSocieties]);
+
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
+
+  const filteredRows = rows.filter((r) => {
+    if (!includeOptions.active && r.status === 'Active') return false;
+    if (!includeOptions.cancelled && r.status === 'Cancelled') return false;
+
+    const iso = toIsoDate(r.dateAdded);
+    if (dateRange !== 'all' && iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      let start: Date | null = null;
+      let end: Date | null = null;
+      if (dateRange === 'last7days') start = new Date(now.getTime() - 7 * 86400000);
+      else if (dateRange === 'last30days') start = new Date(now.getTime() - 30 * 86400000);
+      else if (dateRange === 'last90days') start = new Date(now.getTime() - 90 * 86400000);
+      else if (dateRange === 'thisMonth') start = new Date(now.getFullYear(), now.getMonth(), 1);
+      else if (dateRange === 'lastMonth') {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0);
+      } else if (dateRange === 'thisYear') start = new Date(now.getFullYear(), 0, 1);
+      else if (dateRange === 'lastYear') {
+        start = new Date(now.getFullYear() - 1, 0, 1);
+        end = new Date(now.getFullYear() - 1, 11, 31);
+      } else if (dateRange === 'custom') {
+        if (customStart) start = new Date(customStart);
+        if (customEnd) end = new Date(customEnd);
+      }
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+    } else if (dateRange !== 'all' && !iso) {
+      return false;
+    }
+    return true;
+  });
+
+  const filenameSuffix = dateRange === 'all' ? 'all' : dateRange.replace(/([A-Z])/g, '-$1').toLowerCase();
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -64,7 +160,7 @@ export default function PropertiesExportPage() {
           <AdminTopNavbar toggleSidebar={toggleSidebar} />
         </div>
 
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto h-[calc(100vh-64px)]">
           <div className="max-w-3xl mx-auto">
             {/* Back + Title */}
             <div className="mb-6">
@@ -77,7 +173,7 @@ export default function PropertiesExportPage() {
               </button>
               <h1 className="text-2xl font-bold text-gray-900">Export Properties Data</h1>
               <p className="text-gray-500 mt-1">
-                Configure your export options and download in CSV, PDF, Word, or Text format.
+                Live export from <code>Master Data Of Gurukrupa</code> — {totalCount.toLocaleString('en-IN')} records (exports up to 500 per batch).
               </p>
             </div>
 
@@ -85,10 +181,28 @@ export default function PropertiesExportPage() {
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="p-6 space-y-6">
 
+                {/* Society Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Society</label>
+                  <div className="relative w-full sm:w-96">
+                    <select
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-10 text-gray-700"
+                      value={societyFilter}
+                      onChange={(e) => setSocietyFilter(e.target.value)}
+                    >
+                      <option value="">All Societies</option>
+                      {societies.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                      <ChevronDown size={16} />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Date Range */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date Range
+                    Form Date Range
                   </label>
                   <div className="relative w-full sm:w-72">
                     <select
@@ -96,6 +210,7 @@ export default function PropertiesExportPage() {
                       value={dateRange}
                       onChange={(e) => setDateRange(e.target.value)}
                     >
+                      <option value="all">All Dates</option>
                       <option value="last7days">Last 7 Days</option>
                       <option value="last30days">Last 30 Days</option>
                       <option value="last90days">Last 90 Days</option>
@@ -112,20 +227,34 @@ export default function PropertiesExportPage() {
 
                   {dateRange === 'custom' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-                      {['Start Date', 'End Date'].map((label) => (
-                        <div key={label}>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <Calendar size={16} className="text-gray-400" />
-                            </div>
-                            <input
-                              type="date"
-                              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            />
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Calendar size={16} className="text-gray-400" />
                           </div>
+                          <input
+                            type="date"
+                            value={customStart}
+                            onChange={(e) => setCustomStart(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          />
                         </div>
-                      ))}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">End Date</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Calendar size={16} className="text-gray-400" />
+                          </div>
+                          <input
+                            type="date"
+                            value={customEnd}
+                            onChange={(e) => setCustomEnd(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -133,56 +262,47 @@ export default function PropertiesExportPage() {
                 {/* Include Status Options */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Include Property Status
+                    Include Record Status
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {(Object.keys(includeOptions) as (keyof typeof includeOptions)[]).map((key) => (
-                      <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={includeOptions[key]}
-                          onChange={() => handleStatusChange(key)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="text-sm text-gray-700 capitalize">
-                          {key === 'onInstallment' ? 'On Installment' : key.charAt(0).toUpperCase() + key.slice(1)} Properties
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Property Types */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Property Types
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {(Object.keys(propertyTypes) as (keyof typeof propertyTypes)[]).map((key) => (
-                      <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={propertyTypes[key]}
-                          onChange={() => handleTypeChange(key)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="text-sm text-gray-700 capitalize">{key}</span>
-                      </label>
-                    ))}
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={includeOptions.active}
+                        onChange={() => setIncludeOptions({ ...includeOptions, active: !includeOptions.active })}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-700">Active / Listed Properties</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={includeOptions.cancelled}
+                        onChange={() => setIncludeOptions({ ...includeOptions, cancelled: !includeOptions.cancelled })}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-700">Cancelled / Unlisted Properties</span>
+                    </label>
                   </div>
                 </div>
 
                 {/* Export Action */}
-                <div className="pt-2 border-t border-gray-100 flex items-center gap-4">
+                <div className="pt-2 border-t border-gray-100 flex items-center gap-4 flex-wrap">
                   <ExportDropdown
                     label="Export Properties"
-                    filename={`properties-${filenameSuffix}`}
+                    filename={`gurukrupa-properties-${filenameSuffix}`}
                     columns={PROPERTY_COLUMNS}
-                    rows={MOCK_PROPERTIES}
-                    disabled={MOCK_PROPERTIES.length === 0}
+                    rows={filteredRows}
+                    disabled={loading || filteredRows.length === 0}
                   />
+                  <button
+                    onClick={fetchProperties}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+                  </button>
                   <p className="text-xs text-gray-400">
-                    {MOCK_PROPERTIES.length} properties · {Object.values(propertyTypes).filter(Boolean).length} type(s) selected
+                    {loading ? 'Loading…' : `${filteredRows.length.toLocaleString('en-IN')} of ${rows.length.toLocaleString('en-IN')} rows selected`}
                   </p>
                 </div>
               </div>

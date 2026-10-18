@@ -8,12 +8,12 @@ import {
   Lock, MessageSquare, Shield, Crown, Search, ExternalLink, ArrowRight,
   CheckCircle2, AlertCircle, Printer, HelpCircle, Layers, FileText,
   Globe, Smartphone, Bell, ChevronRight, Sparkles, Building2, Users,
-  BarChart3, Eye, Key, Check
+  BarChart3, Eye, Key, Check, Calendar, StickyNote, CheckSquare, Image as ImageIcon
 } from 'lucide-react';
 
 interface GuideSection {
   id: string;
-  category: 'admin' | 'billing' | 'settings' | 'comms' | 'sitemap';
+  category: 'admin' | 'billing' | 'settings' | 'comms' | 'sitemap' | 'modules';
   title: string;
   badge: string;
   badgeColor: string;
@@ -275,6 +275,240 @@ const GUIDE_SECTIONS: GuideSection[] = [
         description: 'Click "Send Message". Unread counters alert recipients. When an admin reads the message, double checkmarks appear on your view.',
       }
     ]
+  },
+  {
+    id: 'module-website-cms',
+    category: 'modules',
+    title: 'Website CMS — What It Is',
+    badge: 'Live Data',
+    badgeColor: 'bg-green-100 text-green-700 border-green-200',
+    icon: <Globe className="text-green-600" size={24} />,
+    summary: 'The real content manager for the public-facing website. All content is stored in the Supabase `page_content` table (sections keyed by page_slug + section_key) — nothing is mock. It manages four things: registered pages, blog posts, SEO meta settings, and promotional banners.',
+    quickAction: { label: 'Open Website CMS', url: '/website-cms' },
+    steps: [
+      {
+        number: 1,
+        title: 'Pages Tab',
+        description: 'Lists the four schema-managed pages (Homepage, Properties, About Us, Contact Us) plus any custom pages you register. "Edit Sections" on a core page opens the live section editor at /pages/[slug], which reads and writes the page_content table directly.',
+        tips: ['Status shows "Published" unless every saved section is hidden (then it shows "Draft").']
+      },
+      {
+        number: 2,
+        title: 'Blog / News Tab',
+        description: 'Manage news articles for the site (title, category, status, author, tags). All posts are persisted to Supabase under the `_cms_registry` section — add, edit, or delete and refresh to see them preserved.',
+      },
+      {
+        number: 3,
+        title: 'SEO Settings Tab',
+        description: 'Edit meta title, meta description, and focus keyword per page. The SEO score (0-100) recalculates automatically from title/description length and keyword presence, and saves to the database on Save.',
+      },
+      {
+        number: 4,
+        title: 'Banners Tab',
+        description: 'Promotional banners shown across the website (location, date window, link target, active/inactive toggle). Toggling Active instantly updates the stored record.',
+      },
+    ]
+  },
+  {
+    id: 'module-media-library',
+    category: 'modules',
+    title: 'Media Library — What It Is',
+    badge: 'Live Data',
+    badgeColor: 'bg-green-100 text-green-700 border-green-200',
+    icon: <ImageIcon className="text-green-600" size={24} />,
+    summary: 'A live asset repository powered by /api/media. It does NOT use mock files — it indexes three real sources: official Gurukrupa assets in /public (QR codes, emblems, signature, logo), every file in /public/uploads, and attachments embedded in internal-comms messages and bills. Items you upload are registered in page_content so they persist across sessions.',
+    quickAction: { label: 'Open Media Library', url: '/media-library' },
+    steps: [
+      {
+        number: 1,
+        title: 'Browse Real Assets',
+        description: 'Grid and list views show every discovered file with real file size, modified date, category (Images / Documents / Videos / Floor Plans), and the project or society it belongs to.',
+      },
+      {
+        number: 2,
+        title: 'Filter & Search',
+        description: 'Filter by category pills, by project/society (populated from the live unique-societies RPC), or search by filename.',
+      },
+      {
+        number: 3,
+        title: 'Upload Files',
+        description: 'Click "Upload Files", pick an image or PDF, choose a category, project, and tags. The file is saved via /api/uploads to /public/uploads and a metadata record is persisted via POST /api/media.',
+      },
+      {
+        number: 4,
+        title: 'Preview / Download / Delete',
+        description: 'Hover a card (or use list row actions) to preview the file in a new tab, download it, or remove it from the library index. Deletion records a tombstone so system files stay hidden after removal.',
+      },
+    ]
+  },
+  {
+    id: 'module-notifications',
+    category: 'modules',
+    title: 'Notifications — What It Is',
+    badge: 'Live Data',
+    badgeColor: 'bg-green-100 text-green-700 border-green-200',
+    icon: <Bell className="text-green-600" size={24} />,
+    summary: 'A live activity feed built from real database events — NOT a hardcoded list. /api/notifications aggregates the newest bills, application-form registrations, EMI receipts, plot cancellations, internal-comms posts, and message-log entries, then merges your read/deleted state stored in Supabase.',
+    quickAction: { label: 'Open Notifications', url: '/notifications' },
+    steps: [
+      {
+        number: 1,
+        title: 'What Generates a Notification',
+        description: 'Latest rows from `bills` (payments), `Master Data Of Gurukrupa` (new registrations, EMI receipts, cancellations), `internal_messages` (team posts), and `messages` (SMS sends & delivery failures) all appear in the feed with type icons and priority badges.',
+        tips: ['Failed SMS deliveries appear as high-priority "Alert" notifications.']
+      },
+      {
+        number: 2,
+        title: 'Read / Unread / Delete',
+        description: 'The green checkmark toggles read state, the trash icon hides an item, and "Mark all as read" clears the badge. All three write to the `_notifications_state` row in page_content so state persists per-browser-session across reloads.',
+      },
+      {
+        number: 3,
+        title: 'Deep Links',
+        description: 'Every notification links to the source record — bills open the invoice detail, registrations open the customer profile, SMS entries open message history, and comms open Internal Comms.',
+      },
+      {
+        number: 4,
+        title: 'Bell Icon in the Header',
+        description: 'The top-navbar bell now shows the same live feed with a real unread count — no more always-on red dot.',
+      },
+    ]
+  },
+  {
+    id: 'module-messages-history',
+    category: 'modules',
+    title: 'Message History — What It Is',
+    badge: 'Live Data',
+    badgeColor: 'bg-green-100 text-green-700 border-green-200',
+    icon: <MessageSquare className="text-green-600" size={24} />,
+    summary: 'A real delivery log backed by the `messages` table. Every SMS sent from /messages is logged here via /api/sms/send, and contact-form submissions land here too. Statuses (delivered / pending / failed), recipient phone numbers, and timestamps all come from real rows.',
+    quickAction: { label: 'Open Message History', url: '/messages/history' },
+    steps: [
+      {
+        number: 1,
+        title: 'What Appears Here',
+        description: 'Each row is a real `messages` table record: subject, content, sender, source channel (SMS/Email/WhatsApp), recipient phone, delivery status, and timestamp.',
+      },
+      {
+        number: 2,
+        title: 'Filters & Search',
+        description: 'Search subject/content/sender, filter by channel type or delivery status. Pagination works on the filtered set.',
+      },
+      {
+        number: 3,
+        title: 'Export & Inspect',
+        description: 'The Export button downloads the current filtered list as CSV. The eye icon opens a detail modal showing the full message body and delivery breakdown.',
+      },
+    ]
+  },
+  {
+    id: 'module-properties-export',
+    category: 'modules',
+    title: 'Property Export — What It Is',
+    badge: 'Live Data',
+    badgeColor: 'bg-green-100 text-green-700 border-green-200',
+    icon: <FileSpreadsheet className="text-green-600" size={24} />,
+    summary: 'Exports real `Master Data Of Gurukrupa` records fetched via /api/properties — not the old 4-row sample. Filter by society (live list), form-date range (including custom), and Active vs Cancelled status, then download CSV/PDF/Word/Text.',
+    quickAction: { label: 'Open Property Export', url: '/properties/export' },
+    steps: [
+      {
+        number: 1,
+        title: 'Choose a Society',
+        description: 'The society dropdown is populated from the live unique-societies RPC (56 real societies). Leave it on "All Societies" to export everything.',
+      },
+      {
+        number: 2,
+        title: 'Date & Status Filters',
+        description: 'Pick a form-date window (or Custom with start/end pickers) and tick Active / Cancelled records. The row counter updates live so you know exactly how many records will export.',
+        tips: ['Each export batch covers up to 500 records from the API. For the full 90k-row dataset, export per-society.']
+      },
+      {
+        number: 3,
+        title: 'Exported Columns',
+        description: 'Columns map to real fields: Property (society + plot), Client, Plot No, Size, Plot Amount, Paid Amount, EMI, Status, Reg/R. No., Broker, and Form Date — all Indian-format ₹ values.',
+      },
+    ]
+  },
+  {
+    id: 'module-calendar',
+    category: 'modules',
+    title: 'Calendar — What It Is',
+    badge: 'Live Data',
+    badgeColor: 'bg-green-100 text-green-700 border-green-200',
+    icon: <Calendar className="text-green-600" size={24} />,
+    summary: 'A live CRM calendar fed by /api/workspace. It shows two kinds of events: (1) CRM-derived events generated from the latest Master Data records (application registrations and EMI/plot reviews, read-only) and (2) your own custom events, which are persisted to Supabase.',
+    quickAction: { label: 'Open Calendar', url: '/components/calendar' },
+    steps: [
+      {
+        number: 1,
+        title: 'CRM Events',
+        description: 'Recent registrations and EMI entries from `Master Data Of Gurukrupa` appear as scheduled events with client name, society/plot, and registration number in the notes. These are read-only — edit them on the customer record.',
+      },
+      {
+        number: 2,
+        title: 'Custom Events',
+        description: 'Click "Add Event" to create viewings, meetings, deadlines, closings, inspections, or open houses. Saved events persist in the `_workspace` slug of page_content and survive reloads.',
+      },
+      {
+        number: 3,
+        title: 'Navigation & Search',
+        description: 'Navigate months, click a day to see its schedule, and use the sidebar search to find events by title, client, property, or location.',
+      },
+    ]
+  },
+  {
+    id: 'module-notes',
+    category: 'modules',
+    title: 'Notes — What It Is',
+    badge: 'Live Data',
+    badgeColor: 'bg-green-100 text-green-700 border-green-200',
+    icon: <StickyNote className="text-green-600" size={24} />,
+    summary: 'A persistent CRM scratchpad stored in Supabase (`_workspace` slug → `notes` section). First visit seeds a few starter notes from real master-data clients/societies; after that, every create, edit, pin, and delete is written back to the database.',
+    quickAction: { label: 'Open Notes', url: '/components/notes' },
+    steps: [
+      {
+        number: 1,
+        title: 'Create & Organize',
+        description: 'New notes take a title, body, category (Client / Property / Meeting / Other), color, and optional linked client or property.',
+      },
+      {
+        number: 2,
+        title: 'Pin, Edit, Delete',
+        description: 'Pin important notes to the top, edit in place, or delete. Every action saves to Supabase immediately — refresh the page and nothing is lost.',
+      },
+      {
+        number: 3,
+        title: 'Search & Filter',
+        description: 'Search across titles, content, client, and property names; filter by category and sort by updated date, creation date, or title.',
+      },
+    ]
+  },
+  {
+    id: 'module-tasks',
+    category: 'modules',
+    title: 'Tasks — What It Is',
+    badge: 'Live Data',
+    badgeColor: 'bg-green-100 text-green-700 border-green-200',
+    icon: <CheckSquare className="text-green-600" size={24} />,
+    summary: 'A persistent Kanban-style task board backed by Supabase (`_workspace` slug → `tasks` section). Initial tasks are seeded from real master-data records (KYC verification, EMI confirmations). Columns: To Do / In Progress / Completed.',
+    quickAction: { label: 'Open Tasks', url: '/components/tasks' },
+    steps: [
+      {
+        number: 1,
+        title: 'Create Tasks',
+        description: 'Tasks take a title, description, due date, priority, category, and optional client/property links.',
+      },
+      {
+        number: 2,
+        title: 'Move Through Columns',
+        description: 'Change status with the per-card dropdown. Overdue tasks (past due date, not completed) get an "Overdue" badge automatically. All changes persist.',
+      },
+      {
+        number: 3,
+        title: 'Filter & Search',
+        description: 'Search title/description/client/property, filter by status or category across the three columns.',
+      },
+    ]
   }
 ];
 
@@ -294,14 +528,19 @@ const SITEMAP_ITEMS = [
   { section: 'Finance', name: 'Export Invoices', path: '/invoices/export', desc: 'Export filtered invoice data in CSV/Excel', icon: <Download size={15} /> },
   { section: 'Communications', name: 'Internal Comms', path: '/internal-comms', desc: 'End-to-end admin chat, file sharing, and announcements', icon: <Lock size={15} /> },
   { section: 'Communications', name: 'Messages', path: '/messages', desc: 'Outbound SMS, Email, and WhatsApp messaging', icon: <MessageSquare size={15} /> },
-  { section: 'Communications', name: 'Notifications', path: '/notifications', desc: 'Live alerts for transactions, logins, and inquiries', icon: <Bell size={15} /> },
-  { section: 'Content', name: 'Website CMS', path: '/website-cms', desc: 'Edit homepage banners, announcements, testimonials', icon: <Globe size={15} /> },
+  { section: 'Communications', name: 'Message History', path: '/messages/history', desc: 'Live delivery log of SMS/emails from the messages table', icon: <MessageSquare size={15} /> },
+  { section: 'Communications', name: 'Notifications', path: '/notifications', desc: 'Live alerts aggregated from bills, registrations, and messages', icon: <Bell size={15} /> },
+  { section: 'Content', name: 'Website CMS', path: '/website-cms', desc: 'Real CMS backed by the page_content table — pages, blogs, SEO, banners', icon: <Globe size={15} /> },
+  { section: 'Content', name: 'Media Library', path: '/media-library', desc: 'Real asset repository — uploads, QR codes, emblems, bill attachments', icon: <ImageIcon size={15} /> },
+  { section: 'Workspace', name: 'Calendar', path: '/components/calendar', desc: 'Live CRM events plus persisted custom events', icon: <Calendar size={15} /> },
+  { section: 'Workspace', name: 'Notes', path: '/components/notes', desc: 'Persistent notes stored in Supabase', icon: <StickyNote size={15} /> },
+  { section: 'Workspace', name: 'Tasks', path: '/components/tasks', desc: 'Persistent Kanban task board stored in Supabase', icon: <CheckSquare size={15} /> },
   { section: 'System', name: 'Admin Users', path: '/admin-users', desc: 'Create new admins, set roles and module permissions', icon: <Shield size={15} /> },
   { section: 'System', name: 'Settings', path: '/settings', desc: 'Profile, security (2FA/password), active sessions, theme', icon: <Settings size={15} /> },
 ];
 
 export default function AdminGuidePage() {
-  const [activeTab, setActiveTab] = useState<'all' | 'admin' | 'billing' | 'settings' | 'comms' | 'sitemap'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'admin' | 'billing' | 'settings' | 'comms' | 'sitemap' | 'modules'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filter sections by search and tab
@@ -400,6 +639,7 @@ export default function AdminGuidePage() {
               { id: 'billing', label: 'Bills & Invoices', icon: <Receipt size={15} /> },
               { id: 'settings', label: 'Settings', icon: <Settings size={15} /> },
               { id: 'comms', label: 'Internal Comms', icon: <Lock size={15} /> },
+              { id: 'modules', label: 'Live Modules', icon: <Layers size={15} /> },
               { id: 'sitemap', label: 'Where Is Everything?', icon: <Globe size={15} /> },
             ].map((tab) => (
               <button

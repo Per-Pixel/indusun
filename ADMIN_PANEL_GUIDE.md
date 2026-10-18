@@ -17,6 +17,7 @@ This comprehensive guide covers everything you need to know about using, managin
 7. [Customer & Broker CRM](#7-customer--broker-crm)
 8. [Properties Management](#8-properties-management)
 9. [Database & Supabase Setup](#9-database--supabase-setup)
+10. [Live Data Modules (formerly mock pages)](#10-live-data-modules-formerly-mock-pages)
 
 ---
 
@@ -42,6 +43,7 @@ All features are grouped into intuitive sections in the left **Sidebar Navigatio
 | | **Add Property** | `/properties/add` | Multi-step form to list a new property with pricing, bedrooms, location, and specifications. |
 | | **Export Properties** | `/properties/export` | Export property listings to CSV or Excel. |
 | | **Property Detail & Edit** | `/properties/[id]`, `/properties/[id]/edit` | View property analytics or edit existing listing details. |
+| | **Export Properties** | `/properties/export` | Export real `Master Data Of Gurukrupa` records — society filter, date range, Active/Cancelled status. |
 | **CRM** | **Customers** | `/customers` | Database of property buyers, leads, and contacts with contact info and lead source. |
 | | **Add Customer** | `/customers/add` | Onboarding form to register a new customer or buyer inquiry. |
 | | **Customer Profile** | `/customers/[id]` | Customer dossier with transaction history, saved favorites, and inquiries. |
@@ -55,13 +57,17 @@ All features are grouped into intuitive sections in the left **Sidebar Navigatio
 | | **Export Invoices** | `/invoices/export` | Filter and export invoice datasets in CSV/Excel. |
 | **Communications** | **Internal Comms** | `/internal-comms` | **New In-App Hub**: Share private notes, messages, PDFs, images, and documents between admins. |
 | | **Outbound Messaging** | `/messages` | Send SMS, Email, or WhatsApp updates to customers, brokers, or admins. |
-| | **Notifications** | `/notifications` | Live system alerts, transaction confirmations, and inquiry notifications. |
+| | **Notifications** | `/notifications` | Live alerts aggregated from bills, registrations, EMI receipts, cancellations, and messages. |
 | **Development** | **Projects** | `/projects` | Real estate development projects, phases, site progress, and inventory tracking. |
 | | **Site Visits** | `/site-visits` | Schedule, assign, and manage customer physical site visits. |
 | **Sales** | **Sales Overview** | `/sales` | Sales pipeline, revenue forecasts, and conversion rates. |
-| | **Sales Team** | `/sales-team` | Agent performance, assigned leads, and individual deal targets. |
 | | **Reports** | `/reports` | Comprehensive monthly/annual financial statements and performance audits. |
-| **Content** | **Website CMS** | `/website-cms` | Edit hero banners, homepage announcements, testimonials, and public site copy. |
+| **Content** | **Website CMS** | `/website-cms` | Real CMS backed by the `page_content` table — pages, blog posts, SEO metadata, banners. |
+| | **Media Library** | `/media-library` | Live asset repository — uploaded files, official QR/emblem/logo assets, bill & internal-comms attachments. |
+| **Workspace** | **Calendar** | `/components/calendar` | CRM-derived events from master data plus your own persisted events. |
+| | **Notes** | `/components/notes` | Persistent CRM notes stored in Supabase (`_workspace` slug). |
+| | **Tasks** | `/components/tasks` | Persistent Kanban task board stored in Supabase (`_workspace` slug). |
+| **Communications** | **Message History** | `/messages/history` | Live delivery log of outbound SMS/emails from the `messages` table. |
 | **System** | **Admin Users** | `/admin-users` | **Super Admin Hub**: Create new admins, assign permissions, edit roles, and reset passwords. |
 | | **Admin User Profile** | `/admin-users/[id]` | Individual admin profile with activity history, permission editor, and password reset. |
 | | **Settings** | `/settings` | System-wide preferences, security (2FA/password), active sessions, theme, and API console. |
@@ -280,6 +286,74 @@ This script sets up:
 5. Row Level Security (RLS) policies.
 6. Realtime publication subscriptions (`ALTER PUBLICATION supabase_realtime ADD TABLE ...`).
 7. Performance indexes on sender IDs, creation timestamps, and user reads.
+
+> [!NOTE]
+> The live modules below do not need separate migrations. They persist into the existing `page_content` table using reserved `page_slug` values (`_cms_registry`, `_media_library`, `_notifications_state`, `_workspace`). `page_content` is created by `admin/sql/admin_panel_overhaul.sql`; no extra SQL is required.
+
+---
+
+## 10. Live Data Modules (formerly mock pages)
+
+These modules were previously hardcoded demo pages. They are now fully database-backed — every create, edit, toggle, and delete persists to Supabase and survives page reloads.
+
+### 10.1 Website CMS (`/website-cms`)
+* **What it is**: The real content manager for the public website, backed by `/api/cms`.
+* **Data source**: `page_content` table. Core pages (Homepage, Properties, About Us, Contact Us) read from the existing schema-driven sections; blogs, SEO metadata, banners, and custom pages store under `page_slug = '_cms_registry'`.
+* **What you can do**: Register pages, manage blog/news posts, edit SEO meta titles/descriptions/keywords (score auto-calculates), and toggle promotional banners on/off.
+* **Quick link**: Edit Homepage sections at `/pages/homepage`.
+
+### 10.2 Media Library (`/media-library`)
+* **What it is**: A live asset repository powered by `/api/media`.
+* **Data sources**:
+  - `admin/public/` — official assets (Karnataka Bank UPI QR, Gurukrupa emblems, signature, Indusun logo)
+  - `admin/public/uploads/` — every file uploaded via `/api/uploads`
+  - `internal_messages.attachments` and `bills.attachments` — files attached in comms and billing
+  - `page_content` (`_media_library` slug) — metadata for files you register, plus deletion tombstones
+* **What you can do**: Browse grid/list, filter by category and project/society (live society list), upload images & PDFs, preview, download, and remove entries.
+
+### 10.3 Notifications (`/notifications`)
+* **What it is**: A live activity feed powered by `/api/notifications` — not a static list.
+* **Data sources**: newest rows from `bills`, `Master Data Of Gurukrupa` (registrations, EMI receipts, cancellations), `internal_messages`, and `messages` (SMS sends/failures).
+* **Persistence**: read/unread/deleted state stores in `page_content` (`_notifications_state` slug) and also drives the top-navbar bell badge/count.
+* **What you can do**: Filter by type (Payments, Bookings, Leads/SMS, Alerts, Comms), mark read/unread, delete, and jump straight to the source record.
+
+### 10.4 Message History (`/messages/history`)
+* **What it is**: A real delivery log of outbound communications.
+* **Data source**: the `messages` table — populated by `/api/sms/send` (Message Central dispatches) and contact-form submissions.
+* **What you can do**: Search subject/content/sender, filter by channel (SMS/Email/WhatsApp) and status (delivered/pending/failed), view message details, and export the filtered list to CSV.
+
+### 10.5 Property Export (`/properties/export`)
+* **What it is**: Real master-data exports powered by `/api/properties`.
+* **Data source**: `Master Data Of Gurukrupa` (~90,000 rows). Exports up to 500 records per batch.
+* **What you can do**: Filter by live society list, form-date range (presets or custom start/end), and Active vs Cancelled status, then export CSV/PDF/Word/Text with columns mapped to real fields (Client, Society, Plot, Amounts, Reg/R. No., Broker, Form Date).
+
+### 10.6 Calendar (`/components/calendar`)
+* **What it is**: A live CRM calendar powered by `/api/workspace`.
+* **Data sources**:
+  - `Master Data Of Gurukrupa` — derived events from recent registrations and EMI records (read-only)
+  - `page_content` (`_workspace` slug → `calendar_events`) — your custom events
+* **What you can do**: Navigate months, click days for schedules, search events, and create/delete custom events (viewing, meeting, deadline, closing, inspection, open house).
+
+### 10.7 Notes (`/components/notes`)
+* **What it is**: A persistent CRM scratchpad powered by `/api/workspace`.
+* **Data source**: `page_content` (`_workspace` slug → `notes`). First visit seeds starter notes from real master-data clients and societies.
+* **What you can do**: Create/edit/delete notes, pin them, assign color + category (Client/Property/Meeting/Other), link clients and properties, search and sort.
+
+### 10.8 Tasks (`/components/tasks`)
+* **What it is**: A persistent Kanban task board powered by `/api/workspace`.
+* **Data source**: `page_content` (`_workspace` slug → `tasks`). First visit seeds tasks from real master-data records (KYC verification, EMI confirmations).
+* **What you can do**: Create tasks with due date/priority/category, move across To Do / In Progress / Completed, see automatic Overdue badges, edit and delete.
+
+### 10.9 Related Live APIs
+
+| Endpoint | Purpose |
+| :--- | :--- |
+| `GET/PUT /api/cms` | Reads `page_content` sections; saves custom pages, blogs, SEO, banners under `_cms_registry`. |
+| `GET/POST/DELETE /api/media` | Indexes real assets; registers uploads and deletions under `_media_library`. |
+| `GET/PUT /api/notifications` | Aggregates live events into notifications; persists read/deleted state under `_notifications_state`. |
+| `GET/PUT /api/workspace` | Serves and persists calendar events, notes, and tasks under `_workspace`. |
+| `GET /api/messages` | Paginated read of the real `messages` table used by Message History. |
+| `GET /api/properties` | Paginated live `Master Data Of Gurukrupa` records used by Property Export. |
 
 ---
 

@@ -16,6 +16,7 @@ interface DataTableProps {
   currentPage: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
   onClientNameFilter: (value: string) => void;
   onSocietyFilter: (value: string) => void;
   clientNameFilter: string;
@@ -30,6 +31,7 @@ export default function DataTable({
   currentPage,
   pageSize,
   onPageChange,
+  onPageSizeChange,
   onClientNameFilter,
   onSocietyFilter,
   clientNameFilter,
@@ -212,10 +214,7 @@ export default function DataTable({
               <span>Rows per page:</span>
               <select
                 value={pageSize}
-                onChange={(e) => {
-                  // This would need to be handled by parent component
-                  console.log('Page size change not implemented');
-                }}
+                onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
                 className="ml-2 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value={50}>50</option>

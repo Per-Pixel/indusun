@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 import {
-  MessageSquare,
   Search,
   ChevronDown,
   Download,
@@ -13,12 +12,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Calendar,
-  Clock
+  RefreshCw,
+  MessageSquare,
 } from 'lucide-react';
-import Image from 'next/image';
+import toast from 'react-hot-toast';
 
-// Types
+// Types — mapped from the real `messages` table via /api/messages
 interface MessageHistory {
   id: string;
   subject: string;
@@ -30,6 +29,7 @@ interface MessageHistory {
     total: number;
     delivered: number;
     failed: number;
+    phone?: string;
   };
   sender: {
     id: string;
@@ -38,250 +38,157 @@ interface MessageHistory {
   };
 }
 
-// Mock data for message history
-const mockMessageHistory: MessageHistory[] = [
-  {
-    id: 'msg-001',
-    subject: 'New Property Listing',
-    content: 'We have a new property listing that matches your preferences. Check it out!',
-    sentAt: '2023-12-15T10:30:00',
-    status: 'delivered',
-    type: 'email',
-    recipients: {
-      total: 45,
-      delivered: 45,
-      failed: 0
-    },
-    sender: {
-      id: 'admin-1',
-      name: 'David Wilson',
-      image: '/auth/Agents/admin-01.jpg'
-    }
-  },
-  {
-    id: 'msg-002',
-    subject: 'Payment Reminder',
-    content: 'This is a friendly reminder that your payment is due in 3 days.',
-    sentAt: '2023-12-10T14:15:00',
-    status: 'delivered',
-    type: 'sms',
-    recipients: {
-      total: 12,
-      delivered: 10,
-      failed: 2
-    },
-    sender: {
-      id: 'admin-2',
-      name: 'Jessica Adams',
-      image: '/auth/Agents/admin-02.jpg'
-    }
-  },
-  {
-    id: 'msg-003',
-    subject: 'Holiday Office Hours',
-    content: 'Please note our office hours during the upcoming holiday season.',
-    sentAt: '2023-12-05T09:45:00',
-    status: 'delivered',
-    type: 'email',
-    recipients: {
-      total: 120,
-      delivered: 118,
-      failed: 2
-    },
-    sender: {
-      id: 'admin-1',
-      name: 'David Wilson',
-      image: '/auth/Agents/admin-01.jpg'
-    }
-  },
-  {
-    id: 'msg-004',
-    subject: 'Property Viewing Confirmation',
-    content: 'Your property viewing has been scheduled for tomorrow at 2 PM.',
-    sentAt: '2023-12-01T16:20:00',
-    status: 'delivered',
-    type: 'sms',
-    recipients: {
-      total: 1,
-      delivered: 1,
-      failed: 0
-    },
-    sender: {
-      id: 'broker-1',
-      name: 'Amit Kumar',
-      image: '/auth/Agents/agent-01.jpg'
-    }
-  },
-  {
-    id: 'msg-005',
-    subject: 'System Maintenance',
-    content: 'Our system will be undergoing maintenance this weekend.',
-    sentAt: '2023-11-28T11:00:00',
-    status: 'failed',
-    type: 'email',
-    recipients: {
-      total: 200,
-      delivered: 0,
-      failed: 200
-    },
-    sender: {
-      id: 'admin-3',
-      name: 'System',
-    }
-  },
-  {
-    id: 'msg-006',
-    subject: 'New Feature Announcement',
-    content: 'We are excited to announce new features on our platform!',
-    sentAt: '2023-11-25T13:30:00',
-    status: 'delivered',
-    type: 'email',
-    recipients: {
-      total: 150,
-      delivered: 145,
-      failed: 5
-    },
-    sender: {
-      id: 'admin-1',
-      name: 'David Wilson',
-      image: '/auth/Agents/admin-01.jpg'
-    }
-  },
-  {
-    id: 'msg-007',
-    subject: 'Appointment Cancellation',
-    content: 'Your appointment for property viewing has been cancelled.',
-    sentAt: '2023-11-20T15:45:00',
-    status: 'pending',
-    type: 'sms',
-    recipients: {
-      total: 1,
-      delivered: 0,
-      failed: 0
-    },
-    sender: {
-      id: 'broker-2',
-      name: 'Michael Chen',
-      image: '/auth/Agents/agent-02.jpg'
-    }
-  },
-  {
-    id: 'msg-008',
-    subject: 'Property Update via WhatsApp',
-    content: 'Hi! We have exciting updates about your property inquiry. The property you were interested in is now available for viewing. Would you like to schedule a visit?',
-    sentAt: '2023-12-18T09:15:00',
-    status: 'delivered',
-    type: 'whatsapp',
-    recipients: {
-      total: 25,
-      delivered: 24,
-      failed: 1
-    },
-    sender: {
-      id: 'admin-1',
-      name: 'Sarah Johnson',
-      image: '/auth/Agents/agent-01.jpg'
-    }
-  }
-];
+function mapStatus(status: string | null | undefined): MessageHistory['status'] {
+  const s = (status || '').toLowerCase();
+  if (s === 'failed' || s === 'error') return 'failed';
+  if (s === 'pending' || s === 'new' || s === 'queued') return 'pending';
+  return 'delivered';
+}
+
+function mapType(source: string | null | undefined): MessageHistory['type'] {
+  const s = (source || '').toLowerCase();
+  if (s === 'whatsapp') return 'whatsapp';
+  if (s === 'email') return 'email';
+  return 'sms';
+}
 
 export default function MessageHistoryPage() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [messages, setMessages] = useState<MessageHistory[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('All');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selected, setSelected] = useState<MessageHistory | null>(null);
 
-  const messagesPerPage = 5;
+  const messagesPerPage = 10;
 
-  // Toggle sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  // Debounce search term to avoid excessive filtering
+  const fetchMessages = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/messages?limit=200');
+      const json = await res.json();
+      const rows: MessageHistory[] = (json.messages || []).map((m: any) => {
+        const status = mapStatus(m.status);
+        return {
+          id: m.id,
+          subject: m.subject || (m.source || 'SMS'),
+          content: m.message_content || '',
+          sentAt: m.created_at,
+          status,
+          type: mapType(m.source),
+          recipients: {
+            total: 1,
+            delivered: status === 'delivered' ? 1 : 0,
+            failed: status === 'failed' ? 1 : 0,
+            phone: m.sender_phone || undefined,
+          },
+          sender: {
+            id: m.id,
+            name: m.sender_name || 'Admin',
+          },
+        };
+      });
+      setMessages(rows);
+    } catch (err) {
+      console.error('Message history fetch error:', err);
+      toast.error('Failed to load message history');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
+    fetchMessages();
+  }, [fetchMessages]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm, filterType, filterStatus]);
 
-  // Filter messages based on search term, type, and status
   const filteredMessages = React.useMemo(() => {
-    return mockMessageHistory.filter(message => {
-      // Search in subject, content, and sender name
-      const matchesSearch = debouncedSearchTerm === '' ? true : (
-        message.subject.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        message.content.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        message.sender.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-      );
-
-      // Match by message type
+    return messages.filter((message) => {
+      const q = debouncedSearchTerm.toLowerCase();
+      const matchesSearch =
+        !q ||
+        message.subject.toLowerCase().includes(q) ||
+        message.content.toLowerCase().includes(q) ||
+        message.sender.name.toLowerCase().includes(q);
       const matchesType = filterType === 'All' || message.type === filterType.toLowerCase();
-
-      // Match by message status
       const matchesStatus = filterStatus === 'All' || message.status === filterStatus.toLowerCase();
-
       return matchesSearch && matchesType && matchesStatus;
     });
-  }, [debouncedSearchTerm, filterType, filterStatus]);
+  }, [messages, debouncedSearchTerm, filterType, filterStatus]);
 
-  // Calculate pagination
   const indexOfLastMessage = currentPage * messagesPerPage;
   const indexOfFirstMessage = indexOfLastMessage - messagesPerPage;
   const currentMessages = filteredMessages.slice(indexOfFirstMessage, indexOfLastMessage);
   const totalPages = Math.ceil(filteredMessages.length / messagesPerPage);
 
-  // Get status color
   const getStatusColor = (status: MessageHistory['status']) => {
     switch (status) {
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'pending':   return 'bg-yellow-100 text-yellow-800';
+      case 'failed':    return 'bg-red-100 text-red-800';
+      default:          return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    if (Number.isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString('en-IN', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
+  };
+
+  const exportCsv = () => {
+    const header = 'Subject,Sender,Date,Type,Status,Recipient,Content\n';
+    const body = filteredMessages
+      .map((m) =>
+        [
+          `"${m.subject.replace(/"/g, '""')}"`,
+          `"${m.sender.name.replace(/"/g, '""')}"`,
+          `"${m.sentAt}"`,
+          m.type,
+          m.status,
+          `"${(m.recipients.phone || '').replace(/"/g, '""')}"`,
+          `"${m.content.replace(/"/g, '""').slice(0, 300)}"`,
+        ].join(',')
+      )
+      .join('\n');
+    const blob = new Blob([header + body], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `message-history-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} closeSidebar={() => setIsSidebarOpen(false)} />
 
-      {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'ml-[260px]' : 'ml-0'}`}>
-        {/* Top Navbar */}
         <div className="sticky top-0 z-10">
           <AdminTopNavbar toggleSidebar={toggleSidebar} />
         </div>
 
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
-            {/* Back Button and Title */}
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
               <div>
                 <button
@@ -292,18 +199,30 @@ export default function MessageHistoryPage() {
                   <span>Back to Messages</span>
                 </button>
                 <h1 className="text-2xl font-bold text-gray-900">Message History</h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  Live delivery log from the <code>messages</code> table — includes SMS dispatches, contact-form messages, and failures.
+                </p>
               </div>
 
-              <button
-                onClick={() => router.push('/messages/export')}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                <Download size={16} />
-                <span>Export</span>
-              </button>
+              <div className="flex items-center gap-2 mt-3 md:mt-0">
+                <button
+                  onClick={fetchMessages}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </button>
+                <button
+                  onClick={exportCsv}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <Download size={16} />
+                  <span>Export</span>
+                </button>
+              </div>
             </div>
 
-            {/* Filters and Search */}
+            {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="flex-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -311,7 +230,7 @@ export default function MessageHistoryPage() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search messages..."
+                  placeholder="Search subject, content or sender..."
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -325,10 +244,10 @@ export default function MessageHistoryPage() {
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
-                    <option value="All" className="text-gray-900">All Status</option>
-                    <option value="delivered" className="text-gray-900">Delivered</option>
-                    <option value="pending" className="text-gray-900">Pending</option>
-                    <option value="failed" className="text-gray-900">Failed</option>
+                    <option value="All">All Status</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="pending">Pending</option>
+                    <option value="failed">Failed</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                     <ChevronDown size={16} />
@@ -341,10 +260,10 @@ export default function MessageHistoryPage() {
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
                   >
-                    <option value="All" className="text-gray-900">All Types</option>
-                    <option value="email" className="text-gray-900">Email</option>
-                    <option value="sms" className="text-gray-900">SMS</option>
-                    <option value="whatsapp" className="text-gray-900">WhatsApp</option>
+                    <option value="All">All Types</option>
+                    <option value="email">Email</option>
+                    <option value="sms">SMS</option>
+                    <option value="whatsapp">WhatsApp</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900">
                     <ChevronDown size={16} />
@@ -353,7 +272,7 @@ export default function MessageHistoryPage() {
               </div>
             </div>
 
-            {/* Messages Table */}
+            {/* Table */}
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -363,72 +282,56 @@ export default function MessageHistoryPage() {
                       <th className="px-6 py-3">Sent By</th>
                       <th className="px-6 py-3">Date</th>
                       <th className="px-6 py-3">Type</th>
-                      <th className="px-6 py-3">Recipients</th>
+                      <th className="px-6 py-3">Recipient</th>
                       <th className="px-6 py-3">Status</th>
                       <th className="px-6 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {currentMessages.map((message) => (
+                    {loading && messages.length === 0 ? (
+                      <tr><td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">Loading message history…</td></tr>
+                    ) : currentMessages.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-12 text-center">
+                          <MessageSquare size={28} className="mx-auto text-gray-300 mb-2" />
+                          <p className="text-sm text-gray-500">No messages found. Send an SMS from /messages to populate this log.</p>
+                        </td>
+                      </tr>
+                    ) : currentMessages.map((message) => (
                       <tr key={message.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {message.subject}
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-[220px]">
+                          <span className="block truncate" title={message.subject}>{message.subject}</span>
+                          <span className="block text-xs text-gray-400 truncate" title={message.content}>{message.content}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div className="flex items-center">
-                            <div className="h-8 w-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                              {message.sender.image ? (
-                                <Image
-                                  src={message.sender.image}
-                                  alt={message.sender.name}
-                                  width={32}
-                                  height={32}
-                                  className="object-cover"
-                                />
-                              ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-blue-100 text-blue-600">
-                                  {message.sender.name.charAt(0)}
-                                </div>
-                              )}
+                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              {(message.sender.name || 'A').slice(0, 2).toUpperCase()}
                             </div>
                             <span className="ml-2">{message.sender.name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div className="flex items-center">
-                            <Calendar size={14} className="mr-1" />
-                            {formatDate(message.sentAt)}
-                          </div>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(message.sentAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
+                            {message.type}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            message.type === 'email'
-                              ? 'bg-blue-100 text-blue-800'
-                              : message.type === 'sms'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-green-100 text-green-800'
-                          }`}>
-                            {message.type === 'email' ? 'Email' : message.type === 'sms' ? 'SMS' : 'WhatsApp'}
+                          {message.recipients.phone || `${message.recipients.total} recipient`}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${getStatusColor(message.status)}`}>
+                            {message.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div>
-                            <span className="font-medium">{message.recipients.total}</span> total
-                          </div>
-                          <div className="text-xs">
-                            <span className="text-green-600">{message.recipients.delivered}</span> delivered,
-                            <span className="text-red-600 ml-1">{message.recipients.failed}</span> failed
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(message.status)}`}>
-                            {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
-                            onClick={() => router.push(`/messages/view/${message.id}`)}
-                            className="text-blue-600 hover:text-blue-900"
+                            onClick={() => setSelected(message)}
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                            title="View details"
                           >
                             <Eye size={16} />
                           </button>
@@ -441,63 +344,65 @@ export default function MessageHistoryPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
+                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                   <div className="flex-1 flex justify-between sm:hidden">
                     <button
-                      onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)}
+                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                        currentPage === 1 ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-50'
-                      }`}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                     >
                       Previous
                     </button>
                     <button
-                      onClick={() => setCurrentPage(currentPage < totalPages ? currentPage + 1 : totalPages)}
+                      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                        currentPage === totalPages ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-50'
-                      }`}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                     >
                       Next
                     </button>
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-900">
-                        Showing <span className="font-medium">{indexOfFirstMessage + 1}</span> to{' '}
-                        <span className="font-medium">
-                          {indexOfLastMessage > filteredMessages.length
-                            ? filteredMessages.length
-                            : indexOfLastMessage}
-                        </span>{' '}
-                        of <span className="font-medium">{filteredMessages.length}</span> results
-                      </p>
-                    </div>
-                    <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        <button
-                          onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)}
-                          disabled={currentPage === 1}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage === 1 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <span className="sr-only">Previous</span>
-                          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                        <button
-                          onClick={() => setCurrentPage(currentPage < totalPages ? currentPage + 1 : totalPages)}
-                          disabled={currentPage === totalPages}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage === totalPages ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <span className="sr-only">Next</span>
-                          <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                      </nav>
-                    </div>
+                    <p className="text-sm text-gray-700">
+                      Showing <span className="font-medium">{indexOfFirstMessage + 1}</span> to{' '}
+                      <span className="font-medium">{Math.min(indexOfLastMessage, filteredMessages.length)}</span> of{' '}
+                      <span className="font-medium">{filteredMessages.length.toLocaleString('en-IN')}</span> messages
+                    </p>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                        let page = i + 1;
+                        if (totalPages > 7) {
+                          if (currentPage > 4) page = currentPage - 3 + i;
+                          if (page > totalPages) page = totalPages - 6 + i;
+                        }
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === page
+                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </nav>
                   </div>
                 </div>
               )}
@@ -505,6 +410,25 @@ export default function MessageHistoryPage() {
           </div>
         </div>
       </div>
+
+      {/* Detail modal */}
+      {selected && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg text-gray-900">{selected.subject}</h3>
+              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className={`px-2 py-0.5 rounded-full font-semibold capitalize ${getStatusColor(selected.status)}`}>{selected.status}</span>
+              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold capitalize">{selected.type}</span>
+              <span className="text-gray-500">{formatDate(selected.sentAt)}</span>
+            </div>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{selected.content || '—'}</p>
+            <p className="text-xs text-gray-500">Sent by {selected.sender.name} · {selected.recipients.delivered} delivered / {selected.recipients.failed} failed</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -60,6 +60,7 @@ export default function MasterDataPage() {
   const [data, setData] = useState<MasterDataOfGurukrupa[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [societies, setSocieties] = useState<string[]>([]);
+  const [brokers, setBrokers] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -70,9 +71,28 @@ export default function MasterDataPage() {
   const [searchInput, setSearchInput] = useState('');          // raw input
   const [clientNameFilter, setClientNameFilter] = useState(''); // debounced
   const [societyFilter, setSocietyFilter] = useState('');
+  const [brokerFilter, setBrokerFilter] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const pageSize = 50;
+  const [pageSize, setPageSize] = useState(50);
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  /* ── read deep-link params (?search=, ?broker=, ?society=) ─ */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    const s = sp.get('search') || '';
+    const b = sp.get('broker') || '';
+    const soc = sp.get('society') || '';
+    if (s) { setSearchInput(s); setClientNameFilter(s); }
+    if (b) setBrokerFilter(b);
+    if (soc) setSocietyFilter(soc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── debounce search ─────────────────────── */
   const handleSearchChange = (val: string) => {
@@ -90,7 +110,7 @@ export default function MasterDataPage() {
     setCurrentPage(1);
   };
 
-  /* ── fetch societies ─────────────────────── */
+  /* ── fetch societies + brokers (for filters) ─ */
   useEffect(() => {
     (async () => {
       try {
@@ -100,6 +120,23 @@ export default function MasterDataPage() {
         setSocieties(json.societies || []);
       } catch (err) {
         console.error('Error fetching societies:', err);
+      }
+    })();
+    (async () => {
+      try {
+        const res = await fetch('/api/brokers?limit=500');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (Array.isArray(json.brokers)) {
+          const opts = new Set<string>();
+          for (const b of json.brokers) {
+            const ident = String(b.raw_identifier || b.broker_code || b.name || '').trim();
+            if (ident) opts.add(ident);
+          }
+          setBrokers(Array.from(opts).sort((a, b) => a.localeCompare(b)));
+        }
+      } catch (err) {
+        console.error('Error fetching brokers:', err);
       }
     })();
   }, []);
@@ -114,6 +151,7 @@ export default function MasterDataPage() {
         pageSize: String(pageSize),
         clientNameFilter,
         societyFilter,
+        broker: brokerFilter,
       });
       const res = await fetch(`/api/master-data?${params}`);
       if (!res.ok) {
@@ -128,7 +166,7 @@ export default function MasterDataPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, clientNameFilter, societyFilter]);
+  }, [currentPage, pageSize, clientNameFilter, societyFilter, brokerFilter]);
 
   useEffect(() => {
     fetchData();
@@ -175,6 +213,7 @@ export default function MasterDataPage() {
   const activeFilters = [
     clientNameFilter && `Client: "${clientNameFilter}"`,
     societyFilter && `Society: "${societyFilter}"`,
+    brokerFilter && `Broker: "${brokerFilter}"`,
   ].filter(Boolean) as string[];
 
   /* ── stat values ─────────────────────────── */
@@ -339,7 +378,7 @@ export default function MasterDataPage() {
                       setCurrentPage(1);
                     }
                   }}
-                  placeholder="Search by client name, society, plot, broker code, or phone…"
+                  placeholder="Search by client name, Reg #, society, plot, broker code (GKC/…), broker name, or phone…"
                   className="block w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-24 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
                 {searchInput && (
@@ -365,7 +404,7 @@ export default function MasterDataPage() {
               </div>
 
               {/* Society select */}
-              <div className="sm:w-64">
+              <div className="sm:w-56">
                 <select
                   id="society-filter"
                   value={societyFilter}
@@ -375,6 +414,21 @@ export default function MasterDataPage() {
                   <option value="">All Societies</option>
                   {societies.map((s) => (
                     <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Broker select */}
+              <div className="sm:w-56">
+                <select
+                  id="broker-filter"
+                  value={brokerFilter}
+                  onChange={(e) => { setBrokerFilter(e.target.value); setCurrentPage(1); }}
+                  className="block w-full rounded-lg border border-gray-300 py-2.5 px-3 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="">All Brokers / Codes</option>
+                  {brokers.map((b) => (
+                    <option key={b} value={b}>{b}</option>
                   ))}
                 </select>
               </div>
@@ -400,8 +454,16 @@ export default function MasterDataPage() {
                     </button>
                   </span>
                 )}
+                {brokerFilter && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+                    Broker: &quot;{brokerFilter}&quot;
+                    <button onClick={() => { setBrokerFilter(''); setCurrentPage(1); }} className="hover:text-amber-900">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
                 <button
-                  onClick={() => { clearSearch(); setSocietyFilter(''); setCurrentPage(1); }}
+                  onClick={() => { clearSearch(); setSocietyFilter(''); setBrokerFilter(''); setCurrentPage(1); }}
                   className="text-xs text-gray-400 hover:text-red-500 underline"
                 >
                   Clear all
@@ -417,6 +479,7 @@ export default function MasterDataPage() {
             currentPage={currentPage}
             pageSize={pageSize}
             onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
             onClientNameFilter={(val) => { setClientNameFilter(val); setSearchInput(val); }}
             onSocietyFilter={(val) => { setSocietyFilter(val); }}
             clientNameFilter={clientNameFilter}
@@ -429,7 +492,8 @@ export default function MasterDataPage() {
           <p className="text-center text-xs text-gray-400">
             {clientNameFilter && `Searching for "${clientNameFilter}" · `}
             {societyFilter && `Filtered by society "${societyFilter}" · `}
-            {!clientNameFilter && !societyFilter && 'Showing all records · '}
+            {brokerFilter && `Filtered by broker "${brokerFilter}" · `}
+            {!clientNameFilter && !societyFilter && !brokerFilter && 'Showing all records · '}
             Data fetched server-side with pagination.
           </p>
         </main>
