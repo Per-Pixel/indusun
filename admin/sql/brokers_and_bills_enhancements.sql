@@ -261,3 +261,5 @@ WHERE NOT EXISTS (
   SELECT 1 FROM "Master Data Of Gurukrupa"
   WHERE r_no = '9003' OR registration_no = '9003'
 );
+
+NOTIFY pgrst, 'reload schema';

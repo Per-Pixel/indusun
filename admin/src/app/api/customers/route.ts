@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
+import { invalidateServerCache } from '@/utils/serverCache';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
+
+function cleanStr(val: unknown): string | null {
+  if (val === null || val === undefined) return null;
+  const s = String(val).trim();
+  return s || null;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,48 +16,94 @@ export async function POST(req: NextRequest) {
 
     const {
       client_name,
+      father_or_husband_name,
+      age,
+      date_of_birth,
+      profession,
+      address,
       contact_no,
+      resident_no,
+      aadhar_no,
+      pan_no,
+      nominee_name,
+      nominee_relation,
+      nominee_age,
+      nominee_dob,
+      nominee_profession,
       society_name,
+      block_name,
       plot_no,
       plot_size,
       plot_amount,
       paid_amount,
+      amount_in_word,
       emi_amount,
       emi_time,
       emi_no,
+      emi_date,
       emi_paid_date,
       "broker's_name": brokerName,
+      broker_code,
+      ba_code,
       date_of_form,
+      date,
       remarks,
       r_no,
+      registration_no,
       policy_number,
       cheque_cash,
       month_and_year,
+      applicant_photo,
     } = body;
 
     if (!client_name || !String(client_name).trim()) {
       return NextResponse.json({ error: 'Customer name is required' }, { status: 400 });
     }
 
+    const regNo = cleanStr(registration_no) || cleanStr(r_no);
+    const baOrBrokerCode = cleanStr(ba_code) || cleanStr(broker_code);
+    const resolvedBrokerName = cleanStr(brokerName) || baOrBrokerCode;
+
     const insertData: Record<string, any> = {
       client_name: String(client_name).trim(),
-      contact_no: contact_no ? String(contact_no).trim() || null : null,
-      society_name: society_name ? String(society_name).trim() || null : null,
-      plot_no: plot_no ? String(plot_no).trim() || null : null,
-      plot_size: plot_size ? String(plot_size).trim() || null : null,
-      plot_amount: plot_amount ? String(plot_amount).trim() || null : null,
-      paid_amount: paid_amount ? String(paid_amount).trim() || null : null,
-      emi_amount: emi_amount ? String(emi_amount).trim() || null : null,
-      emi_time: emi_time ? String(emi_time).trim() || null : null,
-      emi_no: emi_no ? String(emi_no).trim() || null : null,
-      emi_paid_date: emi_paid_date ? String(emi_paid_date).trim() || null : null,
-      "broker's_name": brokerName ? String(brokerName).trim() || null : null,
-      date_of_form: date_of_form ? String(date_of_form).trim() || null : null,
-      remarks: remarks ? String(remarks).trim() || null : null,
-      r_no: r_no ? String(r_no).trim() || null : null,
-      policy_number: policy_number ? String(policy_number).trim() || null : null,
-      cheque_cash: cheque_cash ? String(cheque_cash).trim() || null : null,
-      month_and_year: month_and_year ? String(month_and_year).trim() || null : null,
+      father_or_husband_name: cleanStr(father_or_husband_name),
+      age: cleanStr(age),
+      date_of_birth: cleanStr(date_of_birth),
+      profession: cleanStr(profession),
+      address: cleanStr(address),
+      contact_no: cleanStr(contact_no),
+      resident_no: cleanStr(resident_no),
+      aadhar_no: cleanStr(aadhar_no),
+      pan_no: cleanStr(pan_no),
+      nominee_name: cleanStr(nominee_name),
+      nominee_relation: cleanStr(nominee_relation),
+      nominee_age: cleanStr(nominee_age),
+      nominee_dob: cleanStr(nominee_dob),
+      nominee_profession: cleanStr(nominee_profession),
+      society_name: cleanStr(society_name),
+      block_name: cleanStr(block_name),
+      plot_no: cleanStr(plot_no),
+      plot_size: cleanStr(plot_size),
+      plot_amount: cleanStr(plot_amount),
+      paid_amount: cleanStr(paid_amount),
+      amount_in_word: cleanStr(amount_in_word),
+      emi_amount: cleanStr(emi_amount),
+      emi_time: cleanStr(emi_time),
+      emi_no: cleanStr(emi_no),
+      emi_date: cleanStr(emi_date),
+      emi_paid_date: cleanStr(emi_paid_date),
+      "broker's_name": resolvedBrokerName,
+      broker_code: cleanStr(broker_code) || baOrBrokerCode,
+      ba_code: baOrBrokerCode,
+      date_of_form: cleanStr(date_of_form),
+      date: cleanStr(date) || cleanStr(date_of_form),
+      remarks: cleanStr(remarks),
+      r_no: regNo,
+      registration_no: regNo,
+      policy_number: cleanStr(policy_number),
+      cheque_cash: cleanStr(cheque_cash),
+      month_and_year: cleanStr(month_and_year),
+      applicant_photo: cleanStr(applicant_photo),
     };
 
     const supabase = createServiceClient();
@@ -68,6 +121,10 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    invalidateServerCache('count:master:');
+    invalidateServerCache('rpc:get_master_data_summary_rpc');
+    invalidateServerCache('rpc:get_unique_clients_rpc');
 
     return NextResponse.json({ success: true, customer: data }, { status: 201 });
   } catch (err: any) {

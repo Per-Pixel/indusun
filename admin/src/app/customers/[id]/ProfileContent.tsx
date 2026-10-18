@@ -238,22 +238,50 @@ export default function ProfileContent({ customer, portfolio }: Props) {
               className="grid grid-cols-1 md:grid-cols-3 gap-5"
             >
               <div className="md:col-span-2 space-y-5">
-                <SectionCard title="Customer Details" icon={<User size={18} style={{ color: 'var(--gold)' }} />}>
+                <SectionCard title="Customer & Personal Details" icon={<User size={18} style={{ color: 'var(--gold)' }} />}>
                   <div className="grid grid-cols-2 gap-4">
+                    <Field label="Registration No. (R. No.)" value={customer.registration_no || customer.r_no} />
+                    <Field label="BA Code / Broker Code" value={customer.ba_code || customer.broker_code || customer["broker's_name"]} />
                     <Field label="Full Name" value={customer.client_name} />
-                    <Field label="Contact Number" value={customer.contact_no} />
-                    <Field label="Society / Project" value={customer.society_name} />
-                    <Field label="Plot Number" value={customer.plot_no} />
-                    <Field label="Plot Size" value={customer.plot_size} />
-                    <Field label="R No" value={customer.r_no} />
+                    <Field label="Father / Husband Name (S/O, D/O, W/O)" value={customer.father_or_husband_name} />
+                    <Field label="Date of Birth" value={fmtDate(customer.date_of_birth)} />
+                    <Field label="Age" value={customer.age ? `${customer.age} yrs` : null} />
+                    <Field label="Profession" value={customer.profession} />
+                    <Field label="Mobile Number" value={customer.contact_no} />
+                    <Field label="Resident / Alt. Number" value={customer.resident_no} />
+                    <Field label="Aadhar Number" value={customer.aadhar_no} />
+                    <Field label="PAN Number" value={customer.pan_no} />
                     <Field label="Policy Number" value={customer.policy_number} />
+                    <div className="col-span-2">
+                      <Field label="Residential Address" value={customer.address} />
+                    </div>
+                  </div>
+                </SectionCard>
+
+                <SectionCard title="Plot & Scheme Details" icon={<Home size={18} style={{ color: 'var(--gold)' }} />}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Society Name" value={customer.society_name} />
+                    <Field label="Block" value={customer.block_name} />
+                    <Field label="Plot Number(s)" value={customer.plot_no} />
+                    <Field label="Plot Size" value={customer.plot_size} />
+                    <Field label="EMI Schedule / Window" value={customer.emi_date ? `${customer.emi_date} of month` : null} />
                     <Field label="Month & Year" value={customer.month_and_year} />
+                  </div>
+                </SectionCard>
+
+                <SectionCard title="Nominee Details" icon={<Users size={18} style={{ color: 'var(--gold)' }} />}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Nominee's Name" value={customer.nominee_name} />
+                    <Field label="Relation" value={customer.nominee_relation} />
+                    <Field label="Nominee Age" value={customer.nominee_age ? `${customer.nominee_age} yrs` : null} />
+                    <Field label="Nominee Date of Birth" value={fmtDate(customer.nominee_dob)} />
+                    <Field label="Nominee Profession" value={customer.nominee_profession} />
                   </div>
                 </SectionCard>
 
                 <SectionCard title="Joining & Registration" icon={<Calendar size={18} style={{ color: 'var(--gold)' }} />}>
                   <div className="grid grid-cols-2 gap-4">
-                    <Field label="Form Date" value={fmtDate(customer.date_of_form)} />
+                    <Field label="Form / Application Date" value={fmtDate(customer.date_of_form)} />
                     <Field label="Booking Date" value={fmtDate(customer.date)} />
                     <Field label="EMI Paid Date" value={fmtDate(customer.emi_paid_date)} />
                     <Field label="Joining Date" value={fmtDate(joinDate)} />
@@ -398,11 +426,12 @@ export default function ProfileContent({ customer, portfolio }: Props) {
               <SectionCard title="EMI Details" icon={<Receipt size={18} style={{ color: 'var(--gold)' }} />}>
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="EMI Amount" value={formatIndianNumber(customer.emi_amount)} />
-                  <Field label="EMI Term" value={customer.emi_time} />
+                  <Field label="Monthly EMI Date" value={customer.emi_date} />
+                  <Field label="EMI Term (Months)" value={customer.emi_time} />
                   <Field label="EMI Number" value={customer.emi_no} />
                   <Field label="EMI Paid Date" value={fmtDate(customer.emi_paid_date)} />
                   <Field label="Month & Year" value={customer.month_and_year} />
-                  <Field label="Date" value={fmtDate(customer.date)} />
+                  <Field label="Application Date" value={fmtDate(customer.date_of_form || customer.date)} />
                 </div>
               </SectionCard>
             </motion.div>

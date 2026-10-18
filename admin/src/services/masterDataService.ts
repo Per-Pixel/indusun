@@ -7,7 +7,7 @@ import { withServerCache } from '@/utils/serverCache';
 
 // Table name with spaces needs special handling
 const TABLE_NAME = 'Master Data Of Gurukrupa';
-const LIST_COLS = 'id,client_name,contact_no,society_name,project_name,block_name,plot_no,plot_size,plot_amount,paid_amount,emi_amount,emi_no,emi_time,r_no,"broker\'s_name",broker_code,broker_name_clean,cancel_date,emi_paid_date,date_of_form,date,remarks';
+const LIST_COLS = 'id,client_name,contact_no,society_name,project_name,block_name,plot_no,plot_size,plot_amount,paid_amount,emi_amount,emi_no,emi_time,emi_date,r_no,registration_no,ba_code,"broker\'s_name",broker_code,broker_name_clean,cancel_date,emi_paid_date,date_of_form,date,remarks,aadhar_no,pan_no,address,profession';
 
 /**
  * Fetch paginated records from Master Data Of Gurukrupa table with filtering
@@ -48,7 +48,7 @@ export async function getPaginatedMasterData({
     const applyFilters = (q: any) => {
       if (searchTerm) {
         q = q.or(
-          `client_name.ilike.%${searchTerm}%,contact_no.ilike.%${searchTerm}%,society_name.ilike.%${searchTerm}%,project_name.ilike.%${searchTerm}%,plot_no.ilike.%${searchTerm}%,"broker's_name".ilike.%${searchTerm}%,broker_code.ilike.%${searchTerm}%,broker_name_clean.ilike.%${searchTerm}%,r_no.ilike.%${searchTerm}%`
+          `client_name.ilike.%${searchTerm}%,contact_no.ilike.%${searchTerm}%,society_name.ilike.%${searchTerm}%,project_name.ilike.%${searchTerm}%,plot_no.ilike.%${searchTerm}%,"broker's_name".ilike.%${searchTerm}%,broker_code.ilike.%${searchTerm}%,ba_code.ilike.%${searchTerm}%,broker_name_clean.ilike.%${searchTerm}%,r_no.ilike.%${searchTerm}%,registration_no.ilike.%${searchTerm}%,aadhar_no.ilike.%${searchTerm}%`
         );
       }
       if (societyFilter) {

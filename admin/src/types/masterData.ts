@@ -33,6 +33,23 @@ export interface MasterDataOfGurukrupa {
   emi_amount_num?: number | null;
   emi_paid_date_iso?: string | null;
   form_date_iso?: string | null;
+  registration_no?: string | null;
+  ba_code?: string | null;
+  father_or_husband_name?: string | null;
+  age?: string | null;
+  date_of_birth?: string | null;
+  profession?: string | null;
+  address?: string | null;
+  resident_no?: string | null;
+  aadhar_no?: string | null;
+  pan_no?: string | null;
+  nominee_name?: string | null;
+  nominee_relation?: string | null;
+  nominee_age?: string | null;
+  nominee_dob?: string | null;
+  nominee_profession?: string | null;
+  emi_date?: string | null;
+  applicant_photo?: string | null;
   created_at?: string;
   updated_at?: string;
 }
