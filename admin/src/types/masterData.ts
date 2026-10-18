@@ -24,6 +24,15 @@ export interface MasterDataOfGurukrupa {
   date: string | null;
   cancel_date: string | null;
   date_of_form: string | null;
+  project_name?: string | null;
+  block_name?: string | null;
+  broker_code?: string | null;
+  broker_name_clean?: string | null;
+  plot_amount_num?: number | null;
+  paid_amount_num?: number | null;
+  emi_amount_num?: number | null;
+  emi_paid_date_iso?: string | null;
+  form_date_iso?: string | null;
   created_at?: string;
   updated_at?: string;
 }

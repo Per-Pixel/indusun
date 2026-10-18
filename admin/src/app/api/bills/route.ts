@@ -45,8 +45,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       billNumber, clientName, clientPhone, clientAddress,
-      description, amount, date, notes, status, paymentMethod,
+      societyName, plotNo, plotSize, referenceBy, totalEmiNo, plotAmount,
+      description, amount, amountInWords, remarks, cancellationNote,
+      bankDetails, upiVpa, showQr,
+      date, notes, status, paymentMethod,
       dueDate, items, taxRate, discount, paymentRef,
+      attachments, linkedBillIds,
     } = body;
 
     if (!clientName?.trim()) {
@@ -85,11 +89,25 @@ export async function POST(req: NextRequest) {
 
     const extendedRecord = {
       ...baseRecord,
-      due_date:    dueDate || null,
-      items:       lineItems,
-      tax_rate:    Math.max(0, parseFloat(taxRate) || 0),
-      discount:    Math.max(0, parseFloat(discount) || 0),
-      payment_ref: paymentRef?.trim() || null,
+      society_name:      societyName?.trim()      || null,
+      plot_no:           plotNo?.trim()           || null,
+      plot_size:         plotSize?.trim()         || null,
+      reference_by:      referenceBy?.trim()      || null,
+      total_emi_no:      totalEmiNo?.trim()       || null,
+      plot_amount:       Math.max(0, parseFloat(plotAmount) || 0),
+      amount_in_words:   amountInWords?.trim()    || null,
+      remarks:           remarks?.trim()          || null,
+      cancellation_note: cancellationNote?.trim() || null,
+      bank_details:      Array.isArray(bankDetails) ? bankDetails : [],
+      upi_vpa:           upiVpa?.trim()           || 'gurukrupacorp@kbl',
+      show_qr:           showQr !== false,
+      due_date:          dueDate || null,
+      items:             lineItems,
+      tax_rate:          Math.max(0, parseFloat(taxRate) || 0),
+      discount:          Math.max(0, parseFloat(discount) || 0),
+      payment_ref:       paymentRef?.trim() || null,
+      attachments:       Array.isArray(attachments) ? attachments : [],
+      linked_bill_ids:   Array.isArray(linkedBillIds) ? linkedBillIds : [],
     };
 
     let { data, error } = await supabase

@@ -14,9 +14,20 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  Users
+  Users,
+  Receipt,
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
+import {
+  GurukrupaReceipt,
+  PaymentQrSection,
+  DEFAULT_BANK_DETAILS,
+  DEFAULT_CANCELLATION_NOTE,
+  DEFAULT_UPI_VPA,
+  numberToIndianWords,
+  paymentMethodToShortCode,
+  type BankAccountItem,
+} from '@/components/invoices/GurukrupaReceipt';
 
 // Types for invoices (same as in the listing page)
 interface Invoice {
@@ -25,7 +36,19 @@ interface Invoice {
   date: string | null;
   dueDate: string | null;
   amount: string;
+  amountNum?: number;
   status: 'Paid' | 'Pending' | 'Overdue';
+  societyName?: string | null;
+  plotNo?: string | null;
+  plotSize?: string | null;
+  referenceBy?: string | null;
+  totalEmiNo?: string | null;
+  amountInWords?: string | null;
+  remarks?: string | null;
+  cancellationNote?: string | null;
+  bankDetails?: BankAccountItem[];
+  upiVpa?: string | null;
+  showQr?: boolean;
   client: {
     name: string;
     type: 'Individual' | 'Company';
@@ -47,6 +70,8 @@ interface Invoice {
   taxRate?: number;
   taxAmount?: string;
   discount?: string;
+  attachments?: { name: string; url: string; type?: string }[];
+  linkedBillIds?: { id: string; billNumber: string; date: string; amount: number; description: string }[];
   items: {
     description: string;
     quantity: number;
@@ -98,6 +123,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const router = useRouter();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [viewMode, setViewMode] = useState<'receipt' | 'invoice'>('receipt');
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
@@ -189,7 +215,33 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                 <h1 className="text-2xl font-bold text-gray-900">Invoice #{invoice.invoiceNumber}</h1>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5 mr-1">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('receipt')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                      viewMode === 'receipt'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Receipt size={14} />
+                    Gurukrupa Receipt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('invoice')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                      viewMode === 'invoice'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FileText size={14} />
+                    Detailed Invoice
+                  </button>
+                </div>
                 <button
                   onClick={() => window.print()}
                   className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -206,7 +258,38 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             <div id="invoice-print-area">
+            {viewMode === 'receipt' && (
+              <div className="mb-6">
+                <GurukrupaReceipt
+                  receiptNumber={invoice.invoiceNumber}
+                  date={invoice.date}
+                  partyName={invoice.client.name}
+                  mobileNo={invoice.client.phone}
+                  societyName={invoice.societyName || invoice.property?.title}
+                  plotNo={invoice.plotNo}
+                  plotSize={invoice.plotSize}
+                  referenceBy={invoice.referenceBy}
+                  totalEmiNo={invoice.totalEmiNo}
+                  paymentDescription={paymentMethodToShortCode(invoice.paymentMethod)}
+                  netAmount={
+                    invoice.amountNum ??
+                    (parseFloat(String(invoice.amount || '').replace(/[^\d.]/g, '')) || 0)
+                  }
+                  amountInWords={invoice.amountInWords}
+                  remarks={invoice.remarks || invoice.notes}
+                  cancellationNote={invoice.cancellationNote || DEFAULT_CANCELLATION_NOTE}
+                  bankDetails={
+                    invoice.bankDetails && invoice.bankDetails.length > 0
+                      ? invoice.bankDetails
+                      : DEFAULT_BANK_DETAILS
+                  }
+                  upiVpa={invoice.upiVpa || DEFAULT_UPI_VPA}
+                  showQr={invoice.showQr !== false}
+                />
+              </div>
+            )}
             {/* Invoice Content */}
+            <div className={viewMode === 'receipt' ? 'no-print' : ''}>
             <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
               {/* Invoice Header */}
               <div className="p-6 border-b border-gray-200">
@@ -386,16 +469,16 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
 
-            {/* Payment Information */}
+              {/* Payment Information */}
             <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
               <div className="p-4 border-b border-gray-200 bg-white">
                 <div className="flex items-center">
                   <DollarSign size={18} className="text-[#333] mr-2" />
-                  <h3 className="font-medium text-[#111]">Payment Information</h3>
+                  <h3 className="font-medium text-[#111]">Payment Information & QR Code</h3>
                 </div>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div>
                     <h4 className="text-sm font-medium text-[#333] mb-2">Payment Status</h4>
                     <div className="flex items-center">
@@ -415,7 +498,33 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                       <p className="text-sm text-[#333]">{invoice.paymentRef}</p>
                     </div>
                   )}
+                  {invoice.referenceBy && (
+                    <div>
+                      <h4 className="text-sm font-medium text-[#333] mb-2">Reference By (Broker)</h4>
+                      <p className="text-sm text-[#333]">{invoice.referenceBy}</p>
+                    </div>
+                  )}
                 </div>
+
+                {/* Bank Details & Karnataka Bank Payment QR Code */}
+                <PaymentQrSection
+                  bankDetails={
+                    invoice.bankDetails && invoice.bankDetails.length > 0
+                      ? invoice.bankDetails
+                      : DEFAULT_BANK_DETAILS
+                  }
+                  upiVpa={invoice.upiVpa || DEFAULT_UPI_VPA}
+                  showQr={invoice.showQr !== false}
+                  amountInWords={
+                    invoice.amountInWords ||
+                    numberToIndianWords(
+                      invoice.amountNum ??
+                        (parseFloat(String(invoice.amount || '').replace(/[^\d.]/g, '')) || 0)
+                    )
+                  }
+                  remarks={invoice.remarks}
+                  cancellationNote={invoice.cancellationNote || DEFAULT_CANCELLATION_NOTE}
+                />
 
                 {invoice.status === 'Pending' || invoice.status === 'Overdue' ? (
                   <div className="mt-6 pt-6 border-t border-gray-200">
@@ -438,7 +547,55 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Notes and Terms */}
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="p-6">
+              <div className="p-6 space-y-6">
+                {(invoice.linkedBillIds && invoice.linkedBillIds.length > 0) && (
+                  <div className="border-b border-gray-100 pb-4">
+                    <h3 className="font-medium mb-3 text-[#111]">Attached / Linked Previous Bills</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {invoice.linkedBillIds.map((lb: any, i: number) => (
+                        <div
+                          key={lb.id || i}
+                          onClick={() => lb.id && router.push(`/invoices/${lb.id}`)}
+                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-blue-50 cursor-pointer transition-colors"
+                        >
+                          <div>
+                            <p className="text-xs font-mono font-bold text-blue-700">#{lb.billNumber || lb.id}</p>
+                            <p className="text-xs text-gray-600 mt-0.5">{lb.description || 'Previous Bill'}</p>
+                          </div>
+                          <div className="text-right">
+                            {lb.amount != null && (
+                              <p className="text-xs font-bold text-gray-900">
+                                Rs. {Number(lb.amount).toLocaleString('en-IN')}
+                              </p>
+                            )}
+                            {lb.date && <p className="text-[11px] text-gray-500">{lb.date}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(invoice.attachments && invoice.attachments.length > 0) && (
+                  <div className="border-b border-gray-100 pb-4">
+                    <h3 className="font-medium mb-3 text-[#111]">Attached Documents</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {invoice.attachments.map((att, i) => (
+                        <a
+                          key={i}
+                          href={att.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium hover:bg-blue-100"
+                        >
+                          <FileText size={14} />
+                          <span>{att.name}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h3 className="font-medium mb-3 text-[#111]">Notes</h3>
@@ -454,6 +611,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
               </div>
+            </div>
             </div>
             </div> {/* end #invoice-print-area */}
         </div>

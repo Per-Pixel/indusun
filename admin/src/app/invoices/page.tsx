@@ -38,6 +38,7 @@ interface Summary {
 export default function InvoicesPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -49,6 +50,11 @@ export default function InvoicesPage() {
 
   const invoicesPerPage = 25;
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   const fetchInvoices = async () => {
     try {
       setIsLoading(true);
@@ -56,7 +62,7 @@ export default function InvoicesPage() {
       const params = new URLSearchParams();
       params.append('page', currentPage.toString());
       params.append('limit', invoicesPerPage.toString());
-      if (searchTerm) params.append('search', searchTerm);
+      if (debouncedSearch) params.append('search', debouncedSearch);
       if (filterStatus !== 'All') params.append('status', filterStatus);
 
       const res = await fetch(`/api/invoices?${params.toString()}`);
@@ -78,7 +84,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchInvoices();
-  }, [currentPage, searchTerm, filterStatus]);
+  }, [currentPage, debouncedSearch, filterStatus]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
