@@ -1,21 +1,38 @@
 # Last Summary
 
-Admin panel visual refresh shipped on `main` and deployed to Vercel (`admin` project). Direction: align admin colors with the client site — white surfaces, blue `#2563EB` actions, charcoal text — while preserving all routes/CRUD.
+Ran a full DB-vs-website verification, fixed everything found, cleaned the production data, and shipped it all. The verifier now reports **22/22 live checks pass** — every number the admin app shows matches the database exactly.
 
-## Changes
-- `admin/src/app/globals.css`: new blue/white token system; gold vars kept as aliases to blue so existing pages inherit the palette. Sidebar tokens/rules REVERTED to old design at user request (light-blue #EAF2FA rail, dark active state, 260px width).
-- `admin/src/app/layout.tsx`: Geist fonts, blue toast accent.
-- `admin/src/components/AdminTopNavbar.tsx`: restyled ⌘K search trigger, aria attrs; HelpCircle unused import removed.
-- `admin/src/app/dashboard/page.tsx`: fetches `getLeads({pageSize:400, order:'asc'})` + `getLeadPipelineCounts()`.
-- `admin/src/app/dashboard/DashboardContent.tsx`: rewritten — blue hero + metric rail, permission-gated focus tabs, real "new enquiries to contact" queue (derived lead_status, excludes "CANCELLED RECIEPT" placeholder rows), retinted charts, removed fake lead-source/trend percentages.
-- `admin/src/services/leadService.ts`: added `order?: 'asc'|'desc'` to `getLeads`.
-- `Sidebar.tsx` / `CRMLayout.tsx`: reverted to HEAD (old sidebar design) per user request.
-- New files: `PRODUCT.md`, `docs/superpowers/plans/2026-10-02-admin-visual-refresh.md`.
+## Verification result (post-fix)
 
-## Verified
-- `npm run build` passes. Lint: only pre-existing errors; changed files clean.
-- Browser-checked desktop (1440px) + mobile (390px): old sidebar restored, hero/queue/charts render, ⌘K modal + sidebar toggle work, no console errors.
-- Impeccable detector run; fixed side-tab stripe + grid overlay; layout-property transitions intentionally kept (sidebar rail/progress).
+- Sales: 86,542 transactions, ₹22,07,17,567 revenue, 5,421 clients, 329 brokers, 4,661 properties, 4,212 sold
+- Billing: same revenue, ₹0 pending, 86,542 completed / 90,352 total, 3,810 cancelled deals (₹91,03,046)
+- Invoices 90,351 paid / 1 pending, transactions/properties 90,352, brokers 329, admin users 1
+- `/api/health`: all 14 checks green
 
-## Status
-Committed to `main`, pushed to `origin` (github.com/Per-Pixel/indusun), deployed to Vercel production. Dev server was left running at http://localhost:3001 last session.
+## Fixes applied
+
+1. **`parseAmount` hardened** (`dataUtils.ts`): multi-amount cells like `"(80000/-1), (89600/-4), (11520/-1)"` now sum the `/-` parts instead of concatenating digits — dashboard Total Plot Amount went from ₹8×10¹⁷ nonsense to the real ₹136.8 Cr.
+2. **Cancelled deals separated**: `/api/sales` and `/api/billing` exclude cancelled rows from revenue/completed counts and report `cancelledTransactions`/`cancelledRevenue` (+ `cancelledCount`/`cancelledAmount`). New "Cancelled Deals" stat card on both pages (red, shows count + written-off amount).
+3. **Broker count fixed**: `/api/sales` now trims + case-dedupes `broker's_name` — 337 phantom count → real 329, matching the brokers page. Broker dropdown uses clean names; filter compares trimmed values.
+4. **`normalizeDate` guard**: pure-integer strings outside Excel-serial range no longer parse as dates (`new Date('150')` was year 150).
+5. **Public site pagination**: `main/src/app/api/properties/route.ts` batches through the ~1000-row PostgREST cap — all 86,488 live listings now returned (was silently ~1,000) with a real count.
+
+## Production data cleanup (applied via PostgREST)
+
+- `cancel_date`: `'CANSAL'`(3,303)/`'DASTAVEJ'`(489)/`'PLOT TRF'`(2)/stray numbers(6) → `'Cancelled'`; date strings → ISO (~15); whitespace-only → `NULL` (54 rows now correctly listed, not cancelled)
+- `paid_amount`: 40 non-numeric values (`'PENDING'`,`'BAKI'`,`'OM'`,`'DONE'`,`'ADJUST'`,`'0'`) → `NULL` (removed phantom bookings)
+- `broker's_name`: 851 rows trimmed of stray whitespace, 1 whitespace-only → `NULL`
+- Gotcha: supabase-js `.update()` can't write `broker's_name` (PostgREST splits on the apostrophe) — raw REST `PATCH ?columns=%22broker's_name%22` works (`scripts/cleanup-brokers.mjs`)
+- **Left untouched**: row id=1608 `plot_amount` — ambiguous whether `/-N` parts are totals or per-plot counts; displays sanely now via parseAmount either way
+
+## Scripts (all re-runnable)
+
+- `admin/scripts/verify-data.mjs` — full DB-vs-live-API verifier, mints auth session via service role
+- `admin/scripts/cleanup-data.mjs` / `cleanup-brokers.mjs` — the cleanup that ran (dry-run default, `--apply` to write)
+- `admin/scripts/verify-anomalies.mjs`, `verify-brokers.mjs`, `test-broker-update.mjs` — ad-hoc probes
+
+## Notes
+
+- Post-cleanup figures changed: completed 86,542 (was 86,488), cancelled 3,810 (was 3,864), revenue ₹22.07Cr (was ₹22.98Cr — cancelled ₹91L now excluded from revenue)
+- Per-row invoice/transaction status still labels cancelled rows "Completed" — summary cards are honest, per-row status isn't (follow-up candidate)
+- Dev server on :3001 is running (restarted during verification); `bills`/`brokers` tables exist but are empty
