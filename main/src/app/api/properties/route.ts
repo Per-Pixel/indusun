@@ -71,23 +71,45 @@ export async function GET(request: Request) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
-  let query = supabase
-    .from('Master Data Of Gurukrupa')
-    .select('id,society_name,client_name,plot_no,plot_size,plot_amount,paid_amount,cancel_date,date_of_form,date,remarks')
-    .is('cancel_date', null)
-    .order('id', { ascending: false });
+  const COLS = 'id,society_name,client_name,plot_no,plot_size,plot_amount,paid_amount,cancel_date,date_of_form,date,remarks';
+  const applyFilters = (q: any) => {
+    q = q.is('cancel_date', null);
+    if (search) {
+      q = q.or(`society_name.ilike.%${search}%,client_name.ilike.%${search}%,plot_no.ilike.%${search}%`);
+    }
+    return q;
+  };
 
-  if (search) {
-    query = query.or(`society_name.ilike.%${search}%,client_name.ilike.%${search}%,plot_no.ilike.%${search}%`);
-  }
-
-  const { data, error } = await query;
-  if (error) {
+  const { count, error: countErr } = await applyFilters(
+    supabase.from('Master Data Of Gurukrupa').select('*', { count: 'exact', head: true })
+  );
+  if (countErr) {
     return NextResponse.json({ error: 'Property listings are temporarily unavailable.' }, { status: 503 });
   }
 
-  const properties = (data as MasterProperty[]).map(toProperty).filter((property) => !type || property.type === type);
-  return NextResponse.json({ data: properties, count: properties.length }, {
+  // PostgREST caps a single response (~1000 rows) — page through in parallel batches.
+  const PAGE = 1000;
+  const pages = Math.ceil((count || 0) / PAGE);
+  const rows: MasterProperty[] = [];
+  for (let b = 0; b < pages; b += 10) {
+    const end = Math.min(b + 10, pages);
+    const results = await Promise.all(
+      Array.from({ length: end - b }, (_, i) =>
+        applyFilters(supabase.from('Master Data Of Gurukrupa').select(COLS))
+          .order('id', { ascending: false })
+          .range((b + i) * PAGE, (b + i) * PAGE + PAGE - 1)
+      )
+    );
+    for (const { data, error } of results) {
+      if (error) {
+        return NextResponse.json({ error: 'Property listings are temporarily unavailable.' }, { status: 503 });
+      }
+      rows.push(...((data || []) as MasterProperty[]));
+    }
+  }
+
+  const properties = rows.map(toProperty).filter((property) => !type || property.type === type);
+  return NextResponse.json({ data: properties, count: count ?? properties.length }, {
     headers: { 'Cache-Control': 'no-store' },
   });
 }

@@ -12,7 +12,15 @@
  */
 export function parseAmount(v: any): number {
   if (v === null || v === undefined || v === '') return 0;
-  return parseFloat(String(v).replace(/[^0-9.]/g, '')) || 0;
+  const s = String(v);
+  // Cells like "(80000/-1), (89600/-4), (11520/-1)" carry several amounts
+  // before "/-" markers. Stripping non-digits would concatenate them into
+  // one huge number — sum the amount parts instead.
+  const parts = s.match(/[\d,]+(?:\.\d+)?\s*\/-/g);
+  if (parts && parts.length) {
+    return parts.reduce((sum, p) => sum + (parseFloat(p.replace(/[^0-9.]/g, '')) || 0), 0);
+  }
+  return parseFloat(s.replace(/[^0-9.]/g, '')) || 0;
 }
 
 /**
@@ -50,6 +58,10 @@ export function normalizeDate(d: any): string | null {
     const dt = new Date(iso);
     if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
   }
+
+  // Pure integer strings outside the serial range are junk markers, not
+  // dates — new Date('150') would parse as year 150.
+  if (/^\d+$/.test(s)) return null;
 
   // ── 3. ISO 8601 / anything else Date() can parse ─────────────────────────
   try {

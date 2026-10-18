@@ -33,16 +33,24 @@ export async function GET(request: NextRequest) {
       const results = await Promise.all(
         Array.from({ length: batchEnd - batch }, (_, i) => {
           const from = (batch + i) * 1000;
-          return supabase.from(TABLE_NAME).select('emi_paid_date,emi_amount').range(from, from + 999);
+          return supabase.from(TABLE_NAME).select('emi_paid_date,emi_amount,society_name,cancel_date').range(from, from + 999);
         })
       );
       for (const { data } of results) aggRows = aggRows.concat(data || []);
     }
 
     let totalRevenue = 0, pendingPayments = 0, completedCount = 0;
+    let cancelledCount = 0, cancelledAmount = 0;
     const monthMap: Record<string, number> = {};
+    const societyMap: Record<string, number> = {};
     for (const row of aggRows) {
       const amount = parseAmount(row.emi_amount);
+      // Cancelled deals are reported separately — never as revenue/pending.
+      if (row.cancel_date) {
+        cancelledCount++;
+        cancelledAmount += amount;
+        continue;
+      }
       const paid = isPaid(row.emi_paid_date);
       const d    = paid ? normalizeDate(row.emi_paid_date) : null;
       if (paid) {
@@ -52,10 +60,19 @@ export async function GET(request: NextRequest) {
           const mk = d.substring(0, 7);
           monthMap[mk] = (monthMap[mk] || 0) + amount;
         }
+        const society = String(row.society_name || '').trim() || 'Unassigned';
+        societyMap[society] = (societyMap[society] || 0) + amount;
       } else {
         pendingPayments += amount;
       }
     }
+
+    // Revenue by society — top 5 plus "Other"
+    const societyEntries = Object.entries(societyMap).sort(([, a], [, b]) => b - a);
+    const topSocieties = societyEntries.slice(0, 5);
+    const restTotal = societyEntries.slice(5).reduce((s, [, v]) => s + v, 0);
+    const sources = topSocieties.map(([name, value]) => ({ name, value }));
+    if (restTotal > 0) sources.push({ name: 'Other', value: restTotal });
 
     const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const trends = Object.entries(monthMap)
@@ -93,8 +110,9 @@ export async function GET(request: NextRequest) {
 
     const totalItems = count || 0;
     return NextResponse.json({
-      summary: { totalRevenue, pendingPayments, totalTransactions: totalCount || 0, completedTransactions: completedCount },
+      summary: { totalRevenue, pendingPayments, totalTransactions: totalCount || 0, completedTransactions: completedCount, cancelledCount, cancelledAmount },
       trends,
+      sources,
       transactions,
       pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) },
     });
@@ -102,5 +120,34 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Billing API error:', error);
     return NextResponse.json({ error: 'Failed to fetch billing data' }, { status: 500 });
+  }
+}
+
+// PATCH /api/billing  { id }
+// Marks a master-data EMI row as paid by stamping today's date on emi_paid_date.
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const id = parseInt(body.id);
+    if (isNaN(id)) {
+      return NextResponse.json({ error: 'Valid transaction id required' }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+    const paidDate = body.paidDate || new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from(TABLE_NAME)
+      .update({ emi_paid_date: paidDate })
+      .eq('id', id)
+      .select('id,emi_paid_date')
+      .single();
+
+    if (error) throw new Error(error.message);
+    return NextResponse.json({ success: true, id: data.id, paidDate: data.emi_paid_date });
+
+  } catch (error: any) {
+    console.error('Billing PATCH error:', error);
+    return NextResponse.json({ error: error.message || 'Failed to mark as paid' }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -22,7 +23,9 @@ import {
   User,
   Hash,
   Tag,
-  CalendarDays
+  CalendarDays,
+  Upload,
+  Plus,
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
 import ExportDropdown from '@/components/ui/ExportDropdown';
@@ -31,57 +34,46 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-// Default data for billing sources
-const defaultBillingSourcesData = [
-  { name: 'Property Sales', value: 65 },
-  { name: 'Broker Commissions', value: 15 },
-  { name: 'Service Fees', value: 10 },
-  { name: 'Rental Income', value: 10 },
-];
-
-// Default data for billing trends
-const defaultBillingTrendsData = [
-  { name: 'Jan', value: 400000 },
-  { name: 'Feb', value: 300000 },
-  { name: 'Mar', value: 550000 },
-  { name: 'Apr', value: 450000 },
-  { name: 'May', value: 650000 },
-  { name: 'Jun', value: 400000 },
-  { name: 'Jul', value: 700000 },
-];
-
+// Chart datasets are populated from /api/billing (`trends`, `sources`)
 // Colors for pie chart
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A78BFA', '#9CA3AF'];
 
-// Default summary cards data
+// Default summary cards data (placeholders until API responds)
 const defaultSummaryData = [
   {
     title: 'Total Revenue',
-    value: '₹3.45 Cr',
+    value: '—',
     icon: <DollarSign size={20} className="text-blue-600" />,
     bgColor: 'bg-blue-50',
-    change: '+12% from last month'
+    change: ''
   },
   {
     title: 'Pending Payments',
-    value: '₹45 Lakhs',
+    value: '—',
     icon: <CreditCard size={20} className="text-yellow-600" />,
     bgColor: 'bg-yellow-50',
-    change: '-5% from last month'
+    change: ''
   },
   {
     title: 'Total Transactions',
-    value: '245',
+    value: '—',
     icon: <TrendingUp size={20} className="text-green-600" />,
     bgColor: 'bg-green-50',
-    change: '+8% from last month'
+    change: ''
   },
   {
-    title: 'Invoices Generated',
-    value: '128',
+    title: 'Completed Transactions',
+    value: '—',
     icon: <FileText size={20} className="text-purple-600" />,
     bgColor: 'bg-purple-50',
-    change: '+15% from last month'
+    change: ''
+  },
+  {
+    title: 'Cancelled Deals',
+    value: '—',
+    icon: <XCircle size={20} className="text-red-600" />,
+    bgColor: 'bg-red-50',
+    change: ''
   }
 ];
 
@@ -224,20 +216,48 @@ export default function BillingPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [filterSource, setFilterSource] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
   // State for real data from API
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState(defaultSummaryData);
-  const [billingTrendsData, setBillingTrendsData] = useState(defaultBillingTrendsData);
-  const [billingSourcesData, setBillingSourcesData] = useState(defaultBillingSourcesData);
+  const [billingTrendsData, setBillingTrendsData] = useState<{ name: string; value: number }[]>([]);
+  const [billingSourcesData, setBillingSourcesData] = useState<{ name: string; value: number }[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   // Billing detail drawer
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [markPaidError, setMarkPaidError] = useState<string | null>(null);
+
+  const markAsPaid = async (txn: Transaction) => {
+    setIsMarkingPaid(true);
+    setMarkPaidError(null);
+    try {
+      const res = await fetch('/api/billing', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: txn.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to mark as paid');
+      // Update the transaction in place and refetch aggregates
+      setTransactions(prev => prev.map(t =>
+        t.id === txn.id ? { ...t, status: 'Completed' as const, date: data.paidDate || t.date } : t
+      ));
+      setSelectedTransaction(prev => prev && prev.id === txn.id
+        ? { ...prev, status: 'Completed', date: data.paidDate || prev.date }
+        : prev
+      );
+      fetchBillingData();
+    } catch (e: any) {
+      setMarkPaidError(e.message);
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
 
   const openDrawer = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
@@ -259,16 +279,14 @@ export default function BillingPage() {
       searchParams.append('limit', transactionsPerPage.toString());
       if (searchTerm) searchParams.append('search', searchTerm);
       if (filterStatus !== 'All') searchParams.append('status', filterStatus);
-      if (filterSource !== 'All') searchParams.append('source', filterSource);
       
       const response = await fetch(`/api/billing?${searchParams.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      console.log('Received billing data:', data);
 
       // Update summary data
       if (data.summary) {
@@ -278,21 +296,21 @@ export default function BillingPage() {
             value: `₹${data.summary.totalRevenue ? formatAmount(data.summary.totalRevenue) : '0'}`,
             icon: <DollarSign size={20} className="text-blue-600" />,
             bgColor: 'bg-blue-50',
-            change: '+12% from last month' // This could be calculated in the future
+            change: ''
           },
           {
             title: 'Pending Payments',
             value: `₹${data.summary.pendingPayments ? formatAmount(data.summary.pendingPayments) : '0'}`,
             icon: <CreditCard size={20} className="text-yellow-600" />,
             bgColor: 'bg-yellow-50',
-            change: '-5% from last month' // This could be calculated in the future
+            change: ''
           },
           {
             title: 'Total Transactions',
             value: `${data.summary.totalTransactions || 0}`,
             icon: <TrendingUp size={20} className="text-green-600" />,
             bgColor: 'bg-green-50',
-            change: '+8% from last month' // This could be calculated in the future
+            change: ''
           },
           {
             title: 'Completed Transactions',
@@ -300,6 +318,13 @@ export default function BillingPage() {
             icon: <FileText size={20} className="text-purple-600" />,
             bgColor: 'bg-purple-50',
             change: ''
+          },
+          {
+            title: 'Cancelled Deals',
+            value: `${data.summary.cancelledCount || 0}`,
+            icon: <XCircle size={20} className="text-red-600" />,
+            bgColor: 'bg-red-50',
+            change: `₹${formatAmount(data.summary.cancelledAmount || 0)} written off`
           }
         ];
         setSummaryData(updatedSummary);
@@ -313,10 +338,17 @@ export default function BillingPage() {
           value: parseFloat(trend.value) || 0
         }));
         setBillingTrendsData(formattedTrends);
-        console.log('Updated billing trends data:', formattedTrends);
       } else {
-        console.log('No trends data available, using default data');
-        // Keep using default data if no real data is available
+        setBillingTrendsData([]);
+      }
+
+      if (data.sources && data.sources.length > 0) {
+        setBillingSourcesData(data.sources.map((s: any) => ({
+          name: s.name || 'Unknown',
+          value: parseFloat(s.value) || 0,
+        })));
+      } else {
+        setBillingSourcesData([]);
       }
       
       // Update transactions and pagination
@@ -357,12 +389,12 @@ export default function BillingPage() {
   useEffect(() => {
     // Reset to page 1 when filters change
     setCurrentPage(1);
-  }, [searchTerm, filterStatus, filterSource]);
-  
+  }, [searchTerm, filterStatus]);
+
   // When page changes, refetch data
   useEffect(() => {
     fetchBillingData();
-  }, [currentPage, searchTerm, filterStatus, filterSource]);
+  }, [currentPage, searchTerm, filterStatus]);
   
   // Calculate display indexes for UI
   const indexOfFirstTransaction = (currentPage - 1) * transactionsPerPage + 1;
@@ -402,36 +434,53 @@ export default function BillingPage() {
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Billing</h1>
-              <ExportDropdown
-                label="Export"
-                filename="billing-transactions"
-                disabled={transactions.length === 0}
-                columns={[
-                  { header: 'Date',        key: 'date' },
-                  { header: 'Client',      key: '_client' },
-                  { header: 'Description', key: 'description' },
-                  { header: 'Amount',      key: 'amount' },
-                  { header: 'Status',      key: 'status' },
-                  { header: 'Source',      key: 'source' },
-                  { header: 'Reference',   key: 'reference' },
-                ]}
-                rows={transactions.map((t: any) => ({
-                  date:        t.date || '',
-                  _client:     t.client?.name || '',
-                  description: t.description,
-                  amount:      t.amount,
-                  status:      t.status,
-                  source:      t.source,
-                  reference:   t.reference,
-                }))}
-              />
+              <div className="flex items-center gap-2">
+                <ExportDropdown
+                  label="Export"
+                  filename="billing-transactions"
+                  disabled={transactions.length === 0}
+                  columns={[
+                    { header: 'Date',        key: 'date' },
+                    { header: 'Client',      key: '_client' },
+                    { header: 'Description', key: 'description' },
+                    { header: 'Amount',      key: 'amount' },
+                    { header: 'Status',      key: 'status' },
+                    { header: 'Source',      key: 'source' },
+                    { header: 'Reference',   key: 'reference' },
+                  ]}
+                  rows={transactions.map((t: any) => ({
+                    date:        t.date || '',
+                    _client:     t.client?.name || '',
+                    description: t.description,
+                    amount:      t.amount,
+                    status:      t.status,
+                    source:      t.source,
+                    reference:   t.reference,
+                  }))}
+                />
+                <Link
+                  href="/data-import?entity=bill"
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
+                >
+                  <Upload className="w-4 h-4 text-blue-600" />
+                  Import Excel
+                </Link>
+                <Link
+                  href="/invoices/create"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white shadow-sm transition"
+                  style={{ backgroundColor: 'var(--primary)' }}
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Bill
+                </Link>
+              </div>
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
               {isLoading ? (
                 // Loading state for summary cards
-                Array(4).fill(0).map((_, index) => (
+                Array(5).fill(0).map((_, index) => (
                   <div key={index} className="p-4 rounded-lg border border-gray-200 bg-gray-50 animate-pulse">
                     <div className="flex justify-between items-center mb-2">
                       <div>
@@ -536,29 +585,35 @@ export default function BillingPage() {
                     </div>
                   </div>
 
-                  {/* Billing Sources Chart */}
+                  {/* Revenue by Society Chart */}
                   <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h2 className="text-lg font-medium mb-4">Billing Sources</h2>
+                    <h2 className="text-lg font-medium mb-4">Revenue by Society</h2>
                     <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={billingSourcesData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {billingSourcesData.map((entry, index: number) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      {billingSourcesData && billingSourcesData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={billingSourcesData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                              label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            >
+                              {billingSourcesData.map((entry, index: number) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center bg-gray-50">
+                          <p className="text-gray-400">No paid revenue data available</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </>
@@ -596,21 +651,6 @@ export default function BillingPage() {
                   </div>
                 </div>
 
-                <div className="relative">
-                  <select
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 pr-8"
-                    value={filterSource}
-                    onChange={(e) => setFilterSource(e.target.value)}
-                  >
-                    <option value="All">All Sources</option>
-                    <option value="Property Sale">Property Sale</option>
-                    <option value="Broker Commission">Broker Commission</option>
-                    <option value="Rental Income">Rental Income</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <ChevronDown size={16} />
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -926,16 +966,19 @@ export default function BillingPage() {
 
             {/* Footer Actions */}
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 space-y-2">
+              {markPaidError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {markPaidError}
+                </p>
+              )}
               {selectedTransaction.status === 'Pending' && (
                 <button
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-                  onClick={() => {
-                    // Placeholder — wire to mark-as-paid API when available
-                    alert(`Mark transaction ${selectedTransaction.reference} as paid — API integration pending`);
-                  }}
+                  disabled={isMarkingPaid}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                  onClick={() => markAsPaid(selectedTransaction)}
                 >
                   <CheckCircle size={16} />
-                  Mark as Paid
+                  {isMarkingPaid ? 'Marking…' : 'Mark as Paid'}
                 </button>
               )}
               <button

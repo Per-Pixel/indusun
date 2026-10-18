@@ -9,7 +9,7 @@ import {
 import {
   Search, Info, ChevronDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Bell, DollarSign, User,
   Calendar, Filter, SortAsc, SortDesc, Loader, RefreshCw, Users, UserCheck, Building2,
-  Briefcase, Home, CheckCircle, Plus
+  Briefcase, Home, CheckCircle, Plus, XCircle
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
 import RecentTransactions from '@/components/sales/RecentTransactions';
@@ -43,6 +43,8 @@ interface SalesSummary {
   propertiesSold: number;
   totalTransactions: number;
   totalRevenue: number;
+  cancelledTransactions: number;
+  cancelledRevenue: number;
 }
 
 // Format amount as Indian currency
@@ -61,7 +63,7 @@ const getStatsCards = (summary: SalesSummary | null) => [
     title: 'Total Revenue',
     value: summary?.totalRevenue || 0,
     formattedValue: formatAmount(summary?.totalRevenue || 0),
-    description: 'All paid transactions',
+    description: 'Paid, excluding cancelled deals',
     icon: <DollarSign className="h-6 w-6 text-green-600" />,
     bgColor: 'bg-green-50',
     isMonetary: true,
@@ -72,7 +74,7 @@ const getStatsCards = (summary: SalesSummary | null) => [
     title: 'Total Transactions',
     value: summary?.totalTransactions || 0,
     formattedValue: (summary?.totalTransactions || 0).toLocaleString(),
-    description: 'All paid transactions',
+    description: 'Paid, excluding cancelled deals',
     icon: <Calendar className="h-6 w-6 text-blue-600" />,
     bgColor: 'bg-blue-50',
     isDynamic: true
@@ -131,6 +133,16 @@ const getStatsCards = (summary: SalesSummary | null) => [
     description: 'Fully completed sales',
     icon: <CheckCircle className="h-6 w-6 text-emerald-600" />,
     bgColor: 'bg-emerald-50'
+  },
+  {
+    id: 9,
+    title: 'Cancelled Deals',
+    value: summary?.cancelledTransactions || 0,
+    formattedValue: (summary?.cancelledTransactions || 0).toLocaleString(),
+    description: `${formatAmount(summary?.cancelledRevenue || 0)} written off`,
+    icon: <XCircle className="h-6 w-6 text-red-600" />,
+    bgColor: 'bg-red-50',
+    isDynamic: true
   },
 ];
 

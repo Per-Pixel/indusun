@@ -52,13 +52,13 @@ export async function GET(request: NextRequest) {
     const rows = await fetchAllRows(supabase);
     console.log(`Supabase master data: ${rows.length} total rows`);
 
-    // ── Filter rows: "paid" = non-empty emi_paid_date ─────────────────────
-    // When a date range is active we also require a parseable date so the
-    // comparison works; when no range is set we include ALL paid rows (same
-    // logic as the billing page).
-    const filteredRows = rows.filter((r) => {
+    // ── Scope rows: all paid rows + all cancelled deals ────────────────────
+    // "Paid" = non-empty emi_paid_date. Cancelled rows are kept even without
+    // a paid date so the cancelled-deals figure covers every cancelled deal.
+    // With a date range, only rows with a parseable paid date can be compared.
+    const inScope = rows.filter((r) => {
       const hasPaidDate = !!(r.emi_paid_date && String(r.emi_paid_date).trim());
-      if (!hasPaidDate) return false;
+      if (!hasPaidDate && !r.cancel_date) return false;
 
       if (startDate || endDate) {
         const d = normalizeDate(r.emi_paid_date);
@@ -67,9 +67,14 @@ export async function GET(request: NextRequest) {
         if (endDate   && d > endDate)   return false;
       }
 
-      if (brokerName && r["broker's_name"] !== brokerName) return false;
+      if (brokerName && String(r["broker's_name"] ?? '').trim() !== brokerName) return false;
       return true;
     });
+
+    // Cancelled deals are reported separately — they must not inflate
+    // revenue, transaction counts, or the chart.
+    const activeRows    = inScope.filter((r) => !r.cancel_date && r.emi_paid_date && String(r.emi_paid_date).trim());
+    const cancelledRows = inScope.filter((r) => r.cancel_date);
 
     // Determine chart granularity: monthly for long/unfiltered ranges, daily for short ones
     const granularity: 'monthly' | 'daily' = (() => {
@@ -83,7 +88,7 @@ export async function GET(request: NextRequest) {
 
     // Aggregate by date (chart only — requires a parseable date)
     const dateMap: Record<string, { total_amount: number; transaction_count: number }> = {};
-    filteredRows.forEach((r) => {
+    activeRows.forEach((r) => {
       const d = normalizeDate(r.emi_paid_date);
       if (!d) return;
       const dateKey = granularity === 'monthly' ? d.substring(0, 7) : d; // YYYY-MM or YYYY-MM-DD
@@ -112,7 +117,7 @@ export async function GET(request: NextRequest) {
     // Monthly: up to 120 buckets (10 years); Daily: up to 366 days
     salesData = salesData.slice(0, granularity === 'monthly' ? 120 : 366);
 
-    console.log(`Sales chart: ${filteredRows.length} payment rows → ${salesData.length} date buckets`);
+    console.log(`Sales chart: ${activeRows.length} payment rows → ${salesData.length} date buckets`);
 
     // ── Summary statistics ─────────────────────────────────────────────────
     const sixMonthsAgo = new Date();
@@ -125,20 +130,26 @@ export async function GET(request: NextRequest) {
     const activeBrokerSet = new Set<string>();
     const propertySet     = new Set<string>();
     const soldPropertySet = new Set<string>();
-    const brokerNameSet   = new Set<string>();
+    // Trim + case-dedupe broker names — the raw column has whitespace-only
+    // values and trailing-space variants like "MANOJ ".
+    const brokerNameMap   = new Map<string, string>();
 
     rows.forEach((r) => {
       const cn   = r.client_name;
-      const bn   = r["broker's_name"];
+      const bn   = String(r["broker's_name"] ?? '').trim();
       const normDate = normalizeDate(r.emi_paid_date);
       const plotKey  = r.plot_no ? `${r.society_name || ''}||${r.plot_no}` : null;
 
       if (cn) clientSet.add(cn);
-      if (bn) { brokerSet.add(bn); brokerNameSet.add(bn); }
+      if (bn) {
+        const key = bn.toLowerCase();
+        brokerSet.add(key);
+        if (!brokerNameMap.has(key)) brokerNameMap.set(key, bn);
+      }
 
       if (normDate && normDate >= sixMonthsAgoStr) {
         if (cn) activeClientSet.add(cn);
-        if (bn) activeBrokerSet.add(bn);
+        if (bn) activeBrokerSet.add(bn.toLowerCase());
       }
 
       if (plotKey) {
@@ -148,8 +159,9 @@ export async function GET(request: NextRequest) {
     });
 
     // Dynamic stats (respect the active filters)
-    const filteredRevenue = filteredRows.reduce((s, r) => s + parseAmount(r.emi_amount), 0);
-    const filteredTxCount = filteredRows.length;
+    const filteredRevenue = activeRows.reduce((s, r) => s + parseAmount(r.emi_amount), 0);
+    const filteredTxCount = activeRows.length;
+    const cancelledRevenue = cancelledRows.reduce((s, r) => s + parseAmount(r.emi_amount), 0);
 
     const summary = {
       totalClients:      clientSet.size,
@@ -160,9 +172,11 @@ export async function GET(request: NextRequest) {
       propertiesSold:    soldPropertySet.size,
       totalTransactions: filteredTxCount,
       totalRevenue:      filteredRevenue,
+      cancelledTransactions: cancelledRows.length,
+      cancelledRevenue,
     };
 
-    const brokers = Array.from(brokerNameSet)
+    const brokers = Array.from(brokerNameMap.values())
       .sort()
       .map((name) => ({ id: name, name }));
 
