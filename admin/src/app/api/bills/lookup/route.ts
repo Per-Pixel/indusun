@@ -102,7 +102,7 @@ function mapMasterRow(r: any): BillSuggestion {
   const effectiveRate = emiAmt || paidAmt || plotAmt || 0;
   const isoDate = r.emi_paid_date_iso || normalizeDate(r.emi_paid_date) || r.form_date_iso || new Date().toISOString().split('T')[0];
   const paid = isPaid(r.emi_paid_date);
-  const billNo = r.r_no || (r.emi_no ? `EMI-${r.emi_no}-${r.id}` : `INV-${String(r.id).padStart(6, '0')}`);
+  const billNo = r.registration_no || r.r_no || (r.emi_no ? `EMI-${r.emi_no}-${r.id}` : `INV-${String(r.id).padStart(6, '0')}`);
 
   const subjectParts = [
     r.society_name,
@@ -214,34 +214,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ suggestions: [] });
     }
 
-    const strippedId = q.replace(/^INV-0*/i, '').replace(/^#/, '').trim();
+    const strippedId = q.replace(/^(INV-|BILL-|R-|#)\s*0*/i, '').trim();
     const numericId = /^\d+$/.test(strippedId) ? parseInt(strippedId, 10) : null;
 
     let billsQuery = supabase.from('bills').select('*').order('created_at', { ascending: false }).limit(10);
     let masterQuery = supabase.from(MASTER_TABLE).select('*').order('id', { ascending: false });
 
     if (field === 'bill') {
-      billsQuery = billsQuery.or(`bill_number.ilike.%${q}%,client_name.ilike.%${q}%`);
+      billsQuery = billsQuery.or(`bill_number.ilike.%${q}%,client_name.ilike.%${q}%,payment_ref.ilike.%${q}%`);
       if (numericId !== null) {
-        masterQuery = masterQuery.or(`r_no.ilike.%${q}%,id.eq.${numericId},plot_no.ilike.%${q}%`).limit(15);
+        masterQuery = masterQuery.or(`r_no.ilike.%${q}%,registration_no.ilike.%${q}%,id.eq.${numericId},plot_no.ilike.%${q}%`).limit(15);
       } else {
-        masterQuery = masterQuery.or(`r_no.ilike.%${q}%,client_name.ilike.%${q}%`).limit(15);
+        masterQuery = masterQuery.or(`r_no.ilike.%${q}%,registration_no.ilike.%${q}%,client_name.ilike.%${q}%`).limit(15);
       }
     } else if (field === 'name') {
-      billsQuery = billsQuery.or(`client_name.ilike.%${q}%,client_phone.ilike.%${q}%`);
+      billsQuery = billsQuery.or(`client_name.ilike.%${q}%,client_phone.ilike.%${q}%,bill_number.ilike.%${q}%`);
       // Fetch up to 60 rows so we can deduplicate by (client_name, society_name, plot_no) and still show distinct clients
       masterQuery = masterQuery
-        .or(`client_name.ilike.%${q}%,contact_no.ilike.%${q}%,society_name.ilike.%${q}%`)
+        .or(`client_name.ilike.%${q}%,contact_no.ilike.%${q}%,society_name.ilike.%${q}%,r_no.ilike.%${q}%,registration_no.ilike.%${q}%`)
         .limit(60);
     } else {
-      billsQuery = billsQuery.or(`bill_number.ilike.%${q}%,client_name.ilike.%${q}%`);
+      billsQuery = billsQuery.or(`bill_number.ilike.%${q}%,client_name.ilike.%${q}%,client_phone.ilike.%${q}%`);
       if (numericId !== null) {
         masterQuery = masterQuery
-          .or(`client_name.ilike.%${q}%,r_no.ilike.%${q}%,contact_no.ilike.%${q}%,id.eq.${numericId}`)
+          .or(`client_name.ilike.%${q}%,r_no.ilike.%${q}%,registration_no.ilike.%${q}%,contact_no.ilike.%${q}%,id.eq.${numericId}`)
           .limit(40);
       } else {
         masterQuery = masterQuery
-          .or(`client_name.ilike.%${q}%,r_no.ilike.%${q}%,contact_no.ilike.%${q}%,society_name.ilike.%${q}%`)
+          .or(`client_name.ilike.%${q}%,r_no.ilike.%${q}%,registration_no.ilike.%${q}%,contact_no.ilike.%${q}%,society_name.ilike.%${q}%`)
           .limit(40);
       }
     }

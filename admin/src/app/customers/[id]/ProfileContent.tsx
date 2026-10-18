@@ -454,14 +454,25 @@ export default function ProfileContent({ customer, portfolio }: Props) {
                         className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-xl font-bold mb-3"
                         style={{ background: 'var(--gold-muted)', color: 'var(--gold-dark)' }}
                       >
-                        {customer["broker's_name"].charAt(0).toUpperCase()}
+                        {(customer.broker_name_clean || customer["broker's_name"]).charAt(0).toUpperCase()}
                       </div>
                       <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        {customer["broker's_name"]}
+                        {customer.broker_name_clean || customer["broker's_name"]}
                       </p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        Associated broker
+                      {(customer.broker_code || customer.ba_code) && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-amber-50 text-amber-900 border border-amber-300 mt-2">
+                          {customer.broker_code || customer.ba_code}
+                        </span>
+                      )}
+                      <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                        Record: {customer["broker's_name"]}
                       </p>
+                      <Link
+                        href={`/brokers/${encodeURIComponent(customer.broker_code || customer.ba_code || customer["broker's_name"])}`}
+                        className="inline-flex items-center gap-1 mt-3 text-xs font-medium text-blue-600 hover:underline"
+                      >
+                        View broker profile &amp; all deals →
+                      </Link>
                     </div>
                   ) : (
                     <div className="empty-state py-8">

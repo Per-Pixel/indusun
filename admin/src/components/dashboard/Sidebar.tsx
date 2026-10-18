@@ -26,6 +26,7 @@ import {
   ClipboardList,
   Lock,
   UploadCloud,
+  Briefcase,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -62,6 +63,7 @@ const NAV_SECTIONS: NavSection[] = [
       { icon: <Calendar size={17} />, label: 'Site Visits', path: '/site-visits' },
       { icon: <BookOpen size={17} />, label: 'Bookings', path: '/bookings' },
       { icon: <UserCheck size={17} />, label: 'Customer Profiles', path: '/customers' },
+      { icon: <Briefcase size={17} />, label: 'Brokers & Codes', path: '/brokers' },
     ],
   },
   {

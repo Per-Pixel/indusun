@@ -66,7 +66,7 @@ export async function getLeads({
     const applyFilters = (q: any) => {
       if (search) {
         q = q.or(
-          `client_name.ilike.%${search}%,contact_no.ilike.%${search}%,society_name.ilike.%${search}%,project_name.ilike.%${search}%,plot_no.ilike.%${search}%,"broker's_name".ilike.%${search}%,broker_code.ilike.%${search}%,broker_name_clean.ilike.%${search}%`
+          `client_name.ilike.%${search}%,contact_no.ilike.%${search}%,society_name.ilike.%${search}%,project_name.ilike.%${search}%,plot_no.ilike.%${search}%,"broker's_name".ilike.%${search}%,broker_code.ilike.%${search}%,ba_code.ilike.%${search}%,broker_name_clean.ilike.%${search}%`
         );
       }
       if (societyFilter) {

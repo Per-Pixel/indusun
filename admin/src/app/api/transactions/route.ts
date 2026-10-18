@@ -4,7 +4,7 @@ import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 import { withServerCache } from '@/utils/serverCache';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
-const TXN_COLS = 'id,client_name,society_name,plot_no,emi_amount,emi_paid_date,emi_paid_date_iso,r_no,emi_no,"broker\'s_name"';
+const TXN_COLS = 'id,client_name,contact_no,society_name,plot_no,emi_amount,emi_paid_date,emi_paid_date_iso,r_no,registration_no,emi_no,"broker\'s_name",ba_code';
 
 // Whether a row should be treated as "Completed"
 function isCompleted(row: any): boolean {
@@ -24,7 +24,7 @@ function mapRow(row: any) {
     amount:      parseAmount(row.emi_amount),
     status:      isCompleted(row) ? 'Completed' : 'Pending',
     source:      'Property Sale',
-    reference:   row.r_no || row.emi_no || `#${row.id}`,
+    reference:   row.registration_no || row.r_no || row.emi_no || `#${row.id}`,
     clientId:    row.id,
     client:      row.client_name
       ? { id: String(row.id), name: row.client_name, type: 'Individual' }
@@ -45,9 +45,29 @@ function applyFilters(
   endDate: string
 ) {
   if (search) {
-    query = query.or(
-      `client_name.ilike.%${search}%,society_name.ilike.%${search}%,plot_no.ilike.%${search}%,"broker's_name".ilike.%${search}%,r_no.ilike.%${search}%`
-    );
+    const s = search.trim();
+    const strippedId = s.replace(/^(inv-|bill-|r-|#)\s*0*/i, '').trim();
+    const numericId = /^\d+$/.test(strippedId) ? parseInt(strippedId, 10) : null;
+    const clauses = [
+      `client_name.ilike.%${s}%`,
+      `contact_no.ilike.%${s}%`,
+      `society_name.ilike.%${s}%`,
+      `plot_no.ilike.%${s}%`,
+      `"broker's_name".ilike.%${s}%`,
+      `broker_code.ilike.%${s}%`,
+      `ba_code.ilike.%${s}%`,
+      `broker_name_clean.ilike.%${s}%`,
+      `r_no.ilike.%${s}%`,
+      `registration_no.ilike.%${s}%`,
+    ];
+    if (numericId !== null) {
+      clauses.push(`id.eq.${numericId}`);
+      if (strippedId !== s) {
+        clauses.push(`r_no.ilike.%${strippedId}%`);
+        clauses.push(`registration_no.ilike.%${strippedId}%`);
+      }
+    }
+    query = query.or(clauses.join(','));
   }
 
   // Status: 'Pending' = null OR empty string; 'Completed' = non-null AND non-empty
@@ -58,7 +78,12 @@ function applyFilters(
   }
 
   if (brokerName) {
-    query = query.eq("broker's_name", brokerName);
+    // Column name contains an apostrophe — use an OR filter with quoted values
+    // instead of .eq(), which parses the column as "broker" and errors.
+    const safe = brokerName.trim().replace(/"/g, '\\"');
+    query = query.or(
+      `"broker's_name".eq."${safe}",broker_code.eq."${safe}",ba_code.eq."${safe}",broker_name_clean.eq."${safe}"`
+    );
   }
 
   if (startDate || endDate) {

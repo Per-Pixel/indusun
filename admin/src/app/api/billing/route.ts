@@ -4,10 +4,32 @@ import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 import { withServerCache } from '@/utils/serverCache';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
-const BILLING_COLS = 'id,client_name,society_name,plot_no,emi_amount,emi_amount_num,emi_paid_date,emi_paid_date_iso,cancel_date,r_no,emi_no';
+const BILLING_COLS = 'id,client_name,contact_no,society_name,plot_no,emi_amount,emi_amount_num,emi_paid_date,emi_paid_date_iso,cancel_date,r_no,registration_no,emi_no,"broker\'s_name",broker_code';
 
 function applyFilters(query: any, search: string, status: string) {
-  if (search) query = query.or(`client_name.ilike.%${search}%,society_name.ilike.%${search}%`);
+  const s = search.trim();
+  if (s) {
+    const strippedId = s.replace(/^(inv-|bill-|r-|#)\s*0*/i, '').trim();
+    const numericId = /^\d+$/.test(strippedId) ? parseInt(strippedId, 10) : null;
+    const clauses = [
+      `client_name.ilike.%${s}%`,
+      `contact_no.ilike.%${s}%`,
+      `society_name.ilike.%${s}%`,
+      `plot_no.ilike.%${s}%`,
+      `"broker's_name".ilike.%${s}%`,
+      `broker_code.ilike.%${s}%`,
+      `ba_code.ilike.%${s}%`,
+      `broker_name_clean.ilike.%${s}%`,
+      `r_no.ilike.%${s}%`,
+      `registration_no.ilike.%${s}%`,
+    ];
+    if (numericId !== null) {
+      clauses.push(`id.eq.${numericId}`);
+      clauses.push(`r_no.ilike.%${strippedId}%`);
+      clauses.push(`registration_no.ilike.%${strippedId}%`);
+    }
+    query = query.or(clauses.join(','));
+  }
   if (status === 'Completed') query = query.not('emi_paid_date', 'is', null).neq('emi_paid_date', '');
   else if (status === 'Pending') query = query.or('emi_paid_date.is.null,emi_paid_date.eq.');
   return query;
@@ -25,12 +47,16 @@ export async function GET(request: NextRequest) {
 
     // ── Summary & trends via fast cached Postgres RPC ──────────────────────
     const countCacheKey = `count:billing:${search}|${status}`;
-    const [aggData, { data, error }, count] = await Promise.all([
+    const [aggData, { data: billRows }, { data, error }, count] = await Promise.all([
       withServerCache('rpc:get_billing_aggregates_rpc', async () => {
         const { data: d, error: e } = await supabase.rpc('get_billing_aggregates_rpc');
         if (e || !d) throw new Error(e?.message || 'Failed to compute billing aggregates');
         return d;
       }),
+      supabase
+        .from('bills')
+        .select('id,bill_number,client_name,client_phone,society_name,plot_no,description,amount,date,status,payment_ref')
+        .order('created_at', { ascending: false }),
       applyFilters(supabase.from(TABLE_NAME).select(BILLING_COLS), search, status)
         .order('id', { ascending: false })
         .range(offset, offset + limit - 1),
@@ -60,7 +86,32 @@ export async function GET(request: NextRequest) {
       sources: { name: string; value: number }[];
     };
 
-    const transactions = (data || []).map((row: any) => {
+    const qLower = search.trim().toLowerCase();
+    const matchedCustomBills = (page === 1 && Array.isArray(billRows) ? billRows : [])
+      .filter((b: any) => {
+        const billStatus = b.status === 'Paid' ? 'Completed' : 'Pending';
+        if (status !== 'All' && billStatus !== status) return false;
+        if (qLower) {
+          const hay = `${b.bill_number || ''} b${b.id || ''} ${b.client_name || ''} ${b.client_phone || ''} ${b.society_name || ''} ${b.plot_no || ''} ${b.description || ''} ${b.payment_ref || ''}`.toLowerCase();
+          if (!hay.includes(qLower)) return false;
+        }
+        return true;
+      })
+      .map((b: any) => {
+        const amt = parseFloat(b.amount) || 0;
+        return {
+          id:          `b${b.id}`,
+          date:        b.date || null,
+          description: [b.society_name, b.plot_no ? `Plot ${b.plot_no}` : null].filter(Boolean).join(' – ') || b.description || 'Property Sale',
+          amount:      `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amt)}`,
+          status:      b.status === 'Paid' ? 'Completed' : 'Pending',
+          source:      'Property Sale',
+          reference:   b.bill_number || `b${b.id}`,
+          client:      b.client_name ? { name: b.client_name, type: 'Individual' } : null,
+        };
+      });
+
+    const masterTransactions = (data || []).map((row: any) => {
       const paid = isPaid(row.emi_paid_date);
       const d    = row.emi_paid_date_iso || (paid ? normalizeDate(row.emi_paid_date) : null);
       return {
@@ -70,12 +121,13 @@ export async function GET(request: NextRequest) {
         amount:      `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(row.emi_amount_num ?? parseAmount(row.emi_amount))}`,
         status:      row.cancel_date ? 'Cancelled' : (paid ? 'Completed' : 'Pending'),
         source:      'Property Sale',
-        reference:   row.r_no || row.emi_no || `#${row.id}`,
+        reference:   row.registration_no || row.r_no || row.emi_no || `#${row.id}`,
         client:      row.client_name ? { name: row.client_name, type: 'Individual' } : null,
       };
     });
 
-    const totalItems = count || 0;
+    const transactions = [...matchedCustomBills, ...masterTransactions].slice(0, limit);
+    const totalItems = (count || 0) + matchedCustomBills.length;
     return NextResponse.json({
       summary,
       trends,

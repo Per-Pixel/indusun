@@ -45,17 +45,92 @@ export async function getPaginatedMasterData({
     const to = from + pageSize - 1;
 
     const searchTerm = (search || clientNameFilter).trim();
+    // Resolve custom bill_number matches -> client names so searching a BILL-... in Customers finds the customer
+    let billMatchedNames: string[] = [];
+    if (searchTerm) {
+      const { data: matchedBills } = await supabase
+        .from('bills')
+        .select('client_name')
+        .ilike('bill_number', `%${searchTerm}%`)
+        .limit(20);
+      if (Array.isArray(matchedBills)) {
+        billMatchedNames = Array.from(
+          new Set(
+            matchedBills
+              .map((b: any) => String(b.client_name || '').trim())
+              .filter(Boolean)
+          )
+        );
+      }
+    }
+
+    // Resolve broker directory matches (name/code/raw_identifier) so searching a
+    // broker name or partial GKC code also matches master-data rows that store
+    // the full record identifier in "broker's_name" (e.g. GKC/10/RS/JUBER).
+    let brokerMatchedIdentifiers: string[] = [];
+    if (searchTerm) {
+      const { data: matchedBrokers } = await supabase
+        .from('brokers')
+        .select('name,broker_code,raw_identifier')
+        .or(`name.ilike.%${searchTerm}%,broker_code.ilike.%${searchTerm}%,raw_identifier.ilike.%${searchTerm}%`)
+        .limit(40);
+      if (Array.isArray(matchedBrokers)) {
+        brokerMatchedIdentifiers = Array.from(
+          new Set(
+            matchedBrokers
+              .flatMap((b: any) => [b.raw_identifier, b.broker_code, b.name])
+              .map((v: any) => String(v || '').trim())
+              .filter(Boolean)
+          )
+        );
+      }
+    }
+
+    const strippedId = searchTerm.replace(/^(INV-|BILL-|R-|#)\s*0*/i, '').trim();
+    const numericId = /^\d+$/.test(strippedId) ? parseInt(strippedId, 10) : null;
+
     const applyFilters = (q: any) => {
       if (searchTerm) {
-        q = q.or(
-          `client_name.ilike.%${searchTerm}%,contact_no.ilike.%${searchTerm}%,society_name.ilike.%${searchTerm}%,project_name.ilike.%${searchTerm}%,plot_no.ilike.%${searchTerm}%,"broker's_name".ilike.%${searchTerm}%,broker_code.ilike.%${searchTerm}%,ba_code.ilike.%${searchTerm}%,broker_name_clean.ilike.%${searchTerm}%,r_no.ilike.%${searchTerm}%,registration_no.ilike.%${searchTerm}%,aadhar_no.ilike.%${searchTerm}%`
-        );
+        // Every column in this OR clause is backed by a GIN trigram index or primary key btree
+        const orClauses = [
+          `client_name.ilike.%${searchTerm}%`,
+          `contact_no.ilike.%${searchTerm}%`,
+          `society_name.ilike.%${searchTerm}%`,
+          `plot_no.ilike.%${searchTerm}%`,
+          `"broker's_name".ilike.%${searchTerm}%`,
+          `broker_code.ilike.%${searchTerm}%`,
+          `ba_code.ilike.%${searchTerm}%`,
+          `broker_name_clean.ilike.%${searchTerm}%`,
+          `r_no.ilike.%${searchTerm}%`,
+          `registration_no.ilike.%${searchTerm}%`,
+          `aadhar_no.ilike.%${searchTerm}%`,
+        ];
+        if (numericId !== null) {
+          orClauses.push(`id.eq.${numericId}`);
+          if (strippedId !== searchTerm) {
+            orClauses.push(`r_no.ilike.%${strippedId}%`);
+            orClauses.push(`registration_no.ilike.%${strippedId}%`);
+          }
+        }
+        for (const name of billMatchedNames) {
+          orClauses.push(`client_name.ilike.%${name.replace(/[,()]/g, '')}%`);
+        }
+        for (const ident of brokerMatchedIdentifiers) {
+          const safe = ident.replace(/"/g, '\\"');
+          orClauses.push(`"broker's_name".eq."${safe}"`);
+          orClauses.push(`broker_code.eq."${safe}"`);
+          orClauses.push(`ba_code.eq."${safe}"`);
+        }
+        q = q.or(orClauses.join(','));
       }
       if (societyFilter) {
         q = q.eq('society_name', societyFilter);
       }
       if (brokerFilter) {
-        q = q.eq("broker's_name", brokerFilter);
+        const safe = brokerFilter.trim().replace(/"/g, '\\"');
+        q = q.or(
+          `"broker's_name".eq."${safe}",broker_code.eq."${safe}",ba_code.eq."${safe}",broker_name_clean.eq."${safe}"`
+        );
       }
       if (statusFilter) {
         if (statusFilter === 'active') {
@@ -133,23 +208,44 @@ export async function getAllMasterData(): Promise<{
 }
 
 /**
- * Get unique broker names (for filtering) - optimized via server-side Postgres RPC
+ * Get unique broker names/identifiers (for filtering) - merges server-side
+ * master-data derived names with the brokers directory codes.
  */
 export async function getUniqueBrokers(): Promise<{
   brokers: string[];
   error: Error | null;
 }> {
   try {
-    const data = await withServerCache('rpc:get_unique_brokers_rpc', async () => {
-      const supabase = createServiceClient();
-      const { data, error } = await supabase.rpc('get_unique_brokers_rpc');
-      if (error) throw new Error(error.message);
-      return Array.isArray(data) ? (data as string[]) : [];
-    });
-    return { brokers: data, error: null };
+    const [derived, { data: dirRows }] = await Promise.all([
+      withServerCache('rpc:get_unique_brokers_rpc', async () => {
+        const supabase = createServiceClient();
+        const { data, error } = await supabase.rpc('get_unique_brokers_rpc');
+        if (error) throw new Error(error.message);
+        return Array.isArray(data) ? (data as string[]) : [];
+      }),
+      supabaseSafeSelectBrokers(),
+    ]);
+    const merged = new Set<string>(derived.filter(Boolean));
+    for (const r of dirRows || []) {
+      if (r.raw_identifier) merged.add(r.raw_identifier);
+      else if (r.broker_code) merged.add(r.broker_code);
+      else if (r.name) merged.add(r.name);
+    }
+    return { brokers: Array.from(merged).sort((a, b) => a.localeCompare(b)), error: null };
   } catch (err) {
     console.error('Unexpected error in getUniqueBrokers:', err);
     return { brokers: [], error: err as Error };
+  }
+}
+
+async function supabaseSafeSelectBrokers() {
+  try {
+    const supabase = createServiceClient();
+    return await supabase
+      .from('brokers')
+      .select('name,broker_code,raw_identifier');
+  } catch {
+    return { data: null };
   }
 }
 

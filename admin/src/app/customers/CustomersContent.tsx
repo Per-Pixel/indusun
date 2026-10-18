@@ -272,7 +272,7 @@ export default function CustomersContent({
               <Search size={16} className="search-icon" />
               <input
                 type="text"
-                placeholder="Search by name, phone, society, plot or broker…"
+                placeholder="Search by name, Reg/R. No., bill #, phone, society, plot or broker…"
                 className="input input-sm pl-9 pr-8"
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
@@ -464,13 +464,20 @@ export default function CustomersContent({
                       <p className="text-sm font-semibold break-words" style={{ color: 'var(--text-primary)' }}>
                         {c.client_name || '—'}
                       </p>
-                      <span
-                        className="flex items-center gap-1 text-xs mt-0.5 truncate"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        <Phone size={10} className="shrink-0" />
-                        {c.contact_no || '—'}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                        <span
+                          className="flex items-center gap-1 text-xs truncate"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          <Phone size={10} className="shrink-0" />
+                          {c.contact_no || '—'}
+                        </span>
+                        {(c.registration_no || c.r_no) && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-50 text-amber-800 border border-amber-200">
+                            Reg #{c.registration_no || c.r_no}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <span className={classNames('badge shrink-0', `badge-${status.tone}`)}>
@@ -534,12 +541,17 @@ export default function CustomersContent({
                     <p className="text-xs flex items-center gap-1.5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
                       <User size={11} />
                       Broker:{' '}
-                      <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      <a
+                        href={`/brokers/${encodeURIComponent(c.broker_code || c.ba_code || c["broker's_name"])}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-medium hover:underline"
+                        style={{ color: 'var(--gold)' }}
+                      >
                         {c.broker_name_clean || c["broker's_name"]}
-                      </span>
-                      {c.broker_code && (
+                      </a>
+                      {(c.broker_code || c.ba_code) && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-50 text-amber-800 border border-amber-200">
-                          {c.broker_code}
+                          {c.broker_code || c.ba_code}
                         </span>
                       )}
                     </p>

@@ -642,7 +642,7 @@ export default function BillingPage() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search transactions..."
+                  placeholder="Search by bill #, registration/R. No., client name, society or plot..."
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}

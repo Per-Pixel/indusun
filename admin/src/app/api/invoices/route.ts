@@ -4,7 +4,7 @@ import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 import { withServerCache } from '@/utils/serverCache';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
-const INVOICE_COLS = 'id,client_name,society_name,plot_no,emi_amount,emi_paid_date,r_no,emi_no,"broker\'s_name"';
+const INVOICE_COLS = 'id,client_name,contact_no,society_name,plot_no,emi_amount,emi_paid_date,r_no,registration_no,emi_no,"broker\'s_name",ba_code';
 
 const inr = (n: number) =>
   `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`;
@@ -25,11 +25,11 @@ export async function GET(request: NextRequest) {
 
     const res1 = await supabase
       .from('bills')
-      .select('id,bill_number,client_name,description,amount,date,due_date,status,payment_method')
+      .select('id,bill_number,client_name,client_phone,society_name,plot_no,reference_by,payment_ref,description,amount,date,due_date,status,payment_method')
       .order('created_at', { ascending: false });
     billRows = res1.data; billErr = res1.error;
 
-    // Retry without due_date if the migration hasn't added it yet
+    // Retry without newer columns if migration hasn't added them yet
     if (billErr) {
       const res2 = await supabase
         .from('bills')
@@ -43,13 +43,14 @@ export async function GET(request: NextRequest) {
         .filter((b: any) => {
           if (status !== 'All' && b.status !== status) return false;
           if (search) {
-            const hay = `${b.client_name || ''} ${b.bill_number || ''} ${b.description || ''}`.toLowerCase();
+            const hay = `${b.client_name || ''} ${b.client_phone || ''} ${b.bill_number || ''} b${b.id || ''} ${b.society_name || ''} ${b.plot_no || ''} ${b.reference_by || ''} ${b.payment_ref || ''} ${b.description || ''}`.toLowerCase();
             if (!hay.includes(search)) return false;
           }
           return true;
         })
         .map((b: any) => {
           const amt = parseFloat(b.amount) || 0;
+          const propTitle = [b.society_name, b.plot_no ? `Plot ${b.plot_no}` : null].filter(Boolean).join(' – ') || b.description;
           return {
             id:            `b${b.id}`,
             invoiceNumber: b.bill_number,
@@ -59,19 +60,39 @@ export async function GET(request: NextRequest) {
             amountNum:     amt,
             status:        b.status === 'Paid' ? 'Paid' : 'Pending',
             client:        { name: b.client_name || 'Unknown', type: 'Individual', id: `b${b.id}` },
-            property:      b.description ? { id: `b${b.id}`, title: b.description } : undefined,
-            broker:        null,
+            property:      propTitle ? { id: `b${b.id}`, title: propTitle } : undefined,
+            broker:        b.reference_by || null,
           };
         });
     }
     // Missing/empty bills table → master data still works.
 
     // ── Master-data invoices ───────────────────────────────────────────────
+    const strippedId = search.replace(/^(inv-|bill-|r-|#)\s*0*/i, '').trim();
+    const numericId = /^\d+$/.test(strippedId) ? parseInt(strippedId, 10) : null;
+
     const applyMasterFilters = (q: any) => {
       if (search) {
-        q = q.or(
-          `client_name.ilike.%${search}%,society_name.ilike.%${search}%,plot_no.ilike.%${search}%,"broker's_name".ilike.%${search}%,r_no.ilike.%${search}%`
-        );
+        const clauses = [
+          `client_name.ilike.%${search}%`,
+          `contact_no.ilike.%${search}%`,
+          `society_name.ilike.%${search}%`,
+          `plot_no.ilike.%${search}%`,
+          `"broker's_name".ilike.%${search}%`,
+          `broker_code.ilike.%${search}%`,
+          `ba_code.ilike.%${search}%`,
+          `broker_name_clean.ilike.%${search}%`,
+          `r_no.ilike.%${search}%`,
+          `registration_no.ilike.%${search}%`,
+        ];
+        if (numericId !== null) {
+          clauses.push(`id.eq.${numericId}`);
+          if (strippedId !== search) {
+            clauses.push(`r_no.ilike.%${strippedId}%`);
+            clauses.push(`registration_no.ilike.%${strippedId}%`);
+          }
+        }
+        q = q.or(clauses.join(','));
       }
       if (status === 'Paid')    q = q.not('emi_paid_date', 'is', null).neq('emi_paid_date', '');
       if (status === 'Pending') q = q.or('emi_paid_date.is.null,emi_paid_date.eq.');
@@ -115,7 +136,7 @@ export async function GET(request: NextRequest) {
         const amount = parseAmount(row.emi_amount);
         return {
           id:            String(row.id),
-          invoiceNumber: row.r_no || row.emi_no || `INV-${String(row.id).padStart(6, '0')}`,
+          invoiceNumber: row.registration_no || row.r_no || row.emi_no || `INV-${String(row.id).padStart(6, '0')}`,
           date:          d || (paid ? String(row.emi_paid_date).trim() : null),
           amount:        inr(amount),
           amountNum:     amount,

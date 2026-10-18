@@ -115,6 +115,11 @@ ALTER TABLE "Master Data Of Gurukrupa" ADD COLUMN IF NOT EXISTS nominee_professi
 ALTER TABLE "Master Data Of Gurukrupa" ADD COLUMN IF NOT EXISTS emi_date               text;
 ALTER TABLE "Master Data Of Gurukrupa" ADD COLUMN IF NOT EXISTS applicant_photo        text;
 
+CREATE INDEX IF NOT EXISTS idx_master_registration_no_trgm
+  ON public."Master Data Of Gurukrupa" USING gin (registration_no gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_master_aadhar_no_trgm
+  ON public."Master Data Of Gurukrupa" USING gin (aadhar_no gin_trgm_ops);
+
 -- Update normalization trigger so explicitly supplied block_name, ba_code,
 -- broker_code, and registration_no from the Application Form are preserved.
 CREATE OR REPLACE FUNCTION public.sync_master_data_normalized_cols()

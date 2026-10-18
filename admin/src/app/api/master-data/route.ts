@@ -7,9 +7,18 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1', 10);
   const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
   const clientNameFilter = searchParams.get('clientNameFilter') || '';
+  const search = searchParams.get('search') || '';
   const societyFilter = searchParams.get('societyFilter') || '';
+  const brokerFilter = searchParams.get('broker') || '';
 
-  const result = await getPaginatedMasterData({ page, pageSize, clientNameFilter, societyFilter });
+  const result = await getPaginatedMasterData({
+    page,
+    pageSize,
+    clientNameFilter,
+    search,
+    societyFilter,
+    brokerFilter,
+  });
 
   if (result.error) {
     return NextResponse.json({ error: result.error.message }, { status: 500 });

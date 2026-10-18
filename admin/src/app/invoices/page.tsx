@@ -171,7 +171,7 @@ export default function InvoicesPage() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search by client name or society..."
+                  placeholder="Search by bill/invoice #, registration #, client name, phone, society or plot..."
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                   value={searchTerm}
                   onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
