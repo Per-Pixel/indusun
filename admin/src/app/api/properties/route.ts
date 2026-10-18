@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPaginatedMasterData } from '@/services/masterDataService';
+import { createServiceClient } from '@/utils/supabase/service';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import { formatIndianNumber } from '@/utils/format';
+
+const TABLE_NAME = 'Master Data Of Gurukrupa';
 
 /**
  * Maps a single MasterDataOfGurukrupa row to the Property shape used by
@@ -93,4 +96,48 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ data: properties, count: result.count });
+}
+
+const ALLOWED_FIELDS = [
+  'society_name', 'plot_no', 'plot_size', 'plot_amount',
+  'client_name', 'contact_no', 'paid_amount', 'emi_amount', 'emi_time',
+  'emi_no', 'r_no', 'policy_number', 'cheque_cash', 'month_and_year',
+  'date_of_form', 'remarks', "broker's_name",
+] as const;
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    if (!body.society_name?.trim()) {
+      return NextResponse.json({ error: 'society_name is required' }, { status: 400 });
+    }
+    if (!body.plot_no?.trim()) {
+      return NextResponse.json({ error: 'plot_no is required' }, { status: 400 });
+    }
+
+    const record: Record<string, string> = {};
+    for (const key of ALLOWED_FIELDS) {
+      const value = body[key];
+      if (typeof value === 'string' && value.trim()) {
+        record[key] = value.trim();
+      }
+    }
+
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from(TABLE_NAME)
+      .insert(record)
+      .select('id')
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return NextResponse.json({ id: data.id }, { status: 201 });
+  } catch (err: any) {
+    console.error('Properties POST error:', err);
+    return NextResponse.json({ error: err.message || 'Failed to create property' }, { status: 500 });
+  }
 }

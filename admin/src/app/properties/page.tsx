@@ -367,6 +367,13 @@ export default function PropertiesPage() {
                   rows={filteredProperties.map((p) => ({ ...p, _listedByName: p.listedBy.name }))}
                 />
                 <button
+                  onClick={() => router.push('/data-import?entity=property')}
+                  className="btn btn-secondary btn-sm"
+                >
+                  <Upload size={16} />
+                  Import Excel
+                </button>
+                <button
                   onClick={handleAddProperty}
                   className="btn btn-primary btn-sm"
                 >

@@ -25,6 +25,7 @@ import {
   Layers,
   ClipboardList,
   Lock,
+  UploadCloud,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -51,6 +52,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { icon: <LayoutDashboard size={17} />, label: 'Dashboard', path: '/dashboard' },
       { icon: <Database size={17} />, label: 'Master Data', path: '/master-data' },
+      { icon: <UploadCloud size={17} />, label: 'Excel Import', path: '/data-import' },
     ],
   },
   {

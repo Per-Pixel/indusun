@@ -23,6 +23,7 @@ import {
   Users,
   X,
   XCircle,
+  UploadCloud,
 } from 'lucide-react';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import { parseAmount } from '@/utils/dataUtils';
@@ -169,13 +170,22 @@ export default function CustomersContent({
             {totalCount.toLocaleString('en-IN')} customer{totalCount === 1 ? '' : 's'} in the system
           </p>
         </div>
-        <Link
-          href="/customers/add"
-          className="btn btn-primary btn-sm flex items-center gap-2 shadow-sm"
-        >
-          <Plus size={16} />
-          Add Customer
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/data-import?entity=customer"
+            className="btn btn-secondary btn-sm flex items-center gap-2 shadow-sm"
+          >
+            <UploadCloud size={16} />
+            Import Excel
+          </Link>
+          <Link
+            href="/customers/add"
+            className="btn btn-primary btn-sm flex items-center gap-2 shadow-sm"
+          >
+            <Plus size={16} />
+            Add Customer
+          </Link>
+        </div>
       </div>
 
       {error && (

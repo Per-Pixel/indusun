@@ -6,8 +6,6 @@ import {
   ArrowLeft,
   Download,
   Printer,
-  Mail,
-  Share2,
   FileText,
   Calendar,
   DollarSign,
@@ -43,6 +41,12 @@ interface Invoice {
   generatedBy: 'System' | 'Admin' | 'Broker';
   generatorName?: string;
   paymentMethod?: string;
+  paymentRef?: string | null;
+  notes?: string | null;
+  subtotal?: string;
+  taxRate?: number;
+  taxAmount?: string;
+  discount?: string;
   items: {
     description: string;
     quantity: number;
@@ -50,231 +54,6 @@ interface Invoice {
     total: string;
   }[];
 }
-
-// Mock data for invoices (same as in the listing page)
-const mockInvoices: Invoice[] = [
-  {
-    id: '1',
-    invoiceNumber: 'INV-2023-001',
-    date: '2023-12-15',
-    dueDate: '2023-12-30',
-    amount: '₹1.5 Cr',
-    status: 'Paid',
-    client: {
-      name: 'Priya Patel',
-      type: 'Individual',
-      id: 'c1',
-      address: '123 Main Street, Whitefield, Bangalore - 560066',
-      email: 'priya.patel@example.com',
-      phone: '+91 98765 12345'
-    },
-    property: {
-      id: '1',
-      title: 'Luxury Villa in Whitefield'
-    },
-    generatedBy: 'System',
-    items: [
-      {
-        description: 'Property Purchase - Luxury Villa in Whitefield',
-        quantity: 1,
-        unitPrice: '₹1.5 Cr',
-        total: '₹1.5 Cr'
-      }
-    ]
-  },
-  {
-    id: '2',
-    invoiceNumber: 'INV-2023-002',
-    date: '2023-12-10',
-    dueDate: '2023-12-25',
-    amount: '₹14 Lakhs',
-    status: 'Paid',
-    client: {
-      name: 'Amit Kumar',
-      type: 'Individual',
-      id: 'b2',
-      address: '456 Broker Street, Koramangala, Bangalore - 560034',
-      email: 'amit.kumar@example.com',
-      phone: '+91 98765 54321'
-    },
-    generatedBy: 'Admin',
-    generatorName: 'Rajesh Admin',
-    items: [
-      {
-        description: 'Broker Commission - Commercial Space Sale',
-        quantity: 1,
-        unitPrice: '₹14 Lakhs',
-        total: '₹14 Lakhs'
-      }
-    ]
-  },
-  {
-    id: '3',
-    invoiceNumber: 'INV-2023-003',
-    date: '2023-12-05',
-    dueDate: '2023-12-20',
-    amount: '₹25,000',
-    status: 'Paid',
-    client: {
-      name: 'TechSoft Solutions',
-      type: 'Company',
-      id: 'c3',
-      address: '789 Tech Park, Electronic City, Bangalore - 560100',
-      email: 'accounts@techsoft.com',
-      phone: '+91 80 4567 8901'
-    },
-    generatedBy: 'Broker',
-    generatorName: 'Neha Gupta',
-    items: [
-      {
-        description: 'Property Valuation Service',
-        quantity: 1,
-        unitPrice: '₹25,000',
-        total: '₹25,000'
-      }
-    ]
-  },
-  {
-    id: '4',
-    invoiceNumber: 'INV-2023-004',
-    date: '2023-12-01',
-    dueDate: '2023-12-16',
-    amount: '₹3.5 Lakhs',
-    status: 'Paid',
-    client: {
-      name: 'Global Systems Ltd',
-      type: 'Company',
-      id: 'c4',
-      address: '101 Business Center, Central Business District, Bangalore - 560001',
-      email: 'finance@globalsystems.com',
-      phone: '+91 80 2345 6789'
-    },
-    property: {
-      id: '5',
-      title: 'Office Space in Central Business District'
-    },
-    generatedBy: 'System',
-    items: [
-      {
-        description: 'Monthly Rental - Office Space in CBD',
-        quantity: 1,
-        unitPrice: '₹3.5 Lakhs',
-        total: '₹3.5 Lakhs'
-      }
-    ]
-  },
-  {
-    id: '5',
-    invoiceNumber: 'INV-2023-005',
-    date: '2023-11-28',
-    dueDate: '2023-12-13',
-    amount: '₹85 Lakhs',
-    status: 'Pending',
-    client: {
-      name: 'Ananya Reddy',
-      type: 'Individual',
-      id: 'c5',
-      address: '234 Residential Layout, Sarjapur, Bangalore - 560035',
-      email: 'ananya.reddy@example.com',
-      phone: '+91 98765 67890'
-    },
-    property: {
-      id: '3',
-      title: 'Residential Plot in Sarjapur'
-    },
-    generatedBy: 'Admin',
-    generatorName: 'Rajesh Admin',
-    items: [
-      {
-        description: 'Property Purchase - Residential Plot in Sarjapur',
-        quantity: 1,
-        unitPrice: '₹85 Lakhs',
-        total: '₹85 Lakhs'
-      }
-    ]
-  },
-  {
-    id: '6',
-    invoiceNumber: 'INV-2023-006',
-    date: '2023-11-25',
-    dueDate: '2023-12-10',
-    amount: '₹7.5 Lakhs',
-    status: 'Overdue',
-    client: {
-      name: 'Rahul Sharma',
-      type: 'Individual',
-      id: 'b1',
-      address: '567 Broker Colony, Indiranagar, Bangalore - 560038',
-      email: 'rahul.sharma@example.com',
-      phone: '+91 98765 09876'
-    },
-    generatedBy: 'Broker',
-    generatorName: 'Suresh Menon',
-    items: [
-      {
-        description: 'Broker Commission - Villa Sale',
-        quantity: 1,
-        unitPrice: '₹7.5 Lakhs',
-        total: '₹7.5 Lakhs'
-      }
-    ]
-  },
-  {
-    id: '7',
-    invoiceNumber: 'INV-2023-007',
-    date: '2023-11-20',
-    dueDate: '2023-12-05',
-    amount: '₹15,000',
-    status: 'Paid',
-    client: {
-      name: 'Vikram Singh',
-      type: 'Individual',
-      id: 'c2',
-      address: '890 Client Road, HSR Layout, Bangalore - 560102',
-      email: 'vikram.singh@example.com',
-      phone: '+91 98765 23456'
-    },
-    generatedBy: 'System',
-    items: [
-      {
-        description: 'Property Documentation Service',
-        quantity: 1,
-        unitPrice: '₹15,000',
-        total: '₹15,000'
-      }
-    ]
-  },
-  {
-    id: '8',
-    invoiceNumber: 'INV-2023-008',
-    date: '2023-11-15',
-    dueDate: '2023-11-30',
-    amount: '₹2.8 Lakhs',
-    status: 'Overdue',
-    client: {
-      name: 'Fashion Trends Ltd',
-      type: 'Company',
-      id: 'c8',
-      address: '321 Shopping Mall, Commercial Complex, Bangalore - 560043',
-      email: 'accounts@fashiontrends.com',
-      phone: '+91 80 8765 4321'
-    },
-    property: {
-      id: '8',
-      title: 'Retail Space in Commercial Complex'
-    },
-    generatedBy: 'Admin',
-    generatorName: 'Rajesh Admin',
-    items: [
-      {
-        description: 'Monthly Rental - Retail Space',
-        quantity: 1,
-        unitPrice: '₹2.8 Lakhs',
-        total: '₹2.8 Lakhs'
-      }
-    ]
-  },
-];
 
 const getStatusColor = (status: Invoice['status']) => {
   switch (status) {
@@ -321,6 +100,30 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [markPaidError, setMarkPaidError] = useState<string | null>(null);
+
+  // Bills (id `b<n>`) update via /api/bills; master-data invoices via /api/billing.
+  const markAsPaid = async () => {
+    if (!invoice) return;
+    setIsMarkingPaid(true);
+    setMarkPaidError(null);
+    try {
+      const isBill = invoice.id.startsWith('b');
+      const res = await fetch(isBill ? '/api/bills' : '/api/billing', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: isBill ? invoice.id.slice(1) : invoice.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to mark as paid');
+      setInvoice(prev => prev ? { ...prev, status: 'Paid' } : prev);
+    } catch (e: any) {
+      setMarkPaidError(e.message);
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -398,14 +201,6 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                 <button onClick={() => window.print()} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
                   <Printer size={16} />
                   <span>Print</span>
-                </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-                  <Mail size={16} />
-                  <span>Email</span>
-                </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-                  <Share2 size={16} />
-                  <span>Share</span>
                 </button>
               </div>
             </div>
@@ -543,6 +338,39 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                       ))}
                     </tbody>
                     <tfoot>
+                      {invoice.subtotal && (
+                        <tr>
+                          <td colSpan={2} className="px-6 py-2"></td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-600 text-right">
+                            Subtotal
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                            {invoice.subtotal}
+                          </td>
+                        </tr>
+                      )}
+                      {invoice.discount && invoice.discount !== 'Rs. 0.00' && (
+                        <tr>
+                          <td colSpan={2} className="px-6 py-2"></td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-600 text-right">
+                            Discount
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-red-600 text-right">
+                            − {invoice.discount}
+                          </td>
+                        </tr>
+                      )}
+                      {!!invoice.taxRate && invoice.taxRate > 0 && (
+                        <tr>
+                          <td colSpan={2} className="px-6 py-2"></td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-600 text-right">
+                            Tax ({invoice.taxRate}%)
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                            + {invoice.taxAmount}
+                          </td>
+                        </tr>
+                      )}
                       <tr>
                         <td colSpan={2} className="px-6 py-4"></td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
@@ -581,15 +409,27 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                     <h4 className="text-sm font-medium text-[#333] mb-2">Payment Method</h4>
                     <p className="text-sm text-[#333]">{invoice.paymentMethod || '—'}</p>
                   </div>
+                  {invoice.paymentRef && (
+                    <div>
+                      <h4 className="text-sm font-medium text-[#333] mb-2">Payment Reference</h4>
+                      <p className="text-sm text-[#333]">{invoice.paymentRef}</p>
+                    </div>
+                  )}
                 </div>
 
                 {invoice.status === 'Pending' || invoice.status === 'Overdue' ? (
                   <div className="mt-6 pt-6 border-t border-gray-200">
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                      Mark as Paid
-                    </button>
-                    <button className="ml-3 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                      Send Reminder
+                    {markPaidError && (
+                      <p className="mb-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                        {markPaidError}
+                      </p>
+                    )}
+                    <button
+                      onClick={markAsPaid}
+                      disabled={isMarkingPaid}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {isMarkingPaid ? 'Marking…' : 'Mark as Paid'}
                     </button>
                   </div>
                 ) : null}
@@ -603,7 +443,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                   <div>
                     <h3 className="font-medium mb-3 text-[#111]">Notes</h3>
                     <p className="text-sm text-[#333]">
-                      {(invoice as any).notes || 'Thank you for your business. Please make payment by the due date.'}
+                      {invoice.notes || 'Thank you for your business. Please make payment by the due date.'}
                     </p>
                   </div>
                   <div>

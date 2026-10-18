@@ -29,13 +29,35 @@ export async function GET(
       }
       const b = bill as any;
       const amt = parseFloat(b.amount) || 0;
-      const amtFmt = `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amt)}`;
+      const fmt = (n: number) =>
+        `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`;
+      const amtFmt = fmt(amt);
+
+      const storedItems = Array.isArray(b.items) ? b.items : [];
+      const items = storedItems.length > 0
+        ? storedItems.map((it: any) => ({
+            description: it.description || '',
+            quantity:    it.quantity ?? 1,
+            unitPrice:   fmt(parseFloat(it.unit_price ?? it.unitPrice) || 0),
+            total:       fmt((parseFloat(it.unit_price ?? it.unitPrice) || 0) * (it.quantity ?? 1)),
+          }))
+        : [{
+            description: b.description || b.bill_number,
+            quantity:    1,
+            unitPrice:   amtFmt,
+            total:       amtFmt,
+          }];
+
+      const taxRate  = parseFloat(b.tax_rate) || 0;
+      const discount = parseFloat(b.discount) || 0;
+      const subtotal = items.reduce((s: number, it: any) => s + (parseFloat(String(it.total).replace(/[^\d.]/g, '')) || 0), 0);
+
       return NextResponse.json({
         invoice: {
           id:            `b${b.id}`,
           invoiceNumber: b.bill_number,
-          date:          b.date   || null,
-          dueDate:       b.date   || null,
+          date:          b.date     || null,
+          dueDate:       b.due_date || b.date || null,
           amount:        amtFmt,
           amountNum:     amt,
           status:        b.status === 'Paid' ? 'Paid' : 'Pending',
@@ -52,12 +74,12 @@ export async function GET(
           generatorName: null,
           notes:         b.notes || null,
           paymentMethod: b.payment_method || '—',
-          items: [{
-            description: b.description || b.bill_number,
-            quantity:    1,
-            unitPrice:   amtFmt,
-            total:       amtFmt,
-          }],
+          paymentRef:    b.payment_ref || null,
+          items,
+          subtotal:      fmt(subtotal || amt),
+          taxRate,
+          taxAmount:     fmt(subtotal ? (subtotal * taxRate) / 100 : 0),
+          discount:      fmt(discount),
         },
       });
     }

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Printer, Save, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Printer, Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -14,8 +14,7 @@ function makeBillNumber() {
   return `BILL-${ymd}-${rnd}`;
 }
 
-function formatINR(raw: string): string {
-  const n = parseFloat(raw.replace(/,/g, ''));
+function formatINR(n: number): string {
   if (isNaN(n)) return '—';
   return `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`;
 }
@@ -28,23 +27,55 @@ function fmtDate(iso: string): string {
 
 const today = new Date().toISOString().split('T')[0];
 
+interface LineItem {
+  description: string;
+  quantity: string;
+  unit_price: string;
+}
+
+const emptyItem = (): LineItem => ({ description: '', quantity: '1', unit_price: '' });
+
 const initForm = () => ({
   billNumber:    makeBillNumber(),
   clientName:    '',
   clientPhone:   '',
   clientAddress: '',
   description:   '',
-  amount:        '',
+  items:         [emptyItem()] as LineItem[],
+  discount:      '',
+  taxRate:       '',
   date:          today,
+  dueDate:       '',
   notes:         '',
   status:        'Pending' as 'Pending' | 'Paid',
   paymentMethod: 'Cash',
+  paymentRef:    '',
 });
+
+type Form = ReturnType<typeof initForm>;
+
+function num(v: string) {
+  const n = parseFloat(v.replace(/,/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
+function totals(form: Form) {
+  const subtotal = form.items.reduce(
+    (s, it) => s + num(it.quantity) * num(it.unit_price),
+    0
+  );
+  const discount = num(form.discount);
+  const taxable  = Math.max(0, subtotal - discount);
+  const taxAmt   = (taxable * num(form.taxRate)) / 100;
+  const total    = taxable + taxAmt;
+  return { subtotal, discount, taxAmt, total };
+}
 
 // ── InvoicePreview ───────────────────────────────────────────────────────────
 
-function InvoicePreview({ form }: { form: ReturnType<typeof initForm> }) {
-  const amountStr = formatINR(form.amount);
+function InvoicePreview({ form }: { form: Form }) {
+  const t = totals(form);
+  const filledItems = form.items.filter((it) => it.description.trim() || num(it.unit_price) > 0);
 
   return (
     <div
@@ -62,7 +93,10 @@ function InvoicePreview({ form }: { form: ReturnType<typeof initForm> }) {
           <p className="text-gray-500 text-xs mt-1">
             <span className="font-semibold">#</span>{form.billNumber || '—'}
           </p>
-          <p className="text-gray-500 text-xs mt-0.5">{fmtDate(form.date)}</p>
+          <p className="text-gray-500 text-xs mt-0.5">Date: {fmtDate(form.date)}</p>
+          {form.dueDate && (
+            <p className="text-gray-500 text-xs mt-0.5">Due: {fmtDate(form.dueDate)}</p>
+          )}
         </div>
       </div>
 
@@ -76,6 +110,13 @@ function InvoicePreview({ form }: { form: ReturnType<typeof initForm> }) {
         {form.clientAddress && <p className="text-gray-600 text-xs mt-0.5 whitespace-pre-line">{form.clientAddress}</p>}
       </div>
 
+      {/* Subject */}
+      {form.description && (
+        <div className="mb-4">
+          <p className="text-sm text-gray-700"><span className="font-semibold">Subject:</span> {form.description}</p>
+        </div>
+      )}
+
       {/* Items table */}
       <table className="w-full mb-6 text-sm">
         <thead>
@@ -83,23 +124,53 @@ function InvoicePreview({ form }: { form: ReturnType<typeof initForm> }) {
             <th className="py-2.5 px-4 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
               Description
             </th>
-            <th className="py-2.5 px-4 text-right text-xs font-semibold text-blue-700 uppercase tracking-wider">
+            <th className="py-2.5 px-4 text-center text-xs font-semibold text-blue-700 uppercase tracking-wider w-20">
+              Qty
+            </th>
+            <th className="py-2.5 px-4 text-right text-xs font-semibold text-blue-700 uppercase tracking-wider w-32">
+              Rate
+            </th>
+            <th className="py-2.5 px-4 text-right text-xs font-semibold text-blue-700 uppercase tracking-wider w-32">
               Amount
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr className="border-b border-gray-100">
-            <td className="py-4 px-4 text-gray-800">
-              {form.description || <span className="text-gray-300 italic">Property / service description</span>}
-            </td>
-            <td className="py-4 px-4 text-right font-medium text-gray-900">{amountStr}</td>
-          </tr>
+          {(filledItems.length ? filledItems : [emptyItem()]).map((it, i) => (
+            <tr key={i} className="border-b border-gray-100">
+              <td className="py-3.5 px-4 text-gray-800">
+                {it.description || <span className="text-gray-300 italic">Item description</span>}
+              </td>
+              <td className="py-3.5 px-4 text-center text-gray-600">{num(it.quantity) || '—'}</td>
+              <td className="py-3.5 px-4 text-right text-gray-600">{num(it.unit_price) ? formatINR(num(it.unit_price)) : '—'}</td>
+              <td className="py-3.5 px-4 text-right font-medium text-gray-900">
+                {formatINR(num(it.quantity) * num(it.unit_price))}
+              </td>
+            </tr>
+          ))}
         </tbody>
         <tfoot>
+          <tr className="border-t border-gray-200">
+            <td colSpan={3} className="py-2.5 px-4 text-right text-sm font-medium text-gray-600">Subtotal</td>
+            <td className="py-2.5 px-4 text-right font-semibold text-gray-800">{formatINR(t.subtotal)}</td>
+          </tr>
+          {t.discount > 0 && (
+            <tr>
+              <td colSpan={3} className="py-2.5 px-4 text-right text-sm font-medium text-gray-600">Discount</td>
+              <td className="py-2.5 px-4 text-right font-medium text-red-600">− {formatINR(t.discount)}</td>
+            </tr>
+          )}
+          {num(form.taxRate) > 0 && (
+            <tr>
+              <td colSpan={3} className="py-2.5 px-4 text-right text-sm font-medium text-gray-600">
+                Tax ({num(form.taxRate)}%)
+              </td>
+              <td className="py-2.5 px-4 text-right font-medium text-gray-800">+ {formatINR(t.taxAmt)}</td>
+            </tr>
+          )}
           <tr className="bg-gray-50">
-            <td className="py-3 px-4 text-right text-sm font-semibold text-gray-600">Total</td>
-            <td className="py-3 px-4 text-right font-bold text-blue-800 text-base">{amountStr}</td>
+            <td colSpan={3} className="py-3 px-4 text-right text-sm font-semibold text-gray-600">Total</td>
+            <td className="py-3 px-4 text-right font-bold text-blue-800 text-base">{formatINR(t.total)}</td>
           </tr>
         </tfoot>
       </table>
@@ -115,14 +186,19 @@ function InvoicePreview({ form }: { form: ReturnType<typeof initForm> }) {
         </span>
       </div>
 
-      {/* Payment method */}
-      {form.paymentMethod && (
-        <div className="mb-6">
+      {/* Payment info */}
+      <div className="mb-6 space-y-1">
+        {form.paymentMethod && (
           <p className="text-sm text-gray-600">
             <span className="font-semibold text-gray-700">Payment Method:</span> {form.paymentMethod}
           </p>
-        </div>
-      )}
+        )}
+        {form.paymentRef && (
+          <p className="text-sm text-gray-600">
+            <span className="font-semibold text-gray-700">Payment Ref:</span> {form.paymentRef}
+          </p>
+        )}
+      </div>
 
       {/* Notes */}
       {form.notes && (
@@ -148,14 +224,53 @@ export default function CreateInvoicePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const set = (k: keyof ReturnType<typeof initForm>, v: string) =>
+  const set = (k: keyof Form, v: any) =>
     setForm(f => ({ ...f, [k]: v }));
+
+  const setItem = (i: number, k: keyof LineItem, v: string) =>
+    setForm(f => ({
+      ...f,
+      items: f.items.map((it, idx) => (idx === i ? { ...it, [k]: v } : it)),
+    }));
+
+  const addItem = () => setForm(f => ({ ...f, items: [...f.items, emptyItem()] }));
+
+  const removeItem = (i: number) =>
+    setForm(f => ({ ...f, items: f.items.length > 1 ? f.items.filter((_, idx) => idx !== i) : f.items }));
+
+  const t = totals(form);
+
+  function validate(): string | null {
+    if (!form.clientName.trim()) return 'Client name is required';
+    const hasItem = form.items.some((it) => it.description.trim() && num(it.unit_price) > 0);
+    if (!hasItem) return 'Add at least one item with a description and rate';
+    if (t.total <= 0) return 'Total must be greater than zero';
+    return null;
+  }
 
   async function saveToSupabase(): Promise<string> {
     const res = await fetch('/api/bills', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, amount: parseFloat(form.amount.replace(/,/g, '')) || 0 }),
+      body: JSON.stringify({
+        billNumber:    form.billNumber,
+        clientName:    form.clientName,
+        clientPhone:   form.clientPhone,
+        clientAddress: form.clientAddress,
+        description:   form.description,
+        items:         form.items
+          .filter((it) => it.description.trim() && num(it.unit_price) > 0)
+          .map((it) => ({ description: it.description.trim(), quantity: num(it.quantity), unit_price: num(it.unit_price) })),
+        taxRate:       num(form.taxRate),
+        discount:      num(form.discount),
+        amount:        t.total,
+        date:          form.date,
+        dueDate:       form.dueDate || null,
+        notes:         form.notes,
+        status:        form.status,
+        paymentMethod: form.paymentMethod,
+        paymentRef:    form.paymentRef,
+      }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Save failed');
@@ -163,11 +278,8 @@ export default function CreateInvoicePage() {
   }
 
   const handleSave = async () => {
-    if (!form.clientName.trim()) { setSaveError('Client name is required'); return; }
-    if (!form.amount || isNaN(parseFloat(form.amount.replace(/,/g, '')))) {
-      setSaveError('Valid amount is required');
-      return;
-    }
+    const err = validate();
+    if (err) { setSaveError(err); return; }
     setSaveError(null);
     setIsSaving(true);
     try {
@@ -181,11 +293,8 @@ export default function CreateInvoicePage() {
   };
 
   const handleSaveAndPrint = async () => {
-    if (!form.clientName.trim()) { setSaveError('Client name is required'); return; }
-    if (!form.amount || isNaN(parseFloat(form.amount.replace(/,/g, '')))) {
-      setSaveError('Valid amount is required');
-      return;
-    }
+    const err = validate();
+    if (err) { setSaveError(err); return; }
     setSaveError(null);
     setIsSaving(true);
     try {
@@ -299,6 +408,16 @@ export default function CreateInvoicePage() {
                 </div>
 
                 <div>
+                  <label className={labelCls}>Due Date</label>
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={form.dueDate}
+                    onChange={e => set('dueDate', e.target.value)}
+                  />
+                </div>
+
+                <div>
                   <label className={labelCls}>Status</label>
                   <select
                     className={inputCls}
@@ -344,10 +463,8 @@ export default function CreateInvoicePage() {
                 />
               </div>
 
-              <h2 className="text-base font-semibold text-gray-800 border-b pb-3 pt-2">Payment Details</h2>
-
               <div>
-                <label className={labelCls}>Description <span className="text-red-500">*</span></label>
+                <label className={labelCls}>Subject</label>
                 <input
                   className={inputCls}
                   placeholder="e.g. Plot No 12, Green Valley Phase 2"
@@ -356,33 +473,127 @@ export default function CreateInvoicePage() {
                 />
               </div>
 
-              <div>
-                <label className={labelCls}>Amount (₹) <span className="text-red-500">*</span></label>
-                <input
-                  className={inputCls}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.amount}
-                  onChange={e => set('amount', e.target.value)}
-                />
+              <h2 className="text-base font-semibold text-gray-800 border-b pb-3 pt-2">Line Items</h2>
+
+              <div className="space-y-3">
+                {form.items.map((it, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-start">
+                    <div className="col-span-6">
+                      {i === 0 && <label className={labelCls}>Description</label>}
+                      <input
+                        className={inputCls}
+                        placeholder="e.g. Booking installment"
+                        value={it.description}
+                        onChange={e => setItem(i, 'description', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      {i === 0 && <label className={labelCls}>Qty</label>}
+                      <input
+                        className={inputCls}
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={it.quantity}
+                        onChange={e => setItem(i, 'quantity', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      {i === 0 && <label className={labelCls}>Rate (₹)</label>}
+                      <input
+                        className={inputCls}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={it.unit_price}
+                        onChange={e => setItem(i, 'unit_price', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-1 pt-1 flex justify-center">
+                      {i === 0 && <label className={`${labelCls} invisible`}>.</label>}
+                      <button
+                        type="button"
+                        onClick={() => removeItem(i)}
+                        disabled={form.items.length === 1}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md disabled:opacity-30"
+                        title="Remove item"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800"
+                >
+                  <Plus size={15} /> Add item
+                </button>
               </div>
 
-              <div>
-                <label className={labelCls}>Payment Method</label>
-                <select
-                  className={inputCls}
-                  value={form.paymentMethod}
-                  onChange={e => set('paymentMethod', e.target.value)}
-                >
-                  <option value="Cash">Cash</option>
-                  <option value="UPI">UPI</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="Cheque">Cheque</option>
-                  <option value="Card">Card</option>
-                  <option value="Other">Other</option>
-                </select>
+              <div className="grid grid-cols-2 gap-4 pt-1">
+                <div>
+                  <label className={labelCls}>Discount (₹)</label>
+                  <input
+                    className={inputCls}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.discount}
+                    onChange={e => set('discount', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Tax / GST %</label>
+                  <input
+                    className={inputCls}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 18"
+                    value={form.taxRate}
+                    onChange={e => set('taxRate', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Running total */}
+              <div className="flex items-center justify-between rounded-lg bg-blue-50 border border-blue-100 px-4 py-3">
+                <span className="text-sm font-semibold text-blue-900">Invoice Total</span>
+                <span className="text-lg font-bold text-blue-800">{formatINR(t.total)}</span>
+              </div>
+
+              <h2 className="text-base font-semibold text-gray-800 border-b pb-3 pt-2">Payment Details</h2>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Payment Method</label>
+                  <select
+                    className={inputCls}
+                    value={form.paymentMethod}
+                    onChange={e => set('paymentMethod', e.target.value)}
+                  >
+                    <option value="Cash">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Card">Card</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Payment Ref / Cheque No.</label>
+                  <input
+                    className={inputCls}
+                    placeholder="UTR / Cheque #"
+                    value={form.paymentRef}
+                    onChange={e => set('paymentRef', e.target.value)}
+                  />
+                </div>
               </div>
 
               <div>

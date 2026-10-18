@@ -1,23 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 
-// Run this SQL once in the Supabase SQL editor to create the table:
-//
-// CREATE TABLE IF NOT EXISTS bills (
-//   id             BIGSERIAL     PRIMARY KEY,
-//   bill_number    TEXT          NOT NULL,
-//   client_name    TEXT          NOT NULL,
-//   client_phone   TEXT,
-//   client_address TEXT,
-//   description    TEXT,
-//   amount         NUMERIC(15,2) NOT NULL DEFAULT 0,
-//   date           DATE          NOT NULL DEFAULT CURRENT_DATE,
-//   notes          TEXT,
-//   payment_method TEXT,
-//   status         TEXT          NOT NULL DEFAULT 'Pending'
-//                                CHECK (status IN ('Paid', 'Pending')),
-//   created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-// );
+// Schema: see admin/sql/add_bills_payment_method.sql (base table) and
+// admin/sql/brokers_and_bills_enhancements.sql (due_date, items, tax_rate,
+// discount, payment_ref). POST degrades gracefully if those columns don't
+// exist yet — the bill still saves without them.
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,6 +46,7 @@ export async function POST(req: NextRequest) {
     const {
       billNumber, clientName, clientPhone, clientAddress,
       description, amount, date, notes, status, paymentMethod,
+      dueDate, items, taxRate, discount, paymentRef,
     } = body;
 
     if (!clientName?.trim()) {
@@ -69,23 +57,57 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Valid amount is required' }, { status: 400 });
     }
 
+    // Sanitize line items
+    const lineItems = Array.isArray(items)
+      ? items
+          .map((it: any) => ({
+            description: String(it?.description ?? '').trim(),
+            quantity:    Math.max(0, parseFloat(it?.quantity) || 0),
+            unit_price:  Math.max(0, parseFloat(it?.unit_price ?? it?.unitPrice) || 0),
+          }))
+          .filter((it) => it.description && it.quantity > 0)
+      : [];
+
     const supabase = createServiceClient();
-    const { data, error } = await supabase
+
+    const baseRecord = {
+      bill_number:    billNumber?.trim()     || `BILL-${Date.now()}`,
+      client_name:    clientName.trim(),
+      client_phone:   clientPhone?.trim()   || null,
+      client_address: clientAddress?.trim() || null,
+      description:    description?.trim()   || null,
+      amount:         parsedAmount,
+      date:           date || new Date().toISOString().split('T')[0],
+      notes:          notes?.trim()         || null,
+      payment_method: paymentMethod?.trim() || null,
+      status:         status === 'Paid' ? 'Paid' : 'Pending',
+    };
+
+    const extendedRecord = {
+      ...baseRecord,
+      due_date:    dueDate || null,
+      items:       lineItems,
+      tax_rate:    Math.max(0, parseFloat(taxRate) || 0),
+      discount:    Math.max(0, parseFloat(discount) || 0),
+      payment_ref: paymentRef?.trim() || null,
+    };
+
+    let { data, error } = await supabase
       .from('bills')
-      .insert({
-        bill_number:    billNumber?.trim()     || `BILL-${Date.now()}`,
-        client_name:    clientName.trim(),
-        client_phone:   clientPhone?.trim()   || null,
-        client_address: clientAddress?.trim() || null,
-        description:    description?.trim()   || null,
-        amount:         parsedAmount,
-        date:           date || new Date().toISOString().split('T')[0],
-        notes:          notes?.trim()         || null,
-        payment_method: paymentMethod?.trim() || null,
-        status:         status === 'Paid' ? 'Paid' : 'Pending',
-      })
+      .insert(extendedRecord)
       .select('id')
       .single();
+
+    // Migration not applied yet → retry with legacy columns only
+    if (error && (error.code === 'PGRST204' || error.code === '42703')) {
+      const retry = await supabase
+        .from('bills')
+        .insert(baseRecord)
+        .select('id')
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       if (error.code === '42P01') {
@@ -97,9 +119,37 @@ export async function POST(req: NextRequest) {
       throw new Error(error.message);
     }
 
-    return NextResponse.json({ id: data.id }, { status: 201 });
+    return NextResponse.json({ id: data!.id }, { status: 201 });
   } catch (err: any) {
     console.error('Bills POST error:', err);
     return NextResponse.json({ error: 'Failed to create bill' }, { status: 500 });
+  }
+}
+
+// PATCH /api/bills  { id, status }
+// Updates a bill's status ('Paid' | 'Pending').
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const id = parseInt(body.id);
+    const status = body.status === 'Paid' ? 'Paid' : 'Pending';
+    if (isNaN(id)) {
+      return NextResponse.json({ error: 'Valid bill id required' }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from('bills')
+      .update({ status })
+      .eq('id', id)
+      .select('id,status')
+      .single();
+
+    if (error) throw new Error(error.message);
+    return NextResponse.json({ success: true, id: data.id, status: data.status });
+
+  } catch (err: any) {
+    console.error('Bills PATCH error:', err);
+    return NextResponse.json({ error: 'Failed to update bill' }, { status: 500 });
   }
 }

@@ -58,7 +58,7 @@ export async function getPaginatedMasterData({
     const searchTerm = search || clientNameFilter;
     if (searchTerm) {
       query = query.or(
-        `client_name.ilike.%${searchTerm}%,contact_no.ilike.%${searchTerm}%,society_name.ilike.%${searchTerm}%,plot_no.ilike.%${searchTerm}%,broker's_name.ilike.%${searchTerm}%`
+        `client_name.ilike.%${searchTerm}%,contact_no.ilike.%${searchTerm}%,society_name.ilike.%${searchTerm}%,plot_no.ilike.%${searchTerm}%,"broker's_name".ilike.%${searchTerm}%`
       );
     }
 
