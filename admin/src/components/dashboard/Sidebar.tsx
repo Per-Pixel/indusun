@@ -22,7 +22,6 @@ import {
   TrendingUp,
   DollarSign,
   MessageSquare,
-  UserCog,
   Layers,
   ClipboardList,
   Lock,
@@ -77,7 +76,6 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Sales',
     items: [
       { icon: <TrendingUp size={17} />, label: 'Sales Overview', path: '/sales' },
-      { icon: <UserCog size={17} />, label: 'Sales Team', path: '/sales-team' },
       {
         icon: <DollarSign size={17} />, label: 'Billing & Invoices', path: '/billing',
         children: [
