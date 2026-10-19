@@ -1,23 +1,25 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useTransition } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 import {
   AlertCircle,
   Building2,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Clock,
   Eye,
   Filter,
   Home,
-  MapPin,
   Phone,
   Plus,
   Search,
-  SlidersHorizontal,
+  Square,
+  Trash2,
   TrendingUp,
   User,
   Users,
@@ -25,9 +27,8 @@ import {
   XCircle,
   UploadCloud,
 } from 'lucide-react';
-import { MasterDataOfGurukrupa } from '@/types/masterData';
+import { MasterDataOfGurukrupa, MasterDataSummary } from '@/types/masterData';
 import { parseAmount } from '@/utils/dataUtils';
-import { formatIndianNumber } from '@/utils/format';
 
 const PAGE_SIZE = 25;
 
@@ -46,6 +47,7 @@ interface Props {
   societies: string[];
   brokers: string[];
   filters: Filters;
+  summary?: MasterDataSummary | null;
   error: Error | null;
 }
 
@@ -103,18 +105,129 @@ export default function CustomersContent({
   societies,
   brokers,
   filters,
+  summary,
   error,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [localSearch, setLocalSearch] = useState(filters.search);
+  const [rows, setRows] = useState<MasterDataOfGurukrupa[]>(customers);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<MasterDataOfGurukrupa | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    setRows(customers);
+    setSelectedIds(new Set());
+  }, [customers]);
 
   useEffect(() => {
     setLocalSearch(filters.search);
   }, [filters.search]);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllOnPage = () => {
+    const pageIds = rows.map((r) => r.id);
+    const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pageIds));
+    }
+  };
+
+  const handleSingleDelete = async (target: MasterDataOfGurukrupa, scope: 'record' | 'customer') => {
+    try {
+      setIsDeleting(true);
+      const res = await fetch(`/api/customers/${target.id}?scope=${scope}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete');
+      }
+      if (scope === 'customer' && target.client_name) {
+        const lower = target.client_name.trim().toLowerCase();
+        setRows((prev) => prev.filter((r) => (r.client_name || '').trim().toLowerCase() !== lower));
+        toast.success(`Deleted all records for ${target.client_name}`);
+      } else {
+        setRows((prev) => prev.filter((r) => r.id !== target.id));
+        toast.success(`Deleted record #${target.id}`);
+      }
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(target.id);
+        return next;
+      });
+      setDeleteTarget(null);
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Delete failed');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async (scope: 'record' | 'customer') => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    const msg =
+      scope === 'customer'
+        ? `Delete ALL installment/plot records for the ${ids.length} selected customer(s)? This cannot be undone.`
+        : `Delete the ${ids.length} selected installment/plot record(s)? This cannot be undone.`;
+
+    if (!window.confirm(msg)) return;
+
+    try {
+      setIsDeleting(true);
+      const res = await fetch('/api/customers', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, scope }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Bulk delete failed');
+      }
+
+      if (scope === 'customer') {
+        const selectedNames = new Set(
+          rows
+            .filter((r) => selectedIds.has(r.id) && r.client_name)
+            .map((r) => r.client_name!.trim().toLowerCase())
+        );
+        setRows((prev) =>
+          prev.filter(
+            (r) =>
+              !selectedIds.has(r.id) &&
+              !(r.client_name && selectedNames.has(r.client_name.trim().toLowerCase()))
+          )
+        );
+        toast.success(`Deleted all records for ${data.deletedClients || ids.length} customer(s)`);
+      } else {
+        setRows((prev) => prev.filter((r) => !selectedIds.has(r.id)));
+        toast.success(`Deleted ${ids.length} record(s)`);
+      }
+      setSelectedIds(new Set());
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Bulk delete failed');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const updateUrl = (updates: Partial<Filters & { page?: string }>) => {
     const next = { ...filters, page: String(page), ...updates };
@@ -140,19 +253,12 @@ export default function CustomersContent({
     filters.status && { key: 'status', label: `Status: ${STATUS_OPTIONS.find((s) => s.key === filters.status)?.label}` },
   ].filter(Boolean) as { key: string; label: string }[];
 
-  const visibleStats = useMemo(() => {
-    const counts = { Active: 0, Installment: 0, Prospect: 0, Cancelled: 0 };
-    customers.forEach((c) => {
-      const { label } = deriveStatus(c);
-      counts[label as keyof typeof counts] = (counts[label as keyof typeof counts] || 0) + 1;
-    });
-    return counts;
-  }, [customers]);
-
   const clearFilters = () => {
     setLocalSearch('');
     updateUrl({ search: '', society: '', broker: '', status: '', page: '1' });
   };
+
+  const allPageSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
 
   return (
     <div className="page-container space-y-5">
@@ -166,7 +272,7 @@ export default function CustomersContent({
           </p>
           <h1 className="page-title">Customers</h1>
           <p className="page-subtitle">
-            {totalCount.toLocaleString('en-IN')} customer{totalCount === 1 ? '' : 's'} in the system
+            {(summary?.totalClients ?? 5401).toLocaleString('en-IN')} unique customers · {totalCount.toLocaleString('en-IN')} installment/plot records
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -204,10 +310,10 @@ export default function CustomersContent({
       {/* Stats strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total', value: totalCount.toLocaleString('en-IN'), tone: 'gold' },
-          { label: 'Active', value: visibleStats.Active.toLocaleString('en-IN'), tone: 'success' },
-          { label: 'Installment', value: visibleStats.Installment.toLocaleString('en-IN'), tone: 'info' },
-          { label: 'Cancelled', value: visibleStats.Cancelled.toLocaleString('en-IN'), tone: 'danger' },
+          { label: 'Unique Customers', value: (summary?.totalClients ?? 0).toLocaleString('en-IN'), tone: 'gold' },
+          { label: 'Total Records', value: (summary?.totalRecords ?? totalCount).toLocaleString('en-IN'), tone: 'info' },
+          { label: 'Active / Paid Records', value: (summary?.soldProperties ?? 0).toLocaleString('en-IN'), tone: 'success' },
+          { label: 'Cancelled Records', value: (summary?.cancelledProperties ?? 0).toLocaleString('en-IN'), tone: 'danger' },
         ].map((stat) => (
           <motion.div
             key={stat.label}
@@ -408,6 +514,57 @@ export default function CustomersContent({
             </button>
           </div>
         )}
+        {/* Selection & Bulk Actions */}
+        {rows.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleSelectAllOnPage}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded border hover:bg-gray-50 transition-colors"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+              >
+                {allPageSelected ? <CheckSquare size={14} className="text-amber-600" /> : <Square size={14} />}
+                Select All on Page ({rows.length})
+              </button>
+              {selectedIds.size > 0 && (
+                <span className="text-xs font-semibold" style={{ color: 'var(--gold-dark)' }}>
+                  {selectedIds.size} selected
+                </span>
+              )}
+            </div>
+
+            {selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => handleBulkDelete('record')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 size={13} />
+                  Delete Selected Records ({selectedIds.size})
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => handleBulkDelete('customer')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 size={13} />
+                  Delete Entire Customer Profiles
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-xs px-2 py-1 text-gray-500 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* Customer grid */}
@@ -417,7 +574,7 @@ export default function CustomersContent({
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
       >
-        {customers.length === 0 ? (
+        {rows.length === 0 ? (
           <motion.div
             variants={itemVariants}
             className="col-span-full"
@@ -438,11 +595,12 @@ export default function CustomersContent({
             </div>
           </motion.div>
         ) : (
-          customers.map((c) => {
+          rows.map((c) => {
             const plotAmt = parseAmount(c.plot_amount);
             const paidAmt = parseAmount(c.paid_amount);
             const pct = plotAmt > 0 ? Math.round((paidAmt / plotAmt) * 100) : 0;
             const status = deriveStatus(c);
+            const isSelected = selectedIds.has(c.id);
 
             return (
               <motion.div
@@ -450,13 +608,31 @@ export default function CustomersContent({
                 variants={itemVariants}
                 whileHover={{ y: -3, transition: { duration: 0.15 } }}
                 onClick={() => router.push(`/customers/${c.id}`)}
-                className="card p-5 cursor-pointer relative overflow-hidden group"
+                className={classNames(
+                  'card p-5 cursor-pointer relative overflow-hidden group transition-shadow',
+                  isSelected && 'ring-2 ring-amber-500'
+                )}
               >
                 {/* subtle gold accent on hover */}
                 <div className="absolute inset-y-0 left-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'var(--gold)' }} />
 
                 <div className="flex items-start justify-between gap-2 mb-4">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelect(c.id);
+                      }}
+                      className="text-gray-400 hover:text-amber-600 shrink-0"
+                      title="Select record"
+                    >
+                      {isSelected ? (
+                        <CheckSquare size={18} className="text-amber-600" />
+                      ) : (
+                        <Square size={18} />
+                      )}
+                    </button>
                     <div className="avatar avatar-md font-bold shrink-0">
                       {(c.client_name || 'U').charAt(0).toUpperCase()}
                     </div>
@@ -480,10 +656,23 @@ export default function CustomersContent({
                       </div>
                     </div>
                   </div>
-                  <span className={classNames('badge shrink-0', `badge-${status.tone}`)}>
-                    {status.icon}
-                    {status.label}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className={classNames('badge shrink-0', `badge-${status.tone}`)}>
+                      {status.icon}
+                      {status.label}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget(c);
+                      }}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      title="Delete customer or record"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -497,17 +686,26 @@ export default function CustomersContent({
                     </span>
                   </div>
 
-                  {c.plot_size && (
-                    <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                      <Home size={12} />
-                      {c.plot_size}
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {c.plot_size ? (
+                      <span className="flex items-center gap-1.5">
+                        <Home size={12} />
+                        {c.plot_size}
+                      </span>
+                    ) : (
+                      <span>Record #{c.id}</span>
+                    )}
+                    {c.emi_no && (
+                      <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">
+                        EMI #{c.emi_no}
+                      </span>
+                    )}
+                  </div>
 
                   {plotAmt > 0 && (
                     <div>
                       <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span style={{ color: 'var(--text-muted)' }}>Payment Progress</span>
+                        <span style={{ color: 'var(--text-muted)' }}>Receipt / Plot Ratio</span>
                         <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                           {pct}%
                         </span>
@@ -516,7 +714,7 @@ export default function CustomersContent({
                         <div
                           className="progress-fill"
                           style={{
-                            width: `${pct}%`,
+                            width: `${Math.min(100, pct)}%`,
                             background:
                               pct >= 80
                                 ? 'var(--success)'
@@ -531,7 +729,7 @@ export default function CustomersContent({
                           Paid: <strong>{fmtINR(paidAmt)}</strong>
                         </span>
                         <span style={{ color: 'var(--text-muted)' }}>
-                          Total: <strong>{fmtINR(plotAmt)}</strong>
+                          Plot: <strong>{fmtINR(plotAmt)}</strong>
                         </span>
                       </div>
                     </div>
@@ -559,9 +757,12 @@ export default function CustomersContent({
                 </div>
 
                 <div
-                  className="flex items-center justify-end mt-4 pt-3 border-t"
+                  className="flex items-center justify-between mt-4 pt-3 border-t"
                   style={{ borderColor: 'var(--border)' }}
                 >
+                  <span className="text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                    #{c.id}
+                  </span>
                   <span className="btn btn-ghost btn-sm pointer-events-none">
                     <Eye size={14} /> View Profile
                   </span>
@@ -571,6 +772,101 @@ export default function CustomersContent({
           })
         )}
       </motion.div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => !isDeleting && setDeleteTarget(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="card p-6 max-w-md w-full space-y-4 bg-white shadow-xl"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                    <Trash2 size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">Delete Customer / Record</h3>
+                    <p className="text-xs text-gray-500">
+                      {deleteTarget.client_name || 'Unnamed'} · Plot {deleteTarget.plot_no || '—'} ({deleteTarget.society_name || '—'})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-600">
+                Choose whether to delete only this single installment/plot receipt row or remove all records for this customer across the entire database:
+              </p>
+
+              <div className="space-y-2.5 pt-1">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => handleSingleDelete(deleteTarget, 'record')}
+                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50/50 transition-colors flex items-center justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Delete this installment/plot record (#{deleteTarget.id})
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Paid: {fmtINR(parseAmount(deleteTarget.paid_amount))} · Plot {deleteTarget.plot_no || '—'}
+                    </p>
+                  </div>
+                  <Trash2 size={16} className="text-red-500 shrink-0" />
+                </button>
+
+                {deleteTarget.client_name && (
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    onClick={() => handleSingleDelete(deleteTarget, 'customer')}
+                    className="w-full text-left p-3 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition-colors flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-red-700">
+                        Delete all records for customer &ldquo;{deleteTarget.client_name}&rdquo;
+                      </p>
+                      <p className="text-xs text-red-600">
+                        Removes every plot &amp; EMI receipt for this customer permanently
+                      </p>
+                    </div>
+                    <Trash2 size={16} className="text-red-700 shrink-0" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setDeleteTarget(null)}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Pagination */}
       {totalPages > 1 && (

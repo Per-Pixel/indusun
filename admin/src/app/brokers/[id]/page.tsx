@@ -8,6 +8,8 @@ import { toast } from 'react-hot-toast';
 import {
   ArrowLeft,
   Edit,
+  Trash2,
+  Unlink,
   Mail,
   Phone,
   MapPin,
@@ -68,6 +70,9 @@ export default function BrokerDetailPage() {
   const [dealSearch, setDealSearch] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteMode, setDeleteMode] = useState<'unlink' | 'delete_deals'>('unlink');
+  const [processingDealId, setProcessingDealId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -140,6 +145,81 @@ export default function BrokerDetailPage() {
       toast.error(err.message || 'Failed to update broker');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteBroker = async () => {
+    if (!broker) return;
+    try {
+      setSubmitting(true);
+      const res = await fetch(
+        `/api/brokers/${encodeURIComponent(broker.id)}?mode=${deleteMode}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: deleteMode }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete broker');
+      toast.success(
+        deleteMode === 'delete_deals'
+          ? 'Broker and associated deals deleted'
+          : 'Broker removed and unlinked from deals'
+      );
+      setShowDeleteModal(false);
+      router.push('/brokers');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete broker');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDealAction = async (
+    dealId: number,
+    action: 'unlink_deal' | 'delete_deal',
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    if (!broker) return;
+    try {
+      setProcessingDealId(dealId);
+      const res = await fetch(`/api/brokers/${encodeURIComponent(broker.id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, dealId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update deal');
+
+      toast.success(
+        action === 'delete_deal'
+          ? 'Deal record deleted from Master Data'
+          : 'Deal unlinked from broker'
+      );
+
+      setDeals((prev) => prev.filter((item) => item.id !== dealId));
+      setStats((prev) =>
+        prev
+          ? {
+              ...prev,
+              totalDeals: Math.max(0, prev.totalDeals - 1),
+            }
+          : prev
+      );
+      setBroker((prev) =>
+        prev
+          ? {
+              ...prev,
+              deal_count: Math.max(0, (prev.deal_count || 0) - 1),
+            }
+          : prev
+      );
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update deal');
+    } finally {
+      setProcessingDealId(null);
     }
   };
 
@@ -296,6 +376,16 @@ export default function BrokerDetailPage() {
                     <Edit size={15} />
                     Edit Broker &amp; Code
                   </button>
+                  <button
+                    onClick={() => {
+                      setDeleteMode('unlink');
+                      setShowDeleteModal(true);
+                    }}
+                    className="px-3 py-1.5 bg-red-600 text-white hover:bg-red-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+                  >
+                    <Trash2 size={15} />
+                    Delete Broker
+                  </button>
                 </div>
               </div>
             </div>
@@ -445,14 +535,36 @@ export default function BrokerDetailPage() {
                               {d.broker_code || d.ba_code || d["broker's_name"] || '—'}
                             </span>
                           </td>
-                          <td className="px-5 py-3 whitespace-nowrap text-right">
-                            <Link
-                              href={`/customers/${d.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
-                            >
-                              <Eye size={13} /> Profile
-                            </Link>
+                          <td
+                            className="px-5 py-3 whitespace-nowrap text-right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="inline-flex items-center justify-end gap-2">
+                              <Link
+                                href={`/customers/${d.id}`}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
+                              >
+                                <Eye size={13} /> Profile
+                              </Link>
+                              <button
+                                type="button"
+                                disabled={processingDealId === d.id}
+                                onClick={(e) => handleDealAction(d.id, 'unlink_deal', e)}
+                                title="Unlink this deal from broker (keep customer record)"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-amber-800 bg-amber-50 hover:bg-amber-100 disabled:opacity-50"
+                              >
+                                <Unlink size={13} /> Unlink
+                              </button>
+                              <button
+                                type="button"
+                                disabled={processingDealId === d.id}
+                                onClick={(e) => handleDealAction(d.id, 'delete_deal', e)}
+                                title="Permanently delete this deal record"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+                              >
+                                <Trash2 size={13} /> Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -572,6 +684,109 @@ export default function BrokerDetailPage() {
                 disabled={submitting}
               >
                 {submitting ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Broker Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-bold text-gray-900">Delete Broker</h2>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Choose how you want to remove{' '}
+              <strong>{broker.name}</strong>{' '}
+              {broker.broker_code ? `(${broker.broker_code})` : ''}
+              {stats?.totalDeals ?? broker.deal_count
+                ? ` — ${(stats?.totalDeals ?? broker.deal_count ?? 0).toLocaleString('en-IN')} associated deal(s)`
+                : ''}
+              :
+            </p>
+
+            <div className="space-y-3 mb-6">
+              <label
+                onClick={() => setDeleteMode('unlink')}
+                className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all ${
+                  deleteMode === 'unlink'
+                    ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600'
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="deleteBrokerMode"
+                  value="unlink"
+                  checked={deleteMode === 'unlink'}
+                  onChange={() => setDeleteMode('unlink')}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                />
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">
+                    Remove broker &amp; unlink from deals
+                  </div>
+                  <div className="text-xs text-gray-600 mt-0.5">
+                    Keeps customer/plot records in Master Data and clears the broker assignment.
+                  </div>
+                </div>
+              </label>
+
+              <label
+                onClick={() => setDeleteMode('delete_deals')}
+                className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all ${
+                  deleteMode === 'delete_deals'
+                    ? 'border-red-600 bg-red-50/50 ring-1 ring-red-600'
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="deleteBrokerMode"
+                  value="delete_deals"
+                  checked={deleteMode === 'delete_deals'}
+                  onChange={() => setDeleteMode('delete_deals')}
+                  className="mt-1 h-4 w-4 text-red-600 focus:ring-red-500"
+                />
+                <div>
+                  <div className="text-sm font-semibold text-red-700">
+                    Delete broker &amp; delete all associated deal records
+                  </div>
+                  <div className="text-xs text-red-600/80 mt-0.5">
+                    Permanently deletes their Master Data deal rows along with the broker entry.
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="btn btn-secondary"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteBroker}
+                disabled={submitting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm font-medium inline-flex items-center gap-1.5"
+              >
+                <Trash2 size={15} />
+                {submitting
+                  ? 'Processing...'
+                  : deleteMode === 'delete_deals'
+                  ? 'Delete Broker & Deals'
+                  : 'Remove & Unlink'}
               </button>
             </div>
           </div>

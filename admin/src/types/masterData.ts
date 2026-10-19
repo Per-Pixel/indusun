@@ -62,6 +62,12 @@ export interface MasterDataSummary {
   uniqueBrokers: number;
   totalPlotAmount: number;
   totalPaidAmount: number;
+  activePaidAmount?: number;
+  cancelledPaidAmount?: number;
+  totalEmiAmount?: number;
+  uniquePlots?: number;
+  uniqueSoldPlots?: number;
+  uniquePlotValue?: number;
   listedProperties: number;
   soldProperties: number;
   cancelledProperties: number;

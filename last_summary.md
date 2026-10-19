@@ -1,25 +1,45 @@
 # Last Summary
 
-Built the Brokers & Codes directory into the CRM and made broker name / GKC code / BA code searchable across every customer-facing surface. Brokers now have real profile pages listing their deals and customers.
+Verified and unified data metrics across all CRM pages and Supabase RPCs (`₹29.66 Cr` total paid vs `₹22.07 Cr` EMI installment revenue, `5,401` unique customers vs `90,353` installment/receipt records, `4,484` unique plots [`4,064` sold], and `90,353` bills/receipts), added single and bulk delete, edit, and unlink capabilities across Bills/Invoices, Billing, Transactions, Brokers, Customers, Clients, Properties, Bookings, Leads, and Master Data, and verified everything via `agent-bridge` (`agy`).
+
+## Root Cause of Data Discrepancies
+
+1. **Revenue (`₹29.66 Cr` vs `₹22.07 Cr`)**:
+   - Every row in `"Master Data Of Gurukrupa"` (`90,353` rows) is an EMI receipt/installment record.
+   - `paid_amount_num` stores actual cash/cheque collected on each receipt (including booking downpayments and multi-EMI payments), totaling **₹29,66,20,023 (`₹29.66 Cr`)** across all rows (**₹28,72,84,970 [`₹28.73 Cr`]** across `86,362` active non-cancelled rows; **₹93,35,053 [`₹93.35 L`]** across `3,991` cancelled rows).
+   - `emi_amount_num` stores only the plot's nominal monthly EMI rate, totaling **₹22,07,16,417 (`₹22.07 Cr`)** across active rows (**₹22,98,25,613 [`₹22.98 Cr`]** including cancelled).
+   - Dashboard, Reports, Projects, and Bookings summed `paid_amount_num` (`₹29.66 Cr`), while Sales, Billing, Invoices, Transactions, and Brokers summed `emi_amount_num` (`₹22.07 Cr`).
+   - Summing `plot_amount_num` across all 90,353 receipt rows counted each plot's price ~20–60 times (`₹1,367.71 Cr`); the true contract value across the **4,484 unique plots** (`4,064` active sold plots) is **₹67.04 Cr** active (**₹74.82 Cr** all plots).
+2. **Users / Customers (`5,401` vs `5,421` vs `90,353`)**:
+   - There are **5,401 unique customers** across **90,353 installment records**.
+   - 19 client names had trailing/leading whitespace in `"Master Data Of Gurukrupa"`, causing untrimmed `COUNT(DISTINCT client_name)` on Sales to report `5,421` while Dashboard/Clients reported `5,401`. Trimmed all `client_name` values in the DB and in `sync_master_data_normalized_cols()`.
+   - `/customers` previously displayed `90,353 customers in the system` (raw row count) and computed status KPI cards from only the 25 rows on the current page.
+   - `/customers/[id]` previously displayed `paid_amount` from only the single clicked EMI receipt row rather than cumulative payments across all receipts for that plot.
+3. **Bills / Invoices (`90,353` bills)**:
+   - `/api/invoices` merges custom admin bills (`bills` table) with all `90,353` EMI receipt rows from `"Master Data Of Gurukrupa"`, and previously counted `3,991` cancelled rows as `Paid`.
 
 ## Changes Made
 
-1. **CRM navigation**: added "Brokers & Codes" (`/brokers`) to the CRM sidebar group; global ⌘K search in `AdminTopNavbar` gained a Brokers quick-link and a second action — "Search Brokers" alongside "Search Master Data" — with a code-aware placeholder.
-2. **`/brokers` page (rewritten)**: shows name, broker/BA code (amber badge + copy button), full record identifier, deal count, collected revenue, contact; filter pills (All / With Code / Direct-Named); sort by deals, revenue, code, or name; deep-links `?search=` and `?filter=`; per-row actions to view deals, open that broker's customers, edit, and delete (delete only for directory brokers).
-3. **`/brokers/[id]` (rewritten, was stale mock data)**: real broker profile — code + full record identifier with copy, contact, commission, RERA, KPIs (deals, collected revenue, societies), and a filterable table of all their customers/plots from master data linking to `/customers/[id]`.
-4. **`/api/brokers`**: merges directory rows + `get_derived_brokers_rpc` (deduped by `raw_identifier` key so same-name brokers with different codes aren't dropped); search now covers `name`, `broker_code`, `raw_identifier`, phone, email, location, RERA plus punctuation-insensitive compact matching; new `filter` (all/coded/uncoded/directory/records) and `sort` params; POST auto-builds `raw_identifier` from `broker_code/name` and invalidates the RPC cache.
-5. **`/api/brokers/[id]`**: resolves `t<id>`, plain ids, broker codes, raw identifiers, or clean names against both the `brokers` table and derived stats — so `/brokers/GKC%2F10%2FRS` works; returns broker + stats + up to 100 linked master-data deals matched by `"broker's_name"`/`broker_code`/`ba_code`. PUT on a records-derived broker now promotes it into the directory instead of 405; DELETE stays directory-only.
-6. **Search coverage**: `masterDataService` OR clause now includes `broker_code`, `ba_code`, `broker_name_clean` and resolves broker-directory matches (name→code→raw_identifier) as exact-match clauses — searching `JUBER` or `GKC/10/RS` in Customers/Master Data finds all their rows. Same three columns added to invoices, billing, and transactions search. `getUniqueBrokers` merges derived names with directory codes.
-7. **Bug fixes found while wiring**: `.eq("broker's_name", …)` in `transactions` route was invalid PostgREST (parsed column `broker`) — replaced with quoted OR filter, same fix applied to the `brokerFilter` param in `masterDataService`. `/api/master-data` now accepts `search` and `broker` params. `/master-data` reads `?search=`/`?broker=`/`?society=` deep links and has a broker dropdown. `api/media` spread of `{societies, error}` fixed (pre-existing type error). Customer profile broker card + customer-card broker name now show the code badge and link to the broker profile.
-8. **Data**: inserted 22 broker identifiers from `scripts/data/ALL BROKERS NAME.xlsx` that were missing from the `brokers` table.
-9. **Deps**: `date-fns@4.1.0` (was imported by calendar but never installed — blocked every build).
+1. **Supabase RPCs & Data Normalization (`admin/sql/brokers_and_bills_enhancements.sql`)**:
+   - Trimmed `client_name` in `"Master Data Of Gurukrupa"` and in `sync_master_data_normalized_cols()`.
+   - Updated `get_master_data_summary_rpc`, `get_sales_aggregates_rpc`, `get_billing_aggregates_rpc`, `get_derived_brokers_rpc`, and `get_unique_clients_rpc` so every endpoint exposes both Collected Paid Revenue (`₹29.66 Cr` total / `₹28.73 Cr` active) and EMI Installment Revenue (`₹22.07 Cr`), plus unique plot counts (`4,484` total / `4,064` sold) and consistent client counts (`5,401`).
+2. **Bills, Invoices, Billing & Transactions (`api/bills`, `api/invoices`, `api/billing`, `api/transactions`, UI pages)**:
+   - Added single and bulk `DELETE` across `/api/bills`, `/api/invoices`, `/api/invoices/[id]`, `/api/billing`, `/api/transactions`, and `/api/transactions/[id]` (plus `PUT /api/transactions/[id]`) supporting both `b<id>` custom bills and numeric master-data receipt rows.
+   - Separated `Custom Bills` vs `EMI Receipts` and `Cancelled` status on `/invoices` and `/billing`, added single/bulk delete on `/invoices`, `/invoices/[id]`, `/billing`, `/billing/transactions`, and `RecentTransactions`.
+3. **Brokers Directory & Broker Profile (`api/brokers`, `api/brokers/[id]`, `/brokers`, `/brokers/[id]`)**:
+   - Enabled deleting **any** broker (both `directory` and `records`-derived) with choice to **unlink deals** (clears broker fields on master-data rows so the broker does not reappear) or **delete associated deal rows**, plus bulk broker delete and per-deal **Unlink** / **Delete** actions on `/brokers/[id]`.
+   - Removed stray file `admin/src/app/api/brokers/[id]/route.ts.new`.
+4. **Customers & Clients (`api/customers`, `api/customers/[id]`, `api/clients`, `api/clients/[id]`, UI pages)**:
+   - Created `/api/customers/[id]` (`GET`, `PUT`, `DELETE` with `scope=record|customer`) and bulk `DELETE /api/customers`.
+   - Updated `/customers` to display database-wide KPIs (`5,401` Unique Customers, `90,353` Total Records, `86,350` Active/Paid, `3,991` Cancelled) and added single/bulk delete (single record or entire customer profile).
+   - Updated `/customers/[id]` to group portfolio plots, compute cumulative plot paid amounts across all receipts, and support editing/deleting customers and individual receipts.
+   - Replaced mock data in `/clients/[id]` with live API calls and enabled editing/deleting master-data clients in `/api/clients/[id]`.
+5. **Master Data, Properties, Bookings, Leads, Dashboard, Reports, Projects & Sales**:
+   - Added `DELETE` (single & bulk) and `PATCH`/`PUT` to `/api/master-data`, `/api/properties`, and `/api/properties/[id]`.
+   - Wired real single/bulk delete and edit actions into `/master-data` (`DataTable`), `/properties`, `/bookings`, and `/leads`.
+   - Unified KPI labels and breakdowns across `/dashboard`, `/reports`, `/projects`, and `/sales`.
 
 ## Verified
 
-- `npm run build` green; `tsc --noEmit` clean.
-- Live on dev server: `/api/brokers` → 350 brokers / 202 coded / 90,142 deals; `?search=JUBER` → 13 brokers; `?search=GKC/10/RS` → JUBER (GKC/10/RS/JUBER); `/api/brokers/t1` and `/api/brokers/GKC%2F10%2FRS` both return JUBER with 16 real deals; `/api/master-data?search=GKC/10/RS` → 16 rows; `?broker=GKC/10/RS/JUBER` → 16 rows.
-
-## Pending / Watch
-
-- Vercel deploys manually (`vercel --prod` in `admin/`); GitHub auto-deploy needs the Vercel GitHub App on `Per-Pixel/indusun` with root `admin`.
-- Derived brokers delete stays disabled by design — remove the name from master-data rows instead.
+- `agent-bridge` (`agy`) audit and verification completed with `SUCCESS`.
+- `npx tsc --noEmit` in `admin/` passed with 0 errors; `npm run build` compiled all 75 routes cleanly.

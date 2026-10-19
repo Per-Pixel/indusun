@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
-import { withServerCache } from '@/utils/serverCache';
+import { withServerCache, invalidateServerCache } from '@/utils/serverCache';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
-const TXN_COLS = 'id,client_name,contact_no,society_name,plot_no,emi_amount,emi_paid_date,emi_paid_date_iso,r_no,registration_no,emi_no,"broker\'s_name",ba_code';
+const TXN_COLS = 'id,client_name,contact_no,society_name,plot_no,emi_amount,paid_amount,paid_amount_num,emi_paid_date,emi_paid_date_iso,cancel_date,r_no,registration_no,emi_no,"broker\'s_name",ba_code';
 
 // Whether a row should be treated as "Completed"
 function isCompleted(row: any): boolean {
@@ -16,13 +16,17 @@ function mapRow(row: any) {
     [row.society_name, row.plot_no ? `Plot ${row.plot_no}` : null]
       .filter(Boolean)
       .join(' – ') || 'Property Sale';
+  const amount =
+    (row.paid_amount_num ?? parseAmount(row.paid_amount)) ||
+    parseAmount(row.emi_amount);
+  const isCancelled = Boolean(row.cancel_date && String(row.cancel_date).trim() !== '');
 
   return {
     id:          row.id,
     date:        normalizeDate(row.emi_paid_date),
     description: desc,
-    amount:      parseAmount(row.emi_amount),
-    status:      isCompleted(row) ? 'Completed' : 'Pending',
+    amount,
+    status:      isCancelled ? 'Cancelled' : (isCompleted(row) ? 'Completed' : 'Pending'),
     source:      'Property Sale',
     reference:   row.registration_no || row.r_no || row.emi_no || `#${row.id}`,
     clientId:    row.id,
@@ -71,10 +75,12 @@ function applyFilters(
   }
 
   // Status: 'Pending' = null OR empty string; 'Completed' = non-null AND non-empty
-  if (status === 'Completed') {
-    query = query.not('emi_paid_date', 'is', null).neq('emi_paid_date', '');
+  if (status === 'Cancelled') {
+    query = query.not('cancel_date', 'is', null).neq('cancel_date', '');
+  } else if (status === 'Completed') {
+    query = query.or('cancel_date.is.null,cancel_date.eq.').not('emi_paid_date', 'is', null).neq('emi_paid_date', '');
   } else if (status === 'Pending') {
-    query = query.or('emi_paid_date.is.null,emi_paid_date.eq.');
+    query = query.or('cancel_date.is.null,cancel_date.eq.').or('emi_paid_date.is.null,emi_paid_date.eq.');
   }
 
   if (brokerName) {
@@ -165,4 +171,77 @@ export async function POST() {
     { error: 'Adding transactions directly is not supported on master data' },
     { status: 405 }
   );
+}
+
+// DELETE handler – bulk delete transactions by { ids: number[] }
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const queryId = searchParams.get('id');
+
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch {
+      // ignore if no body
+    }
+
+    const rawIds: (string | number)[] = Array.isArray(body?.ids)
+      ? body.ids
+      : body?.id !== undefined
+      ? [body.id]
+      : queryId
+      ? queryId.split(',')
+      : [];
+
+    const billIds: number[] = [];
+    const masterIds: number[] = [];
+
+    for (const raw of rawIds) {
+      const s = String(raw).trim();
+      if (/^b\d+$/i.test(s)) {
+        const n = parseInt(s.slice(1), 10);
+        if (!isNaN(n)) billIds.push(n);
+      } else {
+        const n = parseInt(s, 10);
+        if (!isNaN(n)) masterIds.push(n);
+      }
+    }
+
+    if (billIds.length === 0 && masterIds.length === 0) {
+      return NextResponse.json({ error: 'Valid transaction ids required' }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+
+    if (billIds.length > 0) {
+      const { error: billErr } = await supabase
+        .from('bills')
+        .delete()
+        .in('id', billIds);
+      if (billErr) throw new Error(billErr.message);
+    }
+
+    if (masterIds.length > 0) {
+      const { error: masterErr } = await supabase
+        .from(TABLE_NAME)
+        .delete()
+        .in('id', masterIds);
+      if (masterErr) throw new Error(masterErr.message);
+    }
+
+    invalidateServerCache();
+    return NextResponse.json({
+      success: true,
+      deletedBills: billIds.length,
+      deletedMaster: masterIds.length,
+      deletedCount: billIds.length + masterIds.length,
+    });
+  } catch (error: any) {
+    console.error('Error bulk deleting transactions:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete transactions' },
+      { status: 500 }
+    );
+  }
 }

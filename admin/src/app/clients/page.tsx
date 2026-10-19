@@ -84,20 +84,24 @@ export default function ClientsPage() {
   };
 
   const handleDelete = async (client: User) => {
-    if (window.confirm(`Are you sure you want to delete ${client.name}?`)) {
+    if (window.confirm(`Are you sure you want to delete ${client.name}? This will also remove all associated customer plot/installment records.`)) {
       try {
         setIsLoading(true);
         const loadingToast = toast.loading(`Deleting ${client.name}...`);
-        
-        const response = await fetch(`/api/clients/${client.id}`, {
+        const rawTarget =
+          String(client.id).startsWith('c-')
+            ? String(client.id)
+            : (client as any).rawName || client.name || String(client.id);
+
+        const response = await fetch(`/api/clients/${encodeURIComponent(rawTarget)}`, {
           method: 'DELETE',
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to delete client');
         }
-        
+
         toast.dismiss(loadingToast);
         toast.success(`${client.name} has been deleted`);
         // Refresh the client list with current page and search
@@ -117,8 +121,13 @@ export default function ClientsPage() {
 
     try {
       if (selectedClient) {
+        const rawTarget =
+          String(selectedClient.id).startsWith('c-')
+            ? String(selectedClient.id)
+            : (selectedClient as any).rawName || selectedClient.name || String(selectedClient.id);
+
         // Update existing client
-        const response = await fetch(`/api/clients/${selectedClient.id}`, {
+        const response = await fetch(`/api/clients/${encodeURIComponent(rawTarget)}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -131,7 +140,7 @@ export default function ClientsPage() {
           throw new Error(errorData.error || 'Failed to update client');
         }
 
-        const data = await response.json();
+        await response.json();
         toast.success(`${clientData.name} has been updated`);
       } else {
         // Add new client
@@ -183,7 +192,11 @@ export default function ClientsPage() {
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Client Management</h1>
-              <p className="text-gray-500">Manage your clients and their information</p>
+              <p className="text-gray-500">
+                {totalItems > 0
+                  ? `${totalItems.toLocaleString('en-IN')} unique clients in the system`
+                  : 'Manage your clients and their information'}
+              </p>
             </div>
 
             {error && (

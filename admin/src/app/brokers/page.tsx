@@ -65,6 +65,7 @@ interface SummaryData {
   uncodedCount?: number;
   totalDeals?: number;
   totalRevenue?: number;
+  totalPaidRevenue?: number;
   newThisMonth: number;
 }
 
@@ -204,6 +205,9 @@ export default function BrokersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedBroker, setSelectedBroker] = useState<Broker | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDelete, setIsBulkDelete] = useState(false);
+  const [deleteMode, setDeleteMode] = useState<'unlink' | 'delete_deals'>('unlink');
   const [formData, setFormData] = useState<BrokerFormData>(emptyForm);
   const [submitting, setSubmitting] = useState(false);
 
@@ -313,31 +317,68 @@ export default function BrokersPage() {
   }, [selectedBroker, formData, currentPage, searchTerm, filterType, sortBy, fetchBrokers]);
 
   const deleteBroker = useCallback(async () => {
-    if (!selectedBroker) return;
     try {
       setSubmitting(true);
-      const response = await fetch(`/api/brokers/${encodeURIComponent(selectedBroker.id)}`, {
-        method: 'DELETE',
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to delete broker');
+      if (isBulkDelete) {
+        const ids = Array.from(selectedIds);
+        if (ids.length === 0) return;
+        const response = await fetch('/api/brokers', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids, mode: deleteMode }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to delete selected brokers');
 
-      toast.success('Broker removed from directory');
-      setShowDeleteModal(false);
-      setSelectedBroker(null);
-      fetchBrokers(currentPage, searchTerm, filterType, sortBy);
+        toast.success(
+          deleteMode === 'delete_deals'
+            ? `Deleted ${ids.length} broker(s) and their deal records`
+            : `Removed ${ids.length} broker(s) and unlinked from deals`
+        );
+        setSelectedIds(new Set());
+        setShowDeleteModal(false);
+        setIsBulkDelete(false);
+        fetchBrokers(currentPage, searchTerm, filterType, sortBy);
+      } else {
+        if (!selectedBroker) return;
+        const response = await fetch(
+          `/api/brokers/${encodeURIComponent(selectedBroker.id)}?mode=${deleteMode}`,
+          {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: deleteMode }),
+          }
+        );
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to delete broker');
+
+        toast.success(
+          deleteMode === 'delete_deals'
+            ? 'Broker and associated deals deleted'
+            : 'Broker removed and unlinked from deals'
+        );
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(selectedBroker.id);
+          return next;
+        });
+        setShowDeleteModal(false);
+        setSelectedBroker(null);
+        fetchBrokers(currentPage, searchTerm, filterType, sortBy);
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete broker');
     } finally {
       setSubmitting(false);
     }
-  }, [selectedBroker, currentPage, searchTerm, filterType, sortBy, fetchBrokers]);
+  }, [isBulkDelete, selectedIds, selectedBroker, deleteMode, currentPage, searchTerm, filterType, sortBy, fetchBrokers]);
 
   const handleSearch = useCallback((value: string) => {
     setSearchTerm(value);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
       setCurrentPage(1);
+      setSelectedIds(new Set());
       fetchBrokers(1, value, filterType, sortBy);
     }, 300);
   }, [fetchBrokers, filterType, sortBy]);
@@ -345,17 +386,20 @@ export default function BrokersPage() {
   const handleFilterChange = useCallback((nextFilter: 'all' | 'coded' | 'uncoded') => {
     setFilterType(nextFilter);
     setCurrentPage(1);
+    setSelectedIds(new Set());
     fetchBrokers(1, searchTerm, nextFilter, sortBy);
   }, [fetchBrokers, searchTerm, sortBy]);
 
   const handleSortChange = useCallback((nextSort: 'deals_desc' | 'revenue_desc' | 'code_asc' | 'name_asc') => {
     setSortBy(nextSort);
     setCurrentPage(1);
+    setSelectedIds(new Set());
     fetchBrokers(1, searchTerm, filterType, nextSort);
   }, [fetchBrokers, searchTerm, filterType]);
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
+    setSelectedIds(new Set());
     fetchBrokers(page, searchTerm, filterType, sortBy);
   }, [searchTerm, filterType, sortBy, fetchBrokers]);
 
@@ -389,8 +433,42 @@ export default function BrokersPage() {
 
   const openDeleteModal = useCallback((broker: Broker) => {
     setSelectedBroker(broker);
+    setIsBulkDelete(false);
+    setDeleteMode('unlink');
     setShowDeleteModal(true);
   }, []);
+
+  const openBulkDeleteModal = useCallback(() => {
+    setSelectedBroker(null);
+    setIsBulkDelete(true);
+    setDeleteMode('unlink');
+    setShowDeleteModal(true);
+  }, []);
+
+  const allOnPageSelected =
+    brokers.length > 0 && brokers.every((b) => selectedIds.has(b.id));
+
+  const toggleSelectAllOnPage = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        for (const b of brokers) next.delete(b.id);
+      } else {
+        for (const b of brokers) next.add(b.id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectBroker = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const summaryCards = [
     {
@@ -441,6 +519,15 @@ export default function BrokersPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={openBulkDeleteModal}
+                  className="px-3 py-1.5 bg-red-600 text-white hover:bg-red-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+                >
+                  <Trash2 size={15} />
+                  Delete Selected ({selectedIds.size})
+                </button>
+              )}
               <button
                 onClick={() => router.push('/data-import?entity=broker')}
                 className="btn btn-secondary btn-sm flex items-center gap-1.5"
@@ -562,6 +649,30 @@ export default function BrokersPage() {
 
           {/* Brokers Table */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            {selectedIds.size > 0 && (
+              <div className="px-5 py-2.5 bg-red-50 border-b border-red-200 flex items-center justify-between">
+                <div className="text-xs font-semibold text-red-900">
+                  {selectedIds.size} broker{selectedIds.size === 1 ? '' : 's'} selected
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIds(new Set())}
+                    className="px-2.5 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Clear Selection
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openBulkDeleteModal}
+                    className="px-3 py-1 text-xs font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 inline-flex items-center gap-1"
+                  >
+                    <Trash2 size={13} />
+                    Delete Selected ({selectedIds.size})
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="overflow-x-auto">
               {loading ? (
                 <div className="p-10 text-center text-gray-500">
@@ -580,6 +691,16 @@ export default function BrokersPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                      <th className="pl-5 pr-2 py-3.5 w-10">
+                        <input
+                          type="checkbox"
+                          checked={allOnPageSelected}
+                          onChange={toggleSelectAllOnPage}
+                          title="Select All on Page"
+                          aria-label="Select All on Page"
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </th>
                       <th className="px-5 py-3.5">Broker / Associate Name</th>
                       <th className="px-5 py-3.5">Broker / BA Code</th>
                       <th className="px-5 py-3.5">Full Record Code</th>
@@ -591,14 +712,26 @@ export default function BrokersPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {brokers.map((broker) => {
-                      const codeToCopy = broker.broker_code || broker.raw_identifier || broker.name;
                       const customerFilterVal = broker.raw_identifier || broker.broker_code || broker.name;
+                      const isSelected = selectedIds.has(broker.id);
                       return (
                         <tr
                           key={broker.id}
                           onClick={() => router.push(`/brokers/${encodeURIComponent(broker.id)}`)}
-                          className="hover:bg-blue-50/40 cursor-pointer transition-colors"
+                          className={`hover:bg-blue-50/40 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50/30' : ''}`}
                         >
+                          <td
+                            className="pl-5 pr-2 py-3.5 whitespace-nowrap"
+                            onClick={(e) => toggleSelectBroker(broker.id, e)}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              aria-label={`Select ${broker.name}`}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                          </td>
                           <td className="px-5 py-3.5 whitespace-nowrap">
                             <div className="flex items-center">
                               <div
@@ -723,15 +856,13 @@ export default function BrokersPage() {
                               >
                                 <Edit size={15} />
                               </button>
-                              {broker.source === 'directory' && (
-                                <button
-                                  onClick={() => openDeleteModal(broker)}
-                                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md"
-                                  title="Delete Broker"
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              )}
+                              <button
+                                onClick={() => openDeleteModal(broker)}
+                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md"
+                                title="Delete Broker"
+                              >
+                                <Trash2 size={15} />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -834,14 +965,92 @@ export default function BrokersPage() {
         </div>
       )}
 
-      {/* Delete Modal */}
-      {showDeleteModal && selectedBroker && (
+      {/* Delete Modal (Single & Bulk) */}
+      {showDeleteModal && (isBulkDelete || selectedBroker) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Delete Broker</h2>
-            <p className="text-gray-600 mb-6">
-              Remove <strong>{selectedBroker.name}</strong> {selectedBroker.broker_code ? `(${selectedBroker.broker_code})` : ''} from the directory?
-            </p>
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-bold text-gray-900">
+                {isBulkDelete
+                  ? `Delete ${selectedIds.size} Selected Broker${selectedIds.size === 1 ? '' : 's'}`
+                  : 'Delete Broker'}
+              </h2>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {isBulkDelete ? (
+              <p className="text-sm text-gray-600 mb-4">
+                Choose how you want to remove the{' '}
+                <strong>{selectedIds.size} selected broker{selectedIds.size === 1 ? '' : 's'}</strong>:
+              </p>
+            ) : selectedBroker ? (
+              <p className="text-sm text-gray-600 mb-4">
+                Choose how you want to remove{' '}
+                <strong>{selectedBroker.name}</strong>{' '}
+                {selectedBroker.broker_code ? `(${selectedBroker.broker_code})` : ''}
+                {selectedBroker.deal_count ? ` — ${selectedBroker.deal_count} associated deal(s)` : ''}:
+              </p>
+            ) : null}
+
+            <div className="space-y-3 mb-6">
+              <label
+                onClick={() => setDeleteMode('unlink')}
+                className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all ${
+                  deleteMode === 'unlink'
+                    ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600'
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="deleteMode"
+                  value="unlink"
+                  checked={deleteMode === 'unlink'}
+                  onChange={() => setDeleteMode('unlink')}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                />
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">
+                    Remove broker &amp; unlink from deals
+                  </div>
+                  <div className="text-xs text-gray-600 mt-0.5">
+                    Keeps customer/plot records in Master Data and clears the broker assignment.
+                  </div>
+                </div>
+              </label>
+
+              <label
+                onClick={() => setDeleteMode('delete_deals')}
+                className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all ${
+                  deleteMode === 'delete_deals'
+                    ? 'border-red-600 bg-red-50/50 ring-1 ring-red-600'
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="deleteMode"
+                  value="delete_deals"
+                  checked={deleteMode === 'delete_deals'}
+                  onChange={() => setDeleteMode('delete_deals')}
+                  className="mt-1 h-4 w-4 text-red-600 focus:ring-red-500"
+                />
+                <div>
+                  <div className="text-sm font-semibold text-red-700">
+                    Delete broker &amp; delete all associated deal records
+                  </div>
+                  <div className="text-xs text-red-600/80 mt-0.5">
+                    Permanently deletes their Master Data deal rows along with the broker entry.
+                  </div>
+                </div>
+              </label>
+            </div>
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -853,9 +1062,14 @@ export default function BrokersPage() {
               <button
                 onClick={deleteBroker}
                 disabled={submitting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm font-medium"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm font-medium inline-flex items-center gap-1.5"
               >
-                {submitting ? 'Deleting...' : 'Delete'}
+                <Trash2 size={15} />
+                {submitting
+                  ? 'Processing...'
+                  : deleteMode === 'delete_deals'
+                  ? 'Delete Broker & Deals'
+                  : 'Remove & Unlink'}
               </button>
             </div>
           </div>

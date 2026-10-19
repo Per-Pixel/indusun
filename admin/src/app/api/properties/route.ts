@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPaginatedMasterData } from '@/services/masterDataService';
 import { createServiceClient } from '@/utils/supabase/service';
+import { invalidateServerCache } from '@/utils/serverCache';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import { formatIndianNumber } from '@/utils/format';
 import { normalizeDate } from '@/utils/dataUtils';
@@ -138,9 +139,50 @@ export async function POST(request: NextRequest) {
       throw new Error(error.message);
     }
 
+    invalidateServerCache();
     return NextResponse.json({ id: data.id }, { status: 201 });
   } catch (err: any) {
     console.error('Properties POST error:', err);
     return NextResponse.json({ error: err.message || 'Failed to create property' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const rawIds: unknown[] = Array.isArray(body?.ids) ? body.ids : [];
+    const validIds = Array.from(
+      new Set(
+        rawIds
+          .map((v) => Number(v))
+          .filter((n) => Number.isFinite(n) && n > 0)
+      )
+    );
+
+    if (validIds.length === 0) {
+      return NextResponse.json({ error: 'No valid property IDs provided' }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+    const { error } = await supabase
+      .from(TABLE_NAME)
+      .delete()
+      .in('id', validIds);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message || 'Failed to delete properties' },
+        { status: 500 }
+      );
+    }
+
+    invalidateServerCache();
+    return NextResponse.json({ success: true, deletedCount: validIds.length });
+  } catch (err: any) {
+    console.error('Properties DELETE error:', err);
+    return NextResponse.json(
+      { error: err.message || 'Failed to delete properties' },
+      { status: 500 }
+    );
   }
 }

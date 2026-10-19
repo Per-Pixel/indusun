@@ -486,6 +486,7 @@ export default function MasterDataPage() {
             societyFilter={societyFilter}
             societies={societies}
             isLoading={isLoading}
+            onRefresh={fetchData}
           />
 
           {/* ── Footer ───────────────────────────────────────────────── */}

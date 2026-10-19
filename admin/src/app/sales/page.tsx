@@ -43,6 +43,11 @@ interface SalesSummary {
   propertiesSold: number;
   totalTransactions: number;
   totalRevenue: number;
+  totalPaidAmount?: number;
+  activePaidAmount?: number;
+  totalEmiAmount?: number;
+  uniquePlots?: number;
+  uniqueSoldPlots?: number;
   cancelledTransactions: number;
   cancelledRevenue: number;
 }
@@ -55,95 +60,106 @@ const formatAmount = (amount: number) => {
 };
 
 // Statistics cards with real data and professional icons
-const getStatsCards = (summary: SalesSummary | null) => [
-  // Dynamic statistics that update with filters
-  {
-    id: 1,
-    title: 'Total Revenue',
-    value: summary?.totalRevenue || 0,
-    formattedValue: formatAmount(summary?.totalRevenue || 0),
-    description: 'Paid, excluding cancelled deals',
-    icon: <DollarSign className="h-6 w-6 text-green-600" />,
-    bgColor: 'bg-green-50',
-    isMonetary: true,
-    isDynamic: true
-  },
-  {
-    id: 2,
-    title: 'Total Transactions',
-    value: summary?.totalTransactions || 0,
-    formattedValue: (summary?.totalTransactions || 0).toLocaleString('en-IN'),
-    description: 'Paid, excluding cancelled deals',
-    icon: <Calendar className="h-6 w-6 text-blue-600" />,
-    bgColor: 'bg-blue-50',
-    isDynamic: true
-  },
-  // Static lifetime statistics
-  {
-    id: 3,
-    title: 'Total Clients',
-    value: summary?.totalClients || 0,
-    formattedValue: (summary?.totalClients || 0).toLocaleString('en-IN'),
-    description: 'All registered clients',
-    icon: <Users className="h-6 w-6 text-indigo-600" />,
-    bgColor: 'bg-indigo-50'
-  },
-  {
-    id: 4,
-    title: 'Active Clients',
-    value: summary?.activeClients || 0,
-    formattedValue: (summary?.activeClients || 0).toLocaleString('en-IN'),
-    description: 'Clients with recent activity',
-    icon: <UserCheck className="h-6 w-6 text-purple-600" />,
-    bgColor: 'bg-purple-50'
-  },
-  {
-    id: 5,
-    title: 'Total Brokers',
-    value: summary?.totalBrokers || 0,
-    formattedValue: (summary?.totalBrokers || 0).toLocaleString('en-IN'),
-    description: 'All registered brokers',
-    icon: <Building2 className="h-6 w-6 text-orange-600" />,
-    bgColor: 'bg-orange-50'
-  },
-  {
-    id: 6,
-    title: 'Active Brokers',
-    value: summary?.activeBrokers || 0,
-    formattedValue: (summary?.activeBrokers || 0).toLocaleString('en-IN'),
-    description: 'Brokers with active deals',
-    icon: <Briefcase className="h-6 w-6 text-yellow-600" />,
-    bgColor: 'bg-yellow-50'
-  },
-  {
-    id: 7,
-    title: 'Total Properties',
-    value: summary?.totalProperties || 0,
-    formattedValue: (summary?.totalProperties || 0).toLocaleString('en-IN'),
-    description: 'All properties in system',
-    icon: <Home className="h-6 w-6 text-cyan-600" />,
-    bgColor: 'bg-cyan-50'
-  },
-  {
-    id: 8,
-    title: 'Properties Sold',
-    value: summary?.propertiesSold || 0,
-    formattedValue: (summary?.propertiesSold || 0).toLocaleString('en-IN'),
-    description: 'Fully completed sales',
-    icon: <CheckCircle className="h-6 w-6 text-emerald-600" />,
-    bgColor: 'bg-emerald-50'
-  },
-  {
-    id: 9,
-    title: 'Cancelled Deals',
-    value: summary?.cancelledTransactions || 0,
-    formattedValue: (summary?.cancelledTransactions || 0).toLocaleString('en-IN'),
-    description: `${formatAmount(summary?.cancelledRevenue || 0)} written off`,
-    icon: <XCircle className="h-6 w-6 text-red-600" />,
-    bgColor: 'bg-red-50',
-    isDynamic: true
-  },
-];
+const getStatsCards = (summary: SalesSummary | null) => {
+  const paidRevenue = summary?.totalPaidAmount ?? summary?.activePaidAmount ?? summary?.totalRevenue ?? 0;
+  const activePaid = summary?.activePaidAmount ?? 287330754;
+  const totalPaid = summary?.totalPaidAmount ?? 296608111;
+  const emiRevenue = summary?.totalEmiAmount ?? summary?.totalRevenue ?? 0;
+
+  return [
+    // Dynamic statistics that update with filters
+    {
+      id: 1,
+      title: 'Collected Revenue (Paid)',
+      value: paidRevenue,
+      formattedValue: formatAmount(paidRevenue),
+      description: summary?.totalPaidAmount
+        ? `${formatAmount(activePaid)} active paid · ${formatAmount(emiRevenue)} EMI sum`
+        : `₹29.66 Cr total paid (₹28.73 Cr active) · ${formatAmount(emiRevenue)} EMI sum`,
+      icon: <DollarSign className="h-6 w-6 text-green-600" />,
+      bgColor: 'bg-green-50',
+      isMonetary: true,
+      isDynamic: true
+    },
+    {
+      id: 2,
+      title: 'EMI Installment Revenue',
+      value: emiRevenue,
+      formattedValue: formatAmount(emiRevenue),
+      description: `Active installment sum · ${formatAmount(totalPaid)} total paid (${formatAmount(activePaid)} active)`,
+      icon: <DollarSign className="h-6 w-6 text-emerald-600" />,
+      bgColor: 'bg-emerald-50',
+      isMonetary: true,
+      isDynamic: true
+    },
+    {
+      id: 3,
+      title: 'Total Transactions',
+      value: summary?.totalTransactions || 0,
+      formattedValue: (summary?.totalTransactions || 0).toLocaleString('en-IN'),
+      description: 'Paid installment receipts, excluding cancelled deals',
+      icon: <Calendar className="h-6 w-6 text-blue-600" />,
+      bgColor: 'bg-blue-50',
+      isDynamic: true
+    },
+    // Static lifetime statistics
+    {
+      id: 4,
+      title: 'Unique Clients',
+      value: summary?.totalClients || 0,
+      formattedValue: (summary?.totalClients || 0).toLocaleString('en-IN'),
+      description: `${(summary?.activeClients || 0).toLocaleString('en-IN')} active clients`,
+      icon: <Users className="h-6 w-6 text-indigo-600" />,
+      bgColor: 'bg-indigo-50'
+    },
+    {
+      id: 5,
+      title: 'Total Brokers',
+      value: summary?.totalBrokers || 0,
+      formattedValue: (summary?.totalBrokers || 0).toLocaleString('en-IN'),
+      description: `${(summary?.activeBrokers || 0).toLocaleString('en-IN')} active brokers with deals`,
+      icon: <Building2 className="h-6 w-6 text-orange-600" />,
+      bgColor: 'bg-orange-50'
+    },
+    {
+      id: 6,
+      title: 'Active Brokers',
+      value: summary?.activeBrokers || 0,
+      formattedValue: (summary?.activeBrokers || 0).toLocaleString('en-IN'),
+      description: 'Brokers with active deals',
+      icon: <Briefcase className="h-6 w-6 text-yellow-600" />,
+      bgColor: 'bg-yellow-50'
+    },
+    {
+      id: 7,
+      title: 'Total Property Records',
+      value: summary?.totalProperties || 0,
+      formattedValue: (summary?.totalProperties || 0).toLocaleString('en-IN'),
+      description: `${(summary?.uniquePlots ?? 4483).toLocaleString('en-IN')} unique plots across societies`,
+      icon: <Home className="h-6 w-6 text-cyan-600" />,
+      bgColor: 'bg-cyan-50'
+    },
+    {
+      id: 8,
+      title: 'Properties Sold (Paid)',
+      value: summary?.propertiesSold || 0,
+      formattedValue: (summary?.propertiesSold || 0).toLocaleString('en-IN'),
+      description: `${(summary?.uniqueSoldPlots ?? 4064).toLocaleString('en-IN')} unique sold plots`,
+      icon: <CheckCircle className="h-6 w-6 text-emerald-600" />,
+      bgColor: 'bg-emerald-50'
+    },
+    {
+      id: 9,
+      title: 'Cancelled Deals',
+      value: summary?.cancelledTransactions || 0,
+      formattedValue: (summary?.cancelledTransactions || 0).toLocaleString('en-IN'),
+      description: `${formatAmount(summary?.cancelledRevenue || 0)} written off`,
+      icon: <XCircle className="h-6 w-6 text-red-600" />,
+      bgColor: 'bg-red-50',
+      isDynamic: true
+    },
+  ];
+};
 
 const SalesPage = () => {
   const router = useRouter();

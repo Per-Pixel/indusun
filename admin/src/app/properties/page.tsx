@@ -140,25 +140,29 @@ interface PropertyFormData {
 // Summary data for property management
 const getSummaryData = (properties: Property[], totalCount: number) => [
   {
-    title: 'Total Properties',
+    title: 'Total Property Records',
+    subtitle: 'All plot & installment records',
     value: (totalCount || properties.length).toLocaleString('en-IN'),
     icon: <Building size={20} className="text-blue-600" />,
     bgColor: 'bg-blue-50'
   },
   {
     title: 'Listed (Current Page)',
+    subtitle: 'Active non-cancelled records',
     value: properties.filter(p => p.status === 'Listed').length.toLocaleString('en-IN'),
     icon: <Eye size={20} className="text-green-600" />,
     bgColor: 'bg-green-50'
   },
   {
     title: 'Unlisted (Current Page)',
+    subtitle: 'Cancelled records on page',
     value: properties.filter(p => p.status === 'Unlisted').length.toLocaleString('en-IN'),
     icon: <EyeOff size={20} className="text-gray-600" />,
     bgColor: 'bg-gray-50'
   },
   {
     title: 'Sold (Current Page)',
+    subtitle: 'Completed sales on page',
     value: properties.filter(p => p.status === 'Sold').length.toLocaleString('en-IN'),
     icon: <CheckCircle size={20} className="text-purple-600" />,
     bgColor: 'bg-purple-50'
@@ -200,6 +204,9 @@ export default function PropertiesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedPropertyIds, setSelectedPropertyIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Debounce search input before firing API call
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -287,11 +294,64 @@ export default function PropertiesPage() {
     setShowActionMenu(null);
   };
 
-  const confirmDeleteProperty = () => {
-    if (currentProperty) {
-      setProperties(properties.filter(p => p.id !== currentProperty.id));
+  const confirmDeleteProperty = async () => {
+    if (!currentProperty) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/properties/${currentProperty.id}`, { method: 'DELETE' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to delete property');
+      }
+      setProperties((prev) => prev.filter((p) => p.id !== currentProperty.id));
+      setTotalCount((prev) => Math.max(0, prev - 1));
+      setSelectedPropertyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(currentProperty.id);
+        return next;
+      });
       setShowDeleteModal(false);
       setCurrentProperty(null);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to delete property');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const toggleSelectProperty = (id: string) => {
+    setSelectedPropertyIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDeleteProperties = async () => {
+    if (selectedPropertyIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedPropertyIds.size} selected property record(s)? This action cannot be undone.`)) {
+      return;
+    }
+    setIsBulkDeleting(true);
+    try {
+      const ids = Array.from(selectedPropertyIds);
+      const res = await fetch('/api/properties', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to delete selected properties');
+      }
+      setProperties((prev) => prev.filter((p) => !selectedPropertyIds.has(p.id)));
+      setTotalCount((prev) => Math.max(0, prev - (json.deletedCount ?? ids.length)));
+      setSelectedPropertyIds(new Set());
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to delete selected properties');
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -389,8 +449,11 @@ export default function PropertiesPage() {
                 <div key={index} className={`p-4 rounded-lg border border-gray-200 ${item.bgColor}`}>
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm text-gray-600">{item.title}</p>
+                      <p className="text-sm font-medium text-gray-700">{item.title}</p>
                       <p className="text-xl font-semibold mt-1 text-black">{item.value}</p>
+                      {item.subtitle && (
+                        <p className="text-xs text-gray-500 mt-0.5">{item.subtitle}</p>
+                      )}
                     </div>
                     <div className="p-2 rounded-full bg-white">
                       {item.icon}
@@ -454,12 +517,54 @@ export default function PropertiesPage() {
               </div>
             </div>
 
+            {/* Bulk Selection Bar */}
+            {filteredProperties.length > 0 && (
+              <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-lg border border-gray-200 mb-4">
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={filteredProperties.length > 0 && filteredProperties.every((p) => selectedPropertyIds.has(p.id))}
+                    onChange={() => {
+                      const allSelected = filteredProperties.every((p) => selectedPropertyIds.has(p.id));
+                      if (allSelected) {
+                        setSelectedPropertyIds(new Set());
+                      } else {
+                        setSelectedPropertyIds(new Set(filteredProperties.map((p) => p.id)));
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>Select All on Page ({filteredProperties.length})</span>
+                </label>
+                {selectedPropertyIds.size > 0 && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleBulkDeleteProperties}
+                      disabled={isBulkDeleting}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-50"
+                    >
+                      <Trash size={14} />
+                      {isBulkDeleting ? 'Deleting…' : `Delete Selected (${selectedPropertyIds.size})`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPropertyIds(new Set())}
+                      className="text-xs text-gray-500 hover:text-gray-800 underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Properties Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
               {filteredProperties.map((property) => (
                 <div
                   key={property.id}
-                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                  className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow border ${selectedPropertyIds.has(property.id) ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-transparent'}`}
                 >
                   <div className="relative h-48">
                     {property.images && property.images.length > 0 && property.images[0] ? (
@@ -473,7 +578,14 @@ export default function PropertiesPage() {
                         <Home className="h-12 w-12 text-gray-400" />
                       </div>
                     )}
-                    <div className="absolute top-2 left-2 flex flex-col gap-1">
+                    <div className="absolute top-2 left-2 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedPropertyIds.has(property.id)}
+                        onChange={() => toggleSelectProperty(property.id)}
+                        aria-label={`Select ${property.title}`}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-white shadow cursor-pointer"
+                      />
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(property.status)}`}>
                         {getStatusIcon(property.status)}
                         {property.status}
@@ -679,15 +791,17 @@ export default function PropertiesPage() {
                       <div className="flex justify-end gap-3">
                         <button
                           onClick={() => setShowDeleteModal(false)}
-                          className="px-4 py-2 border border-gray-300 rounded-md text-black hover:bg-gray-50"
+                          disabled={isDeleting}
+                          className="px-4 py-2 border border-gray-300 rounded-md text-black hover:bg-gray-50 disabled:opacity-50"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={confirmDeleteProperty}
-                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                          disabled={isDeleting}
+                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
                         >
-                          Delete
+                          {isDeleting ? 'Deleting…' : 'Delete'}
                         </button>
                       </div>
                     </div>

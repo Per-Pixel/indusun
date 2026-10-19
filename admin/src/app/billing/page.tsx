@@ -26,6 +26,7 @@ import {
   CalendarDays,
   Upload,
   Plus,
+  Trash2,
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
 import ExportDropdown from '@/components/ui/ExportDropdown';
@@ -41,7 +42,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A78BFA', '#9CA3AF'
 // Default summary cards data (placeholders until API responds)
 const defaultSummaryData = [
   {
-    title: 'Total Revenue',
+    title: 'Total Collected (Paid)',
     value: '—',
     icon: <DollarSign size={20} className="text-blue-600" />,
     bgColor: 'bg-blue-50',
@@ -83,7 +84,8 @@ interface Transaction {
   date: string;
   description: string;
   amount: string;
-  status: 'Completed' | 'Pending' | 'Failed';
+  emiAmount?: string;
+  status: 'Completed' | 'Pending' | 'Failed' | 'Cancelled';
   source: 'Property Sale' | 'Broker Commission' | 'Service Fee' | 'Rental Income';
   reference: string;
   client?: {
@@ -232,6 +234,56 @@ export default function BillingPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
   const [markPaidError, setMarkPaidError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteTransaction = async (txn: Transaction) => {
+    if (!window.confirm(`Delete transaction "${txn.reference}" (${txn.description})? This action cannot be undone.`)) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const res = await fetch('/api/billing', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: txn.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete transaction');
+      if (selectedTransaction && selectedTransaction.id === txn.id) {
+        closeDrawer();
+      }
+      setSelectedIds((prev) => prev.filter((id) => id !== txn.id));
+      await fetchBillingData();
+    } catch (e: any) {
+      alert(e.message || 'Failed to delete transaction');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.length} selected transaction(s)? This action cannot be undone.`)) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const res = await fetch('/api/billing', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete selected transactions');
+      setSelectedIds([]);
+      await fetchBillingData();
+    } catch (e: any) {
+      alert(e.message || 'Failed to delete selected transactions');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const markAsPaid = async (txn: Transaction) => {
     setIsMarkingPaid(true);
@@ -291,13 +343,15 @@ export default function BillingPage() {
 
       // Update summary data
       if (data.summary) {
+        const totalPaidVal = data.summary.totalPaidAmount || data.summary.totalRevenue || 0;
+        const emiRevVal = data.summary.emiRevenue || data.summary.totalRevenue || 0;
         const updatedSummary = [
           {
-            title: 'Total Revenue',
-            value: `₹${data.summary.totalRevenue ? formatAmount(data.summary.totalRevenue) : '0'}`,
+            title: 'Total Collected (Paid)',
+            value: `₹${totalPaidVal ? formatAmount(totalPaidVal) : '0'}`,
             icon: <DollarSign size={20} className="text-blue-600" />,
             bgColor: 'bg-blue-50',
-            change: ''
+            change: `EMI Installments: ₹${formatAmount(emiRevVal)}`
           },
           {
             title: 'Pending Payments',
@@ -406,6 +460,25 @@ export default function BillingPage() {
   const indexOfFirstTransaction = (currentPage - 1) * transactionsPerPage + 1;
   const indexOfLastTransaction = Math.min(currentPage * transactionsPerPage, totalItems);
 
+  const allOnPageSelected =
+    transactions.length > 0 && transactions.every((t) => selectedIds.includes(t.id));
+
+  const toggleSelectAllOnPage = () => {
+    if (allOnPageSelected) {
+      const pageSet = new Set(transactions.map((t) => t.id));
+      setSelectedIds((prev) => prev.filter((id) => !pageSet.has(id)));
+    } else {
+      const merged = new Set([...selectedIds, ...transactions.map((t) => t.id)]);
+      setSelectedIds(Array.from(merged));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   const getStatusColor = (status: Transaction['status']) => {
     switch (status) {
       case 'Completed':
@@ -413,6 +486,7 @@ export default function BillingPage() {
       case 'Pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'Failed':
+      case 'Cancelled':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -659,6 +733,7 @@ export default function BillingPage() {
                     <option value="All">All Status</option>
                     <option value="Completed">Completed</option>
                     <option value="Pending">Pending</option>
+                    <option value="Cancelled">Cancelled</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                     <ChevronDown size={16} />
@@ -670,20 +745,42 @@ export default function BillingPage() {
 
             {/* Transactions Table */}
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap justify-between items-center gap-2">
                 <h2 className="font-medium">Billing Transactions</h2>
-                <button
-                  onClick={() => router.push('/billing/transactions')}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  View All
-                </button>
+                <div className="flex items-center gap-3">
+                  {selectedIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleBulkDelete}
+                      disabled={isDeleting}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 disabled:opacity-50"
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete Selected ({selectedIds.length})</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => router.push('/billing/transactions')}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    View All
+                  </button>
+                </div>
               </div>
               
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 w-10">
+                        <input
+                          type="checkbox"
+                          checked={allOnPageSelected}
+                          onChange={toggleSelectAllOnPage}
+                          aria-label="Select all on page"
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </th>
                       <th className="px-6 py-3">Date</th>
                       <th className="px-6 py-3">Description</th>
                       <th className="px-6 py-3">Amount</th>
@@ -699,6 +796,7 @@ export default function BillingPage() {
                       // Loading state for transactions table
                       Array(5).fill(0).map((_, idx) => (
                         <tr key={idx} className="animate-pulse">
+                          <td className="px-4 py-4"><div className="h-4 bg-gray-200 rounded w-4"></div></td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="h-4 bg-gray-200 rounded w-24"></div>
                           </td>
@@ -721,70 +819,97 @@ export default function BillingPage() {
                             <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
                             <div className="h-3 bg-gray-200 rounded w-16"></div>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 bg-gray-200 rounded w-16"></div>
+                          </td>
                         </tr>
                       ))
                     ) : error ? (
                       // Error state
                       <tr>
-                        <td colSpan={7} className="px-6 py-4 text-center text-red-600">
+                        <td colSpan={9} className="px-6 py-4 text-center text-red-600">
                           Error loading transaction data: {error}
                         </td>
                       </tr>
                     ) : transactions.length === 0 ? (
                       // No data state
                       <tr>
-                        <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                        <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
                           No transactions found matching your filters.
                         </td>
                       </tr>
                     ) : (
                       // Data loaded successfully
-                      transactions.map((transaction, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {transaction.date}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                            {transaction.description}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
-                            {transaction.amount}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(transaction.status)}`}>
-                              {transaction.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <div className="flex items-center">
-                              {getSourceIcon(transaction.source)}
-                              {transaction.source}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {transaction.reference}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {transaction.client?.name}
+                      transactions.map((transaction, idx) => {
+                        const isSelected = selectedIds.includes(transaction.id);
+                        return (
+                          <tr key={transaction.id || idx} className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50/40' : ''}`}>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelectOne(transaction.id)}
+                                aria-label={`Select ${transaction.reference}`}
+                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {transaction.date}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                              {transaction.description}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
+                              {transaction.amount}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(transaction.status)}`}>
+                                {transaction.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <div className="flex items-center">
+                                {getSourceIcon(transaction.source)}
+                                {transaction.source}
                               </div>
-                              <div className="text-xs text-gray-500">
-                                {transaction.client?.type}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {transaction.reference}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {transaction.client?.name}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {transaction.client?.type}
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button
-                              onClick={() => openDrawer(transaction)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors"
-                            >
-                              <Eye size={13} />
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="inline-flex items-center gap-2">
+                                <button
+                                  onClick={() => openDrawer(transaction)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                                >
+                                  <Eye size={13} />
+                                  View
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteTransaction(transaction)}
+                                  disabled={isDeleting}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:text-red-700 transition-colors disabled:opacity-50"
+                                  title="Delete transaction"
+                                >
+                                  <Trash2 size={13} />
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -995,6 +1120,15 @@ export default function BillingPage() {
                   {isMarkingPaid ? 'Marking…' : 'Mark as Paid'}
                 </button>
               )}
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => handleDeleteTransaction(selectedTransaction)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+              >
+                <Trash2 size={16} />
+                {isDeleting ? 'Deleting…' : 'Delete Transaction'}
+              </button>
               <button
                 onClick={closeDrawer}
                 className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

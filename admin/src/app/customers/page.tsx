@@ -4,6 +4,7 @@ import {
   getPaginatedMasterData,
   getUniqueSocieties,
   getUniqueBrokers,
+  getMasterDataSummary,
 } from '@/services/masterDataService';
 
 export const metadata = { title: 'Customers | Indusun CRM' };
@@ -36,7 +37,7 @@ export default async function CustomersPage({
   };
   const { sortBy, sortOrder } = sortMap[sort] || sortMap.newest;
 
-  const [dataResult, societiesResult, brokersResult] = await Promise.all([
+  const [dataResult, societiesResult, brokersResult, summaryResult] = await Promise.all([
     getPaginatedMasterData({
       page,
       pageSize: 25,
@@ -49,6 +50,7 @@ export default async function CustomersPage({
     }),
     getUniqueSocieties(),
     getUniqueBrokers(),
+    getMasterDataSummary(),
   ]);
 
   return (
@@ -60,6 +62,7 @@ export default async function CustomersPage({
         societies={societiesResult.societies}
         brokers={brokersResult.brokers}
         filters={{ search, society, broker, status, sort }}
+        summary={summaryResult.summary}
         error={dataResult.error}
       />
     </CRMLayout>

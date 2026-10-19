@@ -200,7 +200,8 @@ const booking = { rows: 0, token: 0, agreement: 0, registered: 0, possession: 0,
 const visits = { total: 0, scheduled: 0, completed: 0, cancelled: 0 };
 let bookingsCountDb = 0; // .not('paid_amount','is',null)
 for (const r of rows) {
-  if (r.client_name) clients.add(r.client_name);
+  const cn = String(r.client_name ?? '').trim();
+  if (cn) clients.add(cn.toLowerCase());
   if (r.society_name) societies.add(r.society_name);
   const bn = String(r["broker's_name"] ?? '').trim();
   if (bn) brokerKeys.add(bn.toLowerCase());
@@ -235,9 +236,9 @@ for (const r of rows) {
 }
 booking.rows = bookingsCountDb;
 
-// invoices summary: paid = emi_paid_date non-empty; pending = null/'' (PostgREST neq '' matters)
-const invPaid = rows.filter(r => isPaid(r.emi_paid_date)).length;
-const invPending = totalRows - invPaid; // eq '' or null — same partition as isPaid()
+// invoices summary: paid = emi_paid_date non-empty (excluding cancelled); pending = null/'' (excluding cancelled)
+const invPaid = rows.filter(r => !r.cancel_date && isPaid(r.emi_paid_date)).length;
+const invPending = rows.filter(r => !r.cancel_date && !isPaid(r.emi_paid_date)).length;
 
 const aux = {};
 for (const t of ['bills', 'brokers', 'admin_users', 'messages']) {

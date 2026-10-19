@@ -39,7 +39,7 @@ interface Transaction {
   date: string;
   description: string;
   amount: number;
-  status: 'Completed' | 'Pending' | 'Failed';
+  status: 'Completed' | 'Pending' | 'Failed' | 'Cancelled';
   source: 'Property Sale' | 'Broker Commission' | 'Service Fee' | 'Rental Income';
   reference: string;
   clientId?: number;
@@ -88,6 +88,8 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
   const [brokerSearchTerm, setBrokerSearchTerm] = useState<string>('');
   const brokerDropdownRef = useRef<HTMLDivElement>(null);
   const [dateRange, setDateRange] = useState<{ startDate: string | null, endDate: string | null }>({ startDate: null, endDate: null });
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   
 
 
@@ -120,6 +122,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
       // Update state with fetched data
       setTransactions(data.transactions || []);
       setFilterOptions(data.filterOptions || { brokers: [] });
+      setSelectedIds([]);
       
       // Update pagination info
       if (data.pagination) {
@@ -212,6 +215,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
       case 'Pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'Failed':
+      case 'Cancelled':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -255,29 +259,80 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
     );
   };
 
+  const allOnPageSelected =
+    transactions.length > 0 && transactions.every((t) => selectedIds.includes(t.id));
 
+  const toggleSelectAllOnPage = () => {
+    if (allOnPageSelected) {
+      const pageSet = new Set(transactions.map((t) => t.id));
+      setSelectedIds((prev) => prev.filter((id) => !pageSet.has(id)));
+    } else {
+      const merged = new Set([...selectedIds, ...transactions.map((t) => t.id)]);
+      setSelectedIds(Array.from(merged));
+    }
+  };
+
+  const toggleSelectOne = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
   
   // Handle transaction deletion
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this transaction?')) {
+    if (!window.confirm('Are you sure you want to delete this transaction?')) {
       return;
     }
     
+    setIsDeleting(true);
     try {
       const response = await fetch(`/api/transactions/${id}`, {
         method: 'DELETE',
       });
+      const data = await response.json().catch(() => ({}));
       
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        throw new Error(data.error || `Error: ${response.status}`);
       }
       
       // Refresh data after deletion
-      fetchTransactions();
+      await fetchTransactions();
       
     } catch (err: any) {
       console.error('Error deleting transaction:', err);
       alert(`Failed to delete transaction: ${err.message}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Handle bulk deletion
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} selected transaction(s)?`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/transactions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || `Error: ${response.status}`);
+      }
+
+      setSelectedIds([]);
+      await fetchTransactions();
+    } catch (err: any) {
+      console.error('Error deleting transactions:', err);
+      alert(`Failed to delete transactions: ${err.message}`);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -290,9 +345,20 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
   return (
     <div className={`bg-white rounded-lg shadow-sm overflow-hidden ${className}`}>
       {/* Header with title and add button */}
-      <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+      <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap justify-between items-center gap-2">
         <h2 className="font-medium">Recent Transactions</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {selectedIds.length > 0 && (
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="flex items-center space-x-1 px-3 py-1.5 bg-red-600 text-white border border-red-700 rounded hover:bg-red-700 disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="text-sm">Delete Selected ({selectedIds.length})</span>
+            </button>
+          )}
           <ExportDropdown
             label="Export"
             filename="transactions"
@@ -352,6 +418,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
                 <option value="All">All Status</option>
                 <option value="Completed">Completed</option>
                 <option value="Pending">Pending</option>
+                <option value="Cancelled">Cancelled</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                 <ChevronDown size={16} />
@@ -496,6 +563,15 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th scope="col" className="px-4 py-3 text-left w-10">
+                  <input
+                    type="checkbox"
+                    checked={allOnPageSelected}
+                    onChange={toggleSelectAllOnPage}
+                    aria-label="Select all on page"
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
@@ -520,46 +596,59 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className }) =>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {transactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(transaction.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {transaction.reference}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                    {transaction.description}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {renderSource(transaction.source)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {renderStatus(transaction.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatAmount(transaction.amount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        onClick={() => router.push(`/transactions/edit/${transaction.id}`)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Edit"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(transaction.id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {transactions.map((transaction) => {
+                const isSelected = selectedIds.includes(transaction.id);
+                return (
+                  <tr key={transaction.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50/40' : ''}`}>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectOne(transaction.id)}
+                        aria-label={`Select ${transaction.reference}`}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {transaction.date ? new Date(transaction.date).toLocaleDateString() : '—'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {transaction.reference}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                      {transaction.description}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {renderSource(transaction.source)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {renderStatus(transaction.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatAmount(transaction.amount)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => router.push(`/transactions/edit/${transaction.id}`)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Edit"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(transaction.id)}
+                          disabled={isDeleting}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

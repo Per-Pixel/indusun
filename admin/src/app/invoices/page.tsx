@@ -13,6 +13,8 @@ import {
   ChevronRight,
   CheckCircle,
   AlertCircle,
+  XCircle,
+  Trash2,
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
 import ExportDropdown from '@/components/ui/ExportDropdown';
@@ -23,7 +25,9 @@ interface Invoice {
   date: string | null;
   amount: string;
   amountNum: number;
-  status: 'Paid' | 'Pending';
+  emiAmount?: string;
+  status: 'Paid' | 'Pending' | 'Cancelled';
+  source?: 'custom' | 'master';
   client: { name: string; type: string; id: string };
   property?: { id: string; title: string };
   broker?: string | null;
@@ -33,6 +37,9 @@ interface Summary {
   totalCount: number;
   paidCount: number;
   pendingCount: number;
+  cancelledCount?: number;
+  customBillsCount?: number;
+  emiReceiptsCount?: number;
 }
 
 export default function InvoicesPage() {
@@ -40,13 +47,24 @@ export default function InvoicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
+  const [filterSource, setFilterSource] = useState<'all' | 'custom' | 'master'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [summary, setSummary] = useState<Summary>({ totalCount: 0, paidCount: 0, pendingCount: 0 });
+  const [summary, setSummary] = useState<Summary>({
+    totalCount: 0,
+    paidCount: 0,
+    pendingCount: 0,
+    cancelledCount: 0,
+    customBillsCount: 0,
+    emiReceiptsCount: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const invoicesPerPage = 25;
 
@@ -64,17 +82,28 @@ export default function InvoicesPage() {
       params.append('limit', invoicesPerPage.toString());
       if (debouncedSearch) params.append('search', debouncedSearch);
       if (filterStatus !== 'All') params.append('status', filterStatus);
+      if (filterSource !== 'all') params.append('source', filterSource);
 
       const res = await fetch(`/api/invoices?${params.toString()}`);
       if (!res.ok) throw new Error(`Error: ${res.status}`);
       const data = await res.json();
 
       setInvoices(data.invoices || []);
-      setSummary(data.summary || { totalCount: 0, paidCount: 0, pendingCount: 0 });
+      setSummary(
+        data.summary || {
+          totalCount: 0,
+          paidCount: 0,
+          pendingCount: 0,
+          cancelledCount: 0,
+          customBillsCount: 0,
+          emiReceiptsCount: 0,
+        }
+      );
       if (data.pagination) {
         setTotalItems(data.pagination.totalItems);
         setTotalPages(data.pagination.totalPages);
       }
+      setSelectedIds([]);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch invoices');
     } finally {
@@ -84,29 +113,119 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchInvoices();
-  }, [currentPage, debouncedSearch, filterStatus]);
+  }, [currentPage, debouncedSearch, filterStatus, filterSource]);
+
+  const allOnPageSelected =
+    invoices.length > 0 && invoices.every((inv) => selectedIds.includes(inv.id));
+
+  const toggleSelectAllOnPage = () => {
+    if (allOnPageSelected) {
+      const pageSet = new Set(invoices.map((i) => i.id));
+      setSelectedIds((prev) => prev.filter((id) => !pageSet.has(id)));
+    } else {
+      const merged = new Set([...selectedIds, ...invoices.map((i) => i.id)]);
+      setSelectedIds(Array.from(merged));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleDeleteOne = async (inv: Invoice) => {
+    if (!window.confirm(`Delete invoice/receipt "${inv.invoiceNumber}" for ${inv.client.name}? This action cannot be undone.`)) {
+      return;
+    }
+    setIsDeleting(true);
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/invoices/${inv.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete invoice');
+      setFeedback({ type: 'success', message: `Deleted ${inv.invoiceNumber}` });
+      await fetchInvoices();
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Failed to delete invoice' });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} selected bill(s)/receipt(s)? This action cannot be undone.`)) {
+      return;
+    }
+    setIsDeleting(true);
+    setFeedback(null);
+    try {
+      const res = await fetch('/api/invoices', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete selected invoices');
+      const count = selectedIds.length;
+      setSelectedIds([]);
+      setFeedback({ type: 'success', message: `Deleted ${count} selected record(s)` });
+      await fetchInvoices();
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Failed to delete selected invoices' });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Paid':    return 'bg-green-100 text-green-800';
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      default:        return 'bg-gray-100 text-gray-800';
+      case 'Paid':      return 'bg-green-100 text-green-800';
+      case 'Pending':   return 'bg-yellow-100 text-yellow-800';
+      case 'Cancelled': return 'bg-red-100 text-red-800';
+      default:          return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Paid':    return <CheckCircle size={14} className="mr-1" />;
-      case 'Pending': return <Clock size={14} className="mr-1" />;
-      default:        return null;
+      case 'Paid':      return <CheckCircle size={14} className="mr-1" />;
+      case 'Pending':   return <Clock size={14} className="mr-1" />;
+      case 'Cancelled': return <XCircle size={14} className="mr-1" />;
+      default:          return null;
     }
   };
 
   const summaryCards = [
-    { title: 'Total Invoices',   value: summary.totalCount.toLocaleString('en-IN'),      icon: <FileText size={20} className="text-blue-600" />,   bgColor: 'bg-blue-50' },
-    { title: 'Paid',             value: summary.paidCount.toLocaleString('en-IN'),        icon: <DollarSign size={20} className="text-green-600" />, bgColor: 'bg-green-50' },
-    { title: 'Pending',          value: summary.pendingCount.toLocaleString('en-IN'),     icon: <Clock size={20} className="text-yellow-600" />,    bgColor: 'bg-yellow-50' },
-    { title: 'Showing',          value: `${totalItems.toLocaleString('en-IN')} records`,  icon: <FileText size={20} className="text-purple-600" />, bgColor: 'bg-purple-50' },
+    {
+      title: 'Total Receipts & Bills',
+      value: summary.totalCount.toLocaleString('en-IN'),
+      subtitle: `${summary.customBillsCount || 0} custom bills · ${(summary.emiReceiptsCount || summary.totalCount).toLocaleString('en-IN')} EMI receipts`,
+      icon: <FileText size={20} className="text-blue-600" />,
+      bgColor: 'bg-blue-50',
+    },
+    {
+      title: 'Paid Receipts',
+      value: summary.paidCount.toLocaleString('en-IN'),
+      subtitle: `${totalItems.toLocaleString('en-IN')} matching current filter`,
+      icon: <DollarSign size={20} className="text-green-600" />,
+      bgColor: 'bg-green-50',
+    },
+    {
+      title: 'Pending',
+      value: summary.pendingCount.toLocaleString('en-IN'),
+      subtitle: 'Awaiting payment date',
+      icon: <Clock size={20} className="text-yellow-600" />,
+      bgColor: 'bg-yellow-50',
+    },
+    {
+      title: 'Cancelled',
+      value: (summary.cancelledCount || 0).toLocaleString('en-IN'),
+      subtitle: 'Cancelled plot/EMI records',
+      icon: <XCircle size={20} className="text-red-600" />,
+      bgColor: 'bg-red-50',
+    },
   ];
 
   return (
@@ -114,9 +233,20 @@ export default function InvoicesPage() {
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
 
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-              <div className="flex gap-2">
+            <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Invoices & Receipts</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                {selectedIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    disabled={isDeleting}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+                  >
+                    <Trash2 size={16} />
+                    <span>Delete Selected ({selectedIds.length})</span>
+                  </button>
+                )}
                 <ExportDropdown
                   label="Export"
                   filename="invoices"
@@ -150,18 +280,89 @@ export default function InvoicesPage() {
               </div>
             </div>
 
+            {feedback && (
+              <div
+                className={`mb-4 px-4 py-3 rounded-lg border flex items-center justify-between text-sm ${
+                  feedback.type === 'success'
+                    ? 'bg-green-50 border-green-200 text-green-800'
+                    : 'bg-red-50 border-red-200 text-red-800'
+                }`}
+              >
+                <span>{feedback.message}</span>
+                <button
+                  type="button"
+                  onClick={() => setFeedback(null)}
+                  className="text-xs font-semibold underline ml-4"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {summaryCards.map((item, index) => (
                 <div key={index} className={`p-4 rounded-lg border border-gray-200 ${item.bgColor}`}>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-start">
                     <div>
                       <p className="text-sm text-gray-600">{item.title}</p>
                       <p className="text-xl font-semibold mt-1 text-black">{item.value}</p>
+                      {item.subtitle && (
+                        <p className="text-xs text-gray-500 mt-1">{item.subtitle}</p>
+                      )}
                     </div>
                     <div className="p-2 rounded-full bg-white">{item.icon}</div>
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Source filter pills */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 gap-1">
+                <button
+                  type="button"
+                  onClick={() => { setFilterSource('all'); setCurrentPage(1); }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    filterSource === 'all'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setFilterSource('custom'); setCurrentPage(1); }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    filterSource === 'custom'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Custom Bills ({summary.customBillsCount || 0})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setFilterSource('master'); setCurrentPage(1); }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    filterSource === 'master'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  EMI Receipts ({(summary.emiReceiptsCount || summary.totalCount).toLocaleString('en-IN')})
+                </button>
+              </div>
+
+              {invoices.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleSelectAllOnPage}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                >
+                  {allOnPageSelected ? 'Deselect All on Page' : 'Select All on Page'}
+                </button>
+              )}
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -186,6 +387,7 @@ export default function InvoicesPage() {
                   <option value="All">All Status</option>
                   <option value="Paid">Paid</option>
                   <option value="Pending">Pending</option>
+                  <option value="Cancelled">Cancelled</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <ChevronDown size={16} />
@@ -217,6 +419,15 @@ export default function InvoicesPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 w-10">
+                          <input
+                            type="checkbox"
+                            checked={allOnPageSelected}
+                            onChange={toggleSelectAllOnPage}
+                            aria-label="Select all on page"
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </th>
                         <th className="px-6 py-3">Invoice #</th>
                         <th className="px-6 py-3">Client</th>
                         <th className="px-6 py-3">Property</th>
@@ -227,39 +438,69 @@ export default function InvoicesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {invoices.map((invoice) => (
-                        <tr key={invoice.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {invoice.invoiceNumber}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {invoice.client.name}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                            {invoice.property?.title || '—'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {invoice.date ? new Date(invoice.date).toLocaleDateString('en-IN') : '—'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
-                            {invoice.amount}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
-                              {getStatusIcon(invoice.status)}
-                              {invoice.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                            <button
-                              onClick={() => router.push(`/invoices/${invoice.id}`)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {invoices.map((invoice) => {
+                        const isSelected = selectedIds.includes(invoice.id);
+                        return (
+                          <tr key={invoice.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50/40' : ''}`}>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelectOne(invoice.id)}
+                                aria-label={`Select ${invoice.invoiceNumber}`}
+                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              <div className="flex items-center gap-2">
+                                <span>{invoice.invoiceNumber}</span>
+                                {invoice.id.startsWith('b') && (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-blue-100 text-blue-700">
+                                    Custom
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {invoice.client.name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                              {invoice.property?.title || '—'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {invoice.date ? new Date(invoice.date).toLocaleDateString('en-IN') : '—'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
+                              {invoice.amount}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
+                                {getStatusIcon(invoice.status)}
+                                {invoice.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                              <div className="inline-flex items-center justify-end gap-3">
+                                <button
+                                  onClick={() => router.push(`/invoices/${invoice.id}`)}
+                                  className="text-blue-600 hover:text-blue-900 font-medium"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteOne(invoice)}
+                                  disabled={isDeleting}
+                                  className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                                  title="Delete invoice/receipt"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}

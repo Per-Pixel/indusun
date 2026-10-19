@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
+import { invalidateServerCache } from '@/utils/serverCache';
+
+const MASTER_TABLE = 'Master Data Of Gurukrupa';
 
 // Schema: see admin/sql/add_bills_payment_method.sql (base table) and
 // admin/sql/brokers_and_bills_enhancements.sql (due_date, items, tax_rate,
@@ -137,6 +140,7 @@ export async function POST(req: NextRequest) {
       throw new Error(error.message);
     }
 
+    invalidateServerCache();
     return NextResponse.json({ id: data!.id }, { status: 201 });
   } catch (err: any) {
     console.error('Bills POST error:', err);
@@ -149,7 +153,8 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const id = parseInt(body.id);
+    const rawId = String(body.id ?? '').replace(/^b/i, '');
+    const id = parseInt(rawId, 10);
     const status = body.status === 'Paid' ? 'Paid' : 'Pending';
     if (isNaN(id)) {
       return NextResponse.json({ error: 'Valid bill id required' }, { status: 400 });
@@ -164,10 +169,86 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (error) throw new Error(error.message);
+    invalidateServerCache();
     return NextResponse.json({ success: true, id: data.id, status: data.status });
 
   } catch (err: any) {
     console.error('Bills PATCH error:', err);
     return NextResponse.json({ error: 'Failed to update bill' }, { status: 500 });
+  }
+}
+
+// DELETE /api/bills  ?id=<billId>&source=master | { id, ids, source }
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const queryId = searchParams.get('id');
+    const querySource = searchParams.get('source');
+
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {
+      // No JSON body provided
+    }
+
+    const source = body?.source || querySource;
+    const rawList: (string | number)[] = Array.isArray(body?.ids)
+      ? body.ids
+      : body?.id !== undefined
+      ? [body.id]
+      : queryId
+      ? [queryId]
+      : [];
+
+    if (rawList.length === 0) {
+      return NextResponse.json({ error: 'Bill id or ids required' }, { status: 400 });
+    }
+
+    const billIds: number[] = [];
+    const masterIds: number[] = [];
+
+    for (const item of rawList) {
+      const s = String(item).trim();
+      if (/^b\d+$/i.test(s)) {
+        const n = parseInt(s.slice(1), 10);
+        if (!isNaN(n)) billIds.push(n);
+      } else {
+        const n = parseInt(s, 10);
+        if (!isNaN(n)) {
+          if (source === 'master') {
+            masterIds.push(n);
+          } else {
+            billIds.push(n);
+          }
+        }
+      }
+    }
+
+    if (billIds.length === 0 && masterIds.length === 0) {
+      return NextResponse.json({ error: 'No valid IDs provided' }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+
+    if (billIds.length > 0) {
+      const { error } = await supabase.from('bills').delete().in('id', billIds);
+      if (error) throw new Error(error.message);
+    }
+
+    if (masterIds.length > 0) {
+      const { error } = await supabase.from(MASTER_TABLE).delete().in('id', masterIds);
+      if (error) throw new Error(error.message);
+    }
+
+    invalidateServerCache();
+    return NextResponse.json({
+      success: true,
+      deletedBills: billIds.length,
+      deletedMaster: masterIds.length,
+    });
+  } catch (err: any) {
+    console.error('Bills DELETE error:', err);
+    return NextResponse.json({ error: err.message || 'Failed to delete bill(s)' }, { status: 500 });
   }
 }

@@ -121,10 +121,10 @@ export default function ProjectsContent({ projects, totalSocieties, error }: Pro
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Projects', value: totalSocieties, icon: <Building2 size={18} style={{ color: '#C9A84C' }} />, bg: 'bg-amber-50' },
-          { label: 'Total Units', value: totalUnits.toLocaleString('en-IN'), icon: <TrendingUp size={18} style={{ color: '#3B82F6' }} />, bg: 'bg-blue-50' },
-          { label: 'Total Revenue', value: fmtINR(totalRevenue), icon: <DollarSign size={18} style={{ color: '#8B5CF6' }} />, bg: 'bg-purple-50' },
-          { label: 'Units Sold/Paid', value: totalSold.toLocaleString('en-IN'), icon: <CheckCircle size={18} style={{ color: '#10B981' }} />, bg: 'bg-emerald-50' },
+          { label: 'Total Projects (Societies)', value: totalSocieties, icon: <Building2 size={18} style={{ color: '#C9A84C' }} />, bg: 'bg-amber-50' },
+          { label: 'Total Records (Receipts)', value: totalUnits.toLocaleString('en-IN'), icon: <TrendingUp size={18} style={{ color: '#3B82F6' }} />, bg: 'bg-blue-50' },
+          { label: 'Amount Collected', value: fmtINR(totalPaid), icon: <DollarSign size={18} style={{ color: '#8B5CF6' }} />, bg: 'bg-purple-50' },
+          { label: 'Paid Receipts', value: totalSold.toLocaleString('en-IN'), icon: <CheckCircle size={18} style={{ color: '#10B981' }} />, bg: 'bg-emerald-50' },
         ].map((s) => (
           <div key={s.label} className="card p-4 flex items-center gap-3">
             <div className={`p-2.5 rounded-xl ${s.bg}`}>{s.icon}</div>

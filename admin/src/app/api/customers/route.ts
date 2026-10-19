@@ -122,15 +122,105 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    invalidateServerCache('count:master:');
-    invalidateServerCache('rpc:get_master_data_summary_rpc');
-    invalidateServerCache('rpc:get_unique_clients_rpc');
+    invalidateServerCache();
 
     return NextResponse.json({ success: true, customer: data }, { status: 201 });
   } catch (err: any) {
     console.error('Unexpected error in customers POST:', err);
     return NextResponse.json(
       { error: err.message || 'Failed to add customer' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const rawIds: unknown[] = Array.isArray(body?.ids) ? body.ids : [];
+    const scope: 'record' | 'customer' = body?.scope === 'customer' ? 'customer' : 'record';
+
+    const validIds = rawIds
+      .map((v) => Number(v))
+      .filter((n) => Number.isFinite(n) && n > 0);
+
+    if (validIds.length === 0) {
+      return NextResponse.json({ error: 'No valid record IDs provided' }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+
+    if (scope === 'customer') {
+      const { data: rows, error: fetchErr } = await supabase
+        .from(TABLE_NAME)
+        .select('id,client_name')
+        .in('id', validIds);
+
+      if (fetchErr) {
+        return NextResponse.json(
+          { error: fetchErr.message || 'Failed to look up customers' },
+          { status: 500 }
+        );
+      }
+
+      const uniqueNames = Array.from(
+        new Set(
+          (rows || [])
+            .map((r: any) => String(r.client_name || '').trim())
+            .filter(Boolean)
+        )
+      );
+
+      for (const name of uniqueNames) {
+        const { error: delErr } = await supabase
+          .from(TABLE_NAME)
+          .delete()
+          .ilike('client_name', name);
+
+        if (delErr) {
+          return NextResponse.json(
+            { error: delErr.message || `Failed to delete records for ${name}` },
+            { status: 500 }
+          );
+        }
+
+        await supabase.from('clients').delete().ilike('name', name);
+      }
+
+      // Also delete any selected rows that had empty client_name
+      await supabase.from(TABLE_NAME).delete().in('id', validIds);
+
+      invalidateServerCache();
+      return NextResponse.json({
+        success: true,
+        scope: 'customer',
+        deletedClients: uniqueNames.length,
+        deletedIds: validIds.length,
+      });
+    }
+
+    const { error } = await supabase
+      .from(TABLE_NAME)
+      .delete()
+      .in('id', validIds);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message || 'Failed to delete customer records' },
+        { status: 500 }
+      );
+    }
+
+    invalidateServerCache();
+    return NextResponse.json({
+      success: true,
+      scope: 'record',
+      deletedCount: validIds.length,
+    });
+  } catch (err: any) {
+    console.error('Unexpected error in customers DELETE:', err);
+    return NextResponse.json(
+      { error: err.message || 'Failed to delete customer records' },
       { status: 500 }
     );
   }

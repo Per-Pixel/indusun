@@ -1,137 +1,69 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
 import UserForm from '@/components/users/UserForm';
 import { User } from '@/components/users/UserList';
 import { toast } from 'react-hot-toast';
-import { ArrowLeft, Edit, Trash2, Mail, Phone, MapPin, Calendar, Clock, FileText } from 'lucide-react';
+import {
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Clock,
+  FileText,
+  ExternalLink,
+} from 'lucide-react';
+import { parseAmount } from '@/utils/dataUtils';
 
-// Mock data for clients (same as in the clients page)
-const mockClients: User[] = [
-  {
-    id: '1',
-    name: 'Robert Johnson',
-    email: 'robert.j@example.com',
-    phone: '+1 (555) 123-7890',
-    role: 'client',
-    status: 'active',
-    image: '/auth/Agents/client-01.jpg',
-    location: 'New York, NY',
-    lastActive: '2023-12-18',
-    createdAt: '2023-10-15',
-  },
-  {
-    id: '2',
-    name: 'Sarah Williams',
-    email: 'sarah.w@example.com',
-    phone: '+1 (555) 987-6543',
-    role: 'client',
-    status: 'active',
-    image: '/auth/Agents/client-02.jpg',
-    location: 'Los Angeles, CA',
-    lastActive: '2023-12-20',
-    createdAt: '2023-11-05',
-  },
-  {
-    id: '3',
-    name: 'Michael Brown',
-    email: 'michael.b@example.com',
-    phone: '+1 (555) 456-7890',
-    role: 'client',
-    status: 'inactive',
-    image: '/auth/Agents/client-03.jpg',
-    location: 'Chicago, IL',
-    lastActive: '2023-11-30',
-    createdAt: '2023-09-22',
-  },
-  {
-    id: '4',
-    name: 'Emily Davis',
-    email: 'emily.d@example.com',
-    phone: '+1 (555) 234-5678',
-    role: 'client',
-    status: 'pending',
-    image: '/auth/Agents/client-04.jpg',
-    location: 'Houston, TX',
-    lastActive: '2023-12-15',
-    createdAt: '2023-12-01',
-  },
-  {
-    id: '5',
-    name: 'David Wilson',
-    email: 'david.w@example.com',
-    phone: '+1 (555) 876-5432',
-    role: 'client',
-    status: 'active',
-    image: '/auth/Agents/client-05.jpg',
-    location: 'Miami, FL',
-    lastActive: '2023-12-19',
-    createdAt: '2023-08-15',
-  },
-];
-
-// Mock client activity data
-const mockClientActivity = [
-  {
-    id: '1',
-    type: 'property_view',
-    description: 'Viewed 3 properties in Brooklyn',
-    date: '2023-12-20T10:45:00Z',
-  },
-  {
-    id: '2',
-    type: 'saved_property',
-    description: 'Saved "Luxury Apartment in Manhattan" to favorites',
-    date: '2023-12-19T14:30:00Z',
-  },
-  {
-    id: '3',
-    type: 'contact_broker',
-    description: 'Contacted broker Arshir Patel about a property',
-    date: '2023-12-18T09:15:00Z',
-  },
-  {
-    id: '4',
-    type: 'payment',
-    description: 'Made a payment of $2,500 for property booking',
-    date: '2023-12-15T16:20:00Z',
-  },
-  {
-    id: '5',
-    type: 'document',
-    description: 'Uploaded verification documents',
-    date: '2023-12-10T11:05:00Z',
-  },
-];
+interface ClientDetail extends User {
+  rawName?: string;
+  source?: 'master' | 'custom';
+  firstRecordId?: number | null;
+  recordsCount?: number;
+  totalPaid?: number;
+  portfolio?: any[];
+}
 
 export default function ClientDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const clientId = params.id as string;
+  const clientId = String(params?.id || '');
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [client, setClient] = useState<User | null>(null);
+  const [client, setClient] = useState<ClientDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [clientActivity, setClientActivity] = useState(mockClientActivity);
+
+  const fetchClient = useCallback(async () => {
+    if (!clientId) return;
+    try {
+      setIsLoading(true);
+      const res = await fetch(`/api/clients/${encodeURIComponent(clientId)}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Client not found');
+      }
+      const data = await res.json();
+      setClient(data.client);
+    } catch (err: any) {
+      toast.error(err.message || 'Client not found');
+      setClient(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clientId]);
 
   useEffect(() => {
-    // In a real app, you would fetch the client data from an API
-    const foundClient = mockClients.find(c => c.id === clientId);
-
-    if (foundClient) {
-      setClient(foundClient);
-    } else {
-      toast.error('Client not found');
-      router.push('/clients');
-    }
-
-    setIsLoading(false);
-  }, [clientId, router]);
+    fetchClient();
+  }, [fetchClient]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -141,43 +73,56 @@ export default function ClientDetailPage() {
     setShowEditForm(true);
   };
 
-  const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete ${client?.name}?`)) {
-      // In a real app, you would call an API to delete the client
-      toast.success(`${client?.name} has been deleted`);
-      router.push('/clients');
+  const handleDelete = async () => {
+    if (!client) return;
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${client.name}? This will remove all associated customer records.`
+      )
+    ) {
+      try {
+        setIsLoading(true);
+        const res = await fetch(`/api/clients/${encodeURIComponent(clientId)}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to delete client');
+        }
+        toast.success(`${client.name} has been deleted`);
+        router.push('/clients');
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to delete client');
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleFormSubmit = (clientData: Partial<User>) => {
-    setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      if (client) {
-        // Update client
-        setClient({ ...client, ...clientData });
-        toast.success(`${clientData.name} has been updated`);
+  const handleFormSubmit = async (clientData: Partial<User>) => {
+    if (!client) return;
+    try {
+      setIsLoading(true);
+      const res = await fetch(`/api/clients/${encodeURIComponent(clientId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(clientData),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update client');
       }
-
-      setIsLoading(false);
+      setClient((prev) => (prev ? { ...prev, ...clientData, ...(data.client || {}) } : null));
+      toast.success(`${clientData.name || client.name} has been updated`);
       setShowEditForm(false);
-    }, 1000);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update client');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFormCancel = () => {
     setShowEditForm(false);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   if (isLoading) {
@@ -204,6 +149,8 @@ export default function ClientDetailPage() {
       </div>
     );
   }
+
+  const portfolio = Array.isArray(client.portfolio) ? client.portfolio : [];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -241,9 +188,18 @@ export default function ClientDetailPage() {
                 {/* Client Profile */}
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
                   <div className="p-6 border-b border-gray-200">
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-wrap justify-between items-center gap-3">
                       <h2 className="text-xl font-semibold text-gray-900">Client Profile</h2>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        {client.firstRecordId && (
+                          <Link
+                            href={`/customers/${client.firstRecordId}`}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-md hover:bg-amber-100 text-sm font-medium"
+                          >
+                            <ExternalLink size={15} />
+                            <span>View Full Customer Ledger</span>
+                          </Link>
+                        )}
                         <button
                           onClick={handleEdit}
                           className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -281,11 +237,15 @@ export default function ClientDetailPage() {
                             </div>
                           )}
                         </div>
-                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          client.status === 'active' ? 'bg-green-100 text-green-800' :
-                          client.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        <div
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            client.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : client.status === 'inactive'
+                              ? 'bg-gray-100 text-gray-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                        >
                           {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
                         </div>
                       </div>
@@ -299,7 +259,7 @@ export default function ClientDetailPage() {
                             <Mail className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                             <div>
                               <p className="text-sm font-medium text-gray-500">Email</p>
-                              <p className="text-gray-900">{client.email}</p>
+                              <p className="text-gray-900">{client.email || '—'}</p>
                             </div>
                           </div>
 
@@ -307,14 +267,14 @@ export default function ClientDetailPage() {
                             <Phone className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                             <div>
                               <p className="text-sm font-medium text-gray-500">Phone</p>
-                              <p className="text-gray-900">{client.phone}</p>
+                              <p className="text-gray-900">{client.phone || '—'}</p>
                             </div>
                           </div>
 
                           <div className="flex items-start">
                             <MapPin className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                             <div>
-                              <p className="text-sm font-medium text-gray-500">Location</p>
+                              <p className="text-sm font-medium text-gray-500">Location / Society</p>
                               <p className="text-gray-900">{client.location || 'Not specified'}</p>
                             </div>
                           </div>
@@ -323,15 +283,20 @@ export default function ClientDetailPage() {
                             <Calendar className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                             <div>
                               <p className="text-sm font-medium text-gray-500">Member Since</p>
-                              <p className="text-gray-900">{client.createdAt}</p>
+                              <p className="text-gray-900">{client.createdAt || '—'}</p>
                             </div>
                           </div>
 
                           <div className="flex items-start">
                             <Clock className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                             <div>
-                              <p className="text-sm font-medium text-gray-500">Last Active</p>
-                              <p className="text-gray-900">{client.lastActive || 'Unknown'}</p>
+                              <p className="text-sm font-medium text-gray-500">Plot / EMI Records</p>
+                              <p className="text-gray-900">
+                                {client.recordsCount ?? 1} record{(client.recordsCount ?? 1) === 1 ? '' : 's'}
+                                {typeof client.totalPaid === 'number' && client.totalPaid > 0
+                                  ? ` · ₹${client.totalPaid.toLocaleString('en-IN')} total paid`
+                                  : ''}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -340,26 +305,54 @@ export default function ClientDetailPage() {
                   </div>
                 </div>
 
-                {/* Client Activity */}
+                {/* Client Portfolio / Activity */}
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Property &amp; Installment Records ({portfolio.length})
+                    </h2>
                   </div>
 
                   <div className="p-6">
-                    <div className="space-y-6">
-                      {clientActivity.map((activity) => (
-                        <div key={activity.id} className="flex items-start">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                            <FileText className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="text-gray-900">{activity.description}</p>
-                            <p className="text-sm text-gray-500">{formatDate(activity.date)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {portfolio.length === 0 ? (
+                      <p className="text-sm text-gray-500">No installment or plot records found for this client.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {portfolio.map((row: any) => {
+                          const paid = parseAmount(row.paid_amount);
+                          const plotAmt = parseAmount(row.plot_amount);
+                          return (
+                            <div
+                              key={row.id}
+                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 rounded-lg border border-gray-100 hover:bg-gray-50"
+                            >
+                              <div className="flex items-start">
+                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 shrink-0">
+                                  <FileText className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="text-gray-900 font-medium">
+                                    {row.society_name || '—'} · Plot {row.plot_no || '—'}{' '}
+                                    {row.emi_no ? `(EMI #${row.emi_no})` : ''}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    Receipt #{row.id} · Paid: ₹{paid.toLocaleString('en-IN')} / Plot: ₹
+                                    {plotAmt.toLocaleString('en-IN')} ·{' '}
+                                    {row.emi_paid_date || row.date_of_form || row.date || '—'}
+                                  </p>
+                                </div>
+                              </div>
+                              <Link
+                                href={`/customers/${row.id}`}
+                                className="text-xs font-medium text-blue-600 hover:underline self-end sm:self-center"
+                              >
+                                Open Receipt →
+                              </Link>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </>

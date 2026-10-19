@@ -16,6 +16,8 @@ import {
   Clock,
   Users,
   Receipt,
+  Trash2,
+  XCircle,
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
 import {
@@ -37,7 +39,7 @@ interface Invoice {
   dueDate: string | null;
   amount: string;
   amountNum?: number;
-  status: 'Paid' | 'Pending' | 'Overdue';
+  status: 'Paid' | 'Pending' | 'Overdue' | 'Cancelled';
   societyName?: string | null;
   plotNo?: string | null;
   plotSize?: string | null;
@@ -87,6 +89,7 @@ const getStatusColor = (status: Invoice['status']) => {
     case 'Pending':
       return 'bg-yellow-100 text-yellow-800';
     case 'Overdue':
+    case 'Cancelled':
       return 'bg-red-100 text-red-800';
     default:
       return 'bg-gray-100 text-gray-800';
@@ -101,6 +104,8 @@ const getStatusIcon = (status: Invoice['status']) => {
       return <Clock size={16} className="mr-1" />;
     case 'Overdue':
       return <AlertCircle size={16} className="mr-1" />;
+    case 'Cancelled':
+      return <XCircle size={16} className="mr-1" />;
     default:
       return null;
   }
@@ -128,6 +133,24 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
   const [markPaidError, setMarkPaidError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteInvoice = async () => {
+    if (!invoice) return;
+    if (!window.confirm(`Are you sure you want to delete Bill / Receipt #${invoice.invoiceNumber}? This action cannot be undone.`)) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete invoice');
+      router.push('/invoices');
+    } catch (e: any) {
+      alert(e.message || 'Failed to delete invoice');
+      setIsDeleting(false);
+    }
+  };
 
   // Bills (id `b<n>`) update via /api/bills; master-data invoices via /api/billing.
   const markAsPaid = async () => {
@@ -253,6 +276,15 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                 <button onClick={() => window.print()} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
                   <Printer size={16} />
                   <span>Print</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteInvoice}
+                  disabled={isDeleting}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-red-300 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  <Trash2 size={16} />
+                  <span>{isDeleting ? 'Deleting…' : 'Delete Bill / Receipt'}</span>
                 </button>
               </div>
             </div>

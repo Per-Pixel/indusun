@@ -210,7 +210,7 @@ export default function DashboardContent({ summary, societies, leads, pipelineCo
               <div className="max-w-xl">
                 <p className="ops-eyebrow">Indusun Operations</p>
                 <h2 className="mt-2 text-2xl lg:text-[1.7rem] font-extrabold text-white leading-tight tracking-tight">
-                  {fmt(summary.totalClients)} clients · {fmt(summary.totalRecords)} records
+                  {fmt(summary.totalClients)} unique clients · {fmt(summary.totalRecords)} installment receipts
                 </h2>
                 <p className="mt-1.5 text-sm" style={{ color: 'rgba(255,255,255,0.72)' }}>
                   {summary.uniqueSocieties} societies · {summary.uniqueBrokers} brokers ·{' '}
@@ -232,12 +232,12 @@ export default function DashboardContent({ summary, societies, leads, pipelineCo
 
               <div className="metric-rail">
                 <div className="metric-tile">
-                  <p className="metric-value">{fmt(summary.soldProperties)}</p>
-                  <p className="metric-label">Sold</p>
+                  <p className="metric-value">{fmt(summary.uniqueSoldPlots ?? summary.soldProperties)}</p>
+                  <p className="metric-label">Sold Plots</p>
                 </div>
                 <div className="metric-tile">
-                  <p className="metric-value">{fmt(Math.max(0, summary.listedProperties - summary.soldProperties))}</p>
-                  <p className="metric-label">Available</p>
+                  <p className="metric-value">{fmt(summary.soldProperties)}</p>
+                  <p className="metric-label">Paid Receipts</p>
                 </div>
                 <div className="metric-tile">
                   <p className="metric-value">{fmtLakh(summary.totalPaidAmount)}</p>
@@ -276,28 +276,28 @@ export default function DashboardContent({ summary, societies, leads, pipelineCo
             <StatCard
               label="Total Records"
               value={fmt(summary.totalRecords)}
-              sub="All master data entries"
+              sub="All installment receipt entries"
               icon={<ClipboardList size={20} style={{ color: BLUE }} />}
               iconBg="bg-blue-50"
             />
             <StatCard
-              label="Active Clients"
+              label="Unique Clients"
               value={fmt(summary.totalClients)}
-              sub={`${summary.uniqueSocieties} societies`}
+              sub={`Across ${summary.uniqueSocieties} societies`}
               icon={<Users size={20} style={{ color: BLUE_SOFT }} />}
               iconBg="bg-blue-50"
             />
             <StatCard
               label="Sold Properties"
-              value={fmt(summary.soldProperties)}
-              sub={`${pct(summary.soldProperties, summary.totalRecords)} of records`}
+              value={fmt(summary.uniqueSoldPlots ?? summary.soldProperties)}
+              sub={`${fmt(summary.soldProperties)} paid receipts · ${fmt(summary.uniquePlots ?? 4483)} unique plots`}
               icon={<CheckCircle size={20} style={{ color: GREEN }} />}
               iconBg="bg-emerald-50"
             />
             <StatCard
-              label="Total Revenue"
-              value={fmtLakh(summary.totalPlotAmount)}
-              sub={`Collected: ${fmtLakh(summary.totalPaidAmount)}`}
+              label="Collected Revenue"
+              value={fmtLakh(summary.totalPaidAmount)}
+              sub={`Active: ${fmtLakh(summary.activePaidAmount ?? summary.totalPaidAmount)} · EMI: ${fmtLakh(summary.totalEmiAmount ?? 220716417)}`}
               icon={<IndianRupee size={20} style={{ color: BLUE_DEEP }} />}
               iconBg="bg-blue-50"
             />
@@ -436,12 +436,12 @@ export default function DashboardContent({ summary, societies, leads, pipelineCo
                   </div>
                   <div className="grid grid-cols-3 gap-3 mt-5">
                     <div className="card-premium p-3">
-                      <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Outstanding</p>
-                      <p className="text-lg font-extrabold mt-0.5" style={{ color: BLUE_DEEP }}>{fmtLakh(Math.max(0, summary.totalPlotAmount - summary.totalPaidAmount))}</p>
+                      <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Active Paid</p>
+                      <p className="text-lg font-extrabold mt-0.5" style={{ color: BLUE_DEEP }}>{fmtLakh(summary.activePaidAmount ?? summary.totalPaidAmount)}</p>
                     </div>
                     <div className="card-premium p-3">
-                      <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Booked</p>
-                      <p className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--success)' }}>{fmt(pipelineCounts.booked)}</p>
+                      <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>EMI Revenue</p>
+                      <p className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--success)' }}>{fmtLakh(summary.totalEmiAmount ?? 220716417)}</p>
                     </div>
                     <div className="card-premium p-3">
                       <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Cancelled</p>

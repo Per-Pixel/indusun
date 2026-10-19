@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   Search, Filter, Plus, Download, Users, CheckCircle,
   XCircle, Flame, Thermometer, Snowflake, Eye, Phone,
-  Building2, ChevronLeft, ChevronRight, SlidersHorizontal,
+  Building2, ChevronLeft, ChevronRight, SlidersHorizontal, Trash2, Loader2,
 } from 'lucide-react';
 import { LeadRecord, LeadStatus } from '@/services/leadService';
 
@@ -64,8 +64,87 @@ export default function LeadsContent({
   const [isPending, startTransition] = useTransition();
   const [localSearch, setLocalSearch] = useState(filters.search);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, leads]);
+
+  const allOnPageSelected = leads.length > 0 && leads.every((l) => selectedIds.has(l.id));
+
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(leads.map((l) => l.id)));
+    }
+  };
+
+  const toggleSelectRow = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteLead = async (lead: LeadRecord) => {
+    const label = lead.client_name || `Lead #${lead.id}`;
+    if (!window.confirm(`Delete lead record #${lead.id} (${label})? This action cannot be undone.`)) {
+      return;
+    }
+    setDeletingId(lead.id);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/master-data?id=${lead.id}`, { method: 'DELETE' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to delete lead');
+      }
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(lead.id);
+        return next;
+      });
+      router.refresh();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to delete lead');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.size} selected lead record(s)? This action cannot be undone.`)) {
+      return;
+    }
+    setIsBulkDeleting(true);
+    setActionError(null);
+    try {
+      const res = await fetch('/api/master-data', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to delete selected leads');
+      }
+      setSelectedIds(new Set());
+      router.refresh();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to delete selected leads');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
 
   const updateUrl = (updates: Record<string, string>) => {
     const params = new URLSearchParams({
@@ -113,7 +192,10 @@ export default function LeadsContent({
           <button className="btn btn-secondary btn-sm">
             <Download size={14} /> Export
           </button>
-          <button className="btn btn-primary btn-sm">
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => router.push('/customers/add')}
+          >
             <Plus size={14} /> Add Lead
           </button>
         </div>
@@ -221,8 +303,36 @@ export default function LeadsContent({
               <XCircle size={14} /> Clear
             </button>
           )}
+
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+                className="btn btn-sm bg-red-600 text-white hover:bg-red-700 border-red-600 flex items-center gap-1.5"
+              >
+                {isBulkDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Delete Selected ({selectedIds.size})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                className="btn btn-ghost btn-sm text-xs"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {actionError && (
+        <div className="card p-3 flex items-center justify-between" style={{ borderColor: 'var(--danger)', background: 'var(--danger-bg)' }}>
+          <p className="text-xs font-semibold" style={{ color: 'var(--danger)' }}>{actionError}</p>
+          <button onClick={() => setActionError(null)} className="btn btn-ghost btn-sm">Dismiss</button>
+        </div>
+      )}
 
       {/* Leads Table */}
       <div className="card overflow-hidden">
@@ -230,6 +340,15 @@ export default function LeadsContent({
           <table className="crm-table">
             <thead>
               <tr>
+                <th className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={allOnPageSelected}
+                    onChange={toggleSelectAll}
+                    aria-label="Select all leads on page"
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </th>
                 <th>#</th>
                 <th>Client</th>
                 <th>Contact</th>
@@ -246,7 +365,7 @@ export default function LeadsContent({
             <tbody>
               {leads.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center py-12">
+                  <td colSpan={12} className="text-center py-12">
                     <div className="empty-state">
                       <div className="empty-state-icon"><Users size={22} style={{ color: 'var(--text-muted)' }} /></div>
                       <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>No leads found</p>
@@ -261,7 +380,16 @@ export default function LeadsContent({
                   const score = SCORE_CONFIG[lead.lead_score];
                   const statusCfg = STATUS_CONFIG[lead.lead_status];
                   return (
-                    <tr key={lead.id}>
+                    <tr key={lead.id} className={selectedIds.has(lead.id) ? 'bg-blue-50/40' : ''}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(lead.id)}
+                          onChange={() => toggleSelectRow(lead.id)}
+                          aria-label={`Select lead ${lead.id}`}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="text-xs" style={{ color: 'var(--text-muted)' }}>
                         {(page - 1) * PAGE_SIZE + idx + 1}
                       </td>
@@ -329,12 +457,29 @@ export default function LeadsContent({
                           <button
                             className="btn btn-ghost btn-icon btn-sm"
                             title="View details"
-                            onClick={() => router.push(`/master-data?id=${lead.id}`)}
+                            onClick={() => router.push(`/customers/${lead.id}`)}
                           >
                             <Eye size={14} />
                           </button>
-                          <button className="btn btn-ghost btn-icon btn-sm" title="Call client">
+                          <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            title={lead.contact_no ? `Call ${lead.contact_no}` : 'No phone number'}
+                            disabled={!lead.contact_no}
+                            onClick={() => {
+                              if (lead.contact_no) {
+                                window.location.href = `tel:${lead.contact_no}`;
+                              }
+                            }}
+                          >
                             <Phone size={14} />
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-icon btn-sm text-red-600 hover:bg-red-50"
+                            title="Delete lead"
+                            disabled={deletingId === lead.id}
+                            onClick={() => handleDeleteLead(lead)}
+                          >
+                            {deletingId === lead.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                           </button>
                         </div>
                       </td>

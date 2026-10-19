@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
+import { invalidateServerCache } from '@/utils/serverCache';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
 
@@ -114,12 +115,20 @@ export async function GET(
     }
 
     const row = data as any;
-    const paid   = isPaid(row.emi_paid_date);
-    const d      = paid ? normalizeDate(row.emi_paid_date) : (normalizeDate(row.form_date) || null);
-    const amount = row.emi_amount_num ?? parseAmount(row.emi_amount) ?? parseAmount(row.paid_amount) ?? 0;
+    const isCancelled = Boolean(row.cancel_date && String(row.cancel_date).trim() !== '');
+    const paid        = isPaid(row.emi_paid_date);
+    const d           = paid ? normalizeDate(row.emi_paid_date) : (normalizeDate(row.form_date) || null);
+    const paidAmt     = row.paid_amount_num ?? parseAmount(row.paid_amount);
+    const emiAmt      = row.emi_amount_num ?? parseAmount(row.emi_amount);
+    const amount      = paidAmt > 0 ? paidAmt : emiAmt;
     const amountFormatted = `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)}`;
+    const emiFormatted = `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(emiAmt)}`;
     const propertyTitle = [row.society_name, row.plot_no ? `Plot ${row.plot_no}` : null, row.plot_size ? `(${row.plot_size})` : null].filter(Boolean).join(' – ') || null;
     const rawPay = String(row.cheque_cash || '').trim().toUpperCase() || 'CHQ';
+    const baseRemarks = row.remarks ? String(row.remarks).trim() : null;
+    const remarks = isCancelled
+      ? [baseRemarks, `Cancelled on ${String(row.cancel_date).trim()}`].filter(Boolean).join(' | ')
+      : baseRemarks;
 
     return NextResponse.json({
       invoice: {
@@ -129,13 +138,15 @@ export async function GET(
         dueDate:       d,
         amount:        amountFormatted,
         amountNum:     amount,
-        status:        paid ? 'Paid' : 'Pending',
+        emiAmount:     emiFormatted,
+        emiAmountNum:  emiAmt,
+        status:        isCancelled ? 'Cancelled' : (paid ? 'Paid' : 'Pending'),
         societyName:   row.society_name || null,
         plotNo:        row.plot_no || null,
         plotSize:      row.plot_size || null,
         referenceBy:   row["broker's_name"] || [row.broker_code, row.broker_name_clean].filter(Boolean).join('/') || null,
         totalEmiNo:    row.emi_no || row.emi_time || null,
-        remarks:       row.remarks ? String(row.remarks).trim() : null,
+        remarks,
         paymentMethod: rawPay,
         paymentRef:    row.r_no || null,
         showQr:        true,
@@ -164,5 +175,37 @@ export async function GET(
   } catch (error: any) {
     console.error('Invoice detail API error:', error);
     return NextResponse.json({ error: 'Failed to fetch invoice' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = createServiceClient();
+
+    if (id.startsWith('b')) {
+      const billId = parseInt(id.slice(1), 10);
+      if (isNaN(billId)) {
+        return NextResponse.json({ error: 'Invalid bill ID' }, { status: 400 });
+      }
+      const { error } = await supabase.from('bills').delete().eq('id', billId);
+      if (error) throw new Error(error.message);
+    } else {
+      const rowId = parseInt(id, 10);
+      if (isNaN(rowId)) {
+        return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 });
+      }
+      const { error } = await supabase.from(TABLE_NAME).delete().eq('id', rowId);
+      if (error) throw new Error(error.message);
+    }
+
+    invalidateServerCache();
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Invoice DELETE error:', error);
+    return NextResponse.json({ error: error.message || 'Failed to delete invoice' }, { status: 500 });
   }
 }

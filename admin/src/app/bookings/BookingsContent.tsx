@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   BookOpen, Search, DollarSign, CheckCircle, Clock, XCircle,
-  ChevronLeft, ChevronRight, Eye, Phone, Building2, TrendingUp,
+  ChevronLeft, ChevronRight, Eye, Phone, Building2, TrendingUp, Trash2, Loader2,
 } from 'lucide-react';
 import { BookingRecord, BookingStatus } from '@/services/bookingService';
 
@@ -43,7 +43,86 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [localSearch, setLocalSearch] = useState(filters.search);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, bookings]);
+
+  const allOnPageSelected = bookings.length > 0 && bookings.every((b) => selectedIds.has(b.id));
+
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(bookings.map((b) => b.id)));
+    }
+  };
+
+  const toggleSelectRow = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteBooking = async (b: BookingRecord) => {
+    const label = b.client_name || `Booking #${b.id}`;
+    if (!window.confirm(`Delete booking record #${b.id} (${label})? This action cannot be undone.`)) {
+      return;
+    }
+    setDeletingId(b.id);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/master-data?id=${b.id}`, { method: 'DELETE' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to delete booking');
+      }
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(b.id);
+        return next;
+      });
+      router.refresh();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to delete booking');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.size} selected booking record(s)? This action cannot be undone.`)) {
+      return;
+    }
+    setIsBulkDeleting(true);
+    setActionError(null);
+    try {
+      const res = await fetch('/api/master-data', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to delete selected bookings');
+      }
+      setSelectedIds(new Set());
+      router.refresh();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to delete selected bookings');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
 
   const updateUrl = (updates: Record<string, string>) => {
     const params = new URLSearchParams({ search: filters.search, society: filters.society, page: String(page), ...updates });
@@ -112,7 +191,34 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
           <option value="">All Societies</option>
           {societies.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="btn btn-sm bg-red-600 text-white hover:bg-red-700 border-red-600 flex items-center gap-1.5"
+            >
+              {isBulkDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              Delete Selected ({selectedIds.size})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="btn btn-ghost btn-sm text-xs"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
+
+      {actionError && (
+        <div className="card p-3 flex items-center justify-between" style={{ borderColor: 'var(--danger)', background: 'var(--danger-bg)' }}>
+          <p className="text-xs font-semibold" style={{ color: 'var(--danger)' }}>{actionError}</p>
+          <button onClick={() => setActionError(null)} className="btn btn-ghost btn-sm">Dismiss</button>
+        </div>
+      )}
 
       {/* Bookings Table */}
       <div className="card overflow-hidden">
@@ -120,6 +226,15 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
           <table className="crm-table">
             <thead>
               <tr>
+                <th className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={allOnPageSelected}
+                    onChange={toggleSelectAll}
+                    aria-label="Select all bookings on page"
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </th>
                 <th>#</th>
                 <th>Client</th>
                 <th>Society / Plot</th>
@@ -136,7 +251,7 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
             <tbody>
               {bookings.length === 0 ? (
                 <tr>
-                  <td colSpan={11}>
+                  <td colSpan={12}>
                     <div className="empty-state py-10">
                       <div className="empty-state-icon"><BookOpen size={22} style={{ color: 'var(--text-muted)' }} /></div>
                       <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No bookings found</p>
@@ -147,7 +262,16 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
                 bookings.map((b, idx) => {
                   const st = STATUS_MAP[b.booking_status];
                   return (
-                    <tr key={b.id}>
+                    <tr key={b.id} className={selectedIds.has(b.id) ? 'bg-blue-50/40' : ''}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(b.id)}
+                          onChange={() => toggleSelectRow(b.id)}
+                          aria-label={`Select booking ${b.id}`}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="text-xs" style={{ color: 'var(--text-muted)' }}>{(page - 1) * PAGE_SIZE + idx + 1}</td>
                       <td>
                         <div className="flex items-center gap-2.5">
@@ -199,11 +323,27 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
                       <td><span className={`badge ${st.class}`}>{st.label}</span></td>
                       <td>
                         <div className="flex items-center gap-1">
-                          <button className="btn btn-ghost btn-icon btn-sm" onClick={() => router.push(`/master-data?id=${b.id}`)}>
+                          <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            title="View customer"
+                            onClick={() => router.push(`/customers/${b.id}`)}
+                          >
                             <Eye size={14} />
                           </button>
-                          <button className="btn btn-ghost btn-icon btn-sm" title="Payment history">
+                          <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            title="Payment history"
+                            onClick={() => router.push(`/invoices/${b.id}`)}
+                          >
                             <TrendingUp size={14} />
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-icon btn-sm text-red-600 hover:bg-red-50"
+                            title="Delete booking"
+                            disabled={deletingId === b.id}
+                            onClick={() => handleDeleteBooking(b)}
+                          >
+                            {deletingId === b.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                           </button>
                         </div>
                       </td>
