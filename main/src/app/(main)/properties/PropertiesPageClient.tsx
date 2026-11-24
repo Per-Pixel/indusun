@@ -25,6 +25,15 @@ const searchSuggestions = [
   "Ready to move property"
 ];
 
+const PRICE_PRESETS = [
+  { key: 'any', label: 'Any price', min: '', max: '' },
+  { key: 'under-10', label: 'Under ₹10 Lakh', min: '', max: '1000000' },
+  { key: '10-25', label: '₹10–25 Lakh', min: '1000000', max: '2500000' },
+  { key: '25-50', label: '₹25–50 Lakh', min: '2500000', max: '5000000' },
+  { key: '50-100', label: '₹50 Lakh – ₹1 Cr', min: '5000000', max: '10000000' },
+  { key: 'above-100', label: 'Above ₹1 Cr', min: '10000000', max: '' },
+];
+
 const buttonVariants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -39,9 +48,9 @@ const PropertiesPage = () => {
   // State for filters
   const [searchTerm, setSearchTerm] = useState('');
   const [propertyType, setPropertyType] = useState<string>('all');
-  const [priceRange] = useState<[number, number]>([0, 50000000]); // 0 to 5 Cr
-  const [sortBy] = useState<'price-asc' | 'price-desc' | 'area-asc' | 'area-desc' | 'newest'>('newest');
-  const [showFilters] = useState(false);
+  const [pricePreset, setPricePreset] = useState('any');
+  const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'area-asc' | 'area-desc' | 'newest'>('newest');
+  const [showFilters, setShowFilters] = useState(true);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -157,7 +166,11 @@ const PropertiesPage = () => {
     setFetchError(null);
 
     const limit = Math.max(48, visibleProperties + visibleLandProperties + 24);
-    fetch(`/api/properties?q=${encodeURIComponent(searchTerm)}&limit=${limit}`, { signal: controller.signal, cache: 'no-store' })
+    const preset = PRICE_PRESETS.find((item) => item.key === pricePreset);
+    const params = new URLSearchParams({ q: searchTerm, limit: String(limit), sort: sortBy });
+    if (preset?.min) params.set('minPrice', preset.min);
+    if (preset?.max) params.set('maxPrice', preset.max);
+    fetch(`/api/properties?${params.toString()}`, { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'Unable to load properties');
@@ -166,11 +179,8 @@ const PropertiesPage = () => {
       })
       .then((properties) => {
         let result = properties.filter((property) =>
-          (!['House', 'Villa', 'Apartment', 'Plot'].includes(propertyType) || property.type.toLowerCase() === propertyType.toLowerCase()) &&
-          property.priceNumeric >= priceRange[0] && property.priceNumeric <= priceRange[1]
+          (!['House', 'Villa', 'Apartment', 'Plot'].includes(propertyType) || property.type.toLowerCase() === propertyType.toLowerCase())
         );
-        if (sortBy === 'price-asc') result = result.toSorted((a, b) => a.priceNumeric - b.priceNumeric);
-        if (sortBy === 'price-desc') result = result.toSorted((a, b) => b.priceNumeric - a.priceNumeric);
         if (sortBy === 'area-asc') result = result.toSorted((a, b) => a.areaNumeric - b.areaNumeric);
         if (sortBy === 'area-desc') result = result.toSorted((a, b) => b.areaNumeric - a.areaNumeric);
         setFilteredProperties(result);
@@ -182,22 +192,11 @@ const PropertiesPage = () => {
       .finally(() => setIsLoading(false));
 
     return () => controller.abort();
-  }, [searchTerm, propertyType, priceRange, sortBy, refreshKey, visibleProperties, visibleLandProperties]);
+  }, [searchTerm, propertyType, pricePreset, sortBy, refreshKey, visibleProperties, visibleLandProperties]);
 
   // Get current properties for pagination
   const indexOfLastProperty = currentPage * propertiesPerPage;
   const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
-
-  // Format price range for display
-  const formatPrice = (price: number) => {
-    if (price >= 10000000) {
-      return `₹${(price / 10000000).toFixed(1)} Cr`;
-    } else if (price >= 100000) {
-      return `₹${(price / 100000).toFixed(1)} Lac`;
-    } else {
-      return `₹${price}`;
-    }
-  };
 
   // Add these animation variants
   const dropdownVariants = {
@@ -427,10 +426,16 @@ const PropertiesPage = () => {
           >
             {isLoading ? 'Searching…' : 'Search'}
           </button>
+          <button
+            type="button"
+            onClick={() => setShowFilters((open) => !open)}
+            className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md"
+          >
+            {showFilters ? 'Hide filters' : 'Filters'}
+          </button>
         </form>
       </div>
 
-      {/* Filter Dropdowns - Add motion */}
       <AnimatePresence>
         {showFilters && (
           <motion.div
@@ -438,9 +443,36 @@ const PropertiesPage = () => {
             animate="visible"
             exit="hidden"
             variants={dropdownVariants}
-            className="filter-dropdowns"
+            className="max-w-2xl mx-auto mt-3 px-4"
           >
-            {/* Keep your existing filter content */}
+            <div className="flex flex-col sm:flex-row gap-2 bg-white border border-gray-200 rounded-lg shadow-sm p-3">
+              <label className="flex-1 text-xs font-medium text-gray-500">
+                Price
+                <select
+                  value={pricePreset}
+                  onChange={(e) => setPricePreset(e.target.value)}
+                  className="mt-1 w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-800"
+                >
+                  {PRICE_PRESETS.map((preset) => (
+                    <option key={preset.key} value={preset.key}>{preset.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex-1 text-xs font-medium text-gray-500">
+                Sort
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="mt-1 w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-800"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="price-asc">Price: low to high</option>
+                  <option value="price-desc">Price: high to low</option>
+                  <option value="area-asc">Area: small to large</option>
+                  <option value="area-desc">Area: large to small</option>
+                </select>
+              </label>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

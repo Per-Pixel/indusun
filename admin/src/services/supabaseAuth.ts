@@ -2,13 +2,33 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
+import { resolvePermissions } from '@/lib/permissions';
 
 export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'super_admin';
+  role: string;
   permissions?: string[];
+  status?: string;
+  hasProfile: boolean;
+}
+
+async function permissionsFor(
+  supabase: ReturnType<typeof createClient>,
+  role: string,
+  stored: string[] | null | undefined
+): Promise<string[]> {
+  let list = stored || [];
+  if (role !== 'super_admin' && list.length === 0) {
+    const { data } = await supabase
+      .from('admin_roles')
+      .select('permissions')
+      .eq('slug', role)
+      .maybeSingle();
+    if (Array.isArray(data?.permissions)) list = data.permissions as string[];
+  }
+  return resolvePermissions(role, list);
 }
 
 /**
@@ -47,12 +67,19 @@ export async function signInWithPassword(
       console.log('No admin profile found, using basic auth data');
     }
 
+    const role = profileData?.role || data.user.user_metadata?.role || 'admin';
     const user: AuthUser = {
       id: data.user.id,
       email: data.user.email || '',
       name: profileData?.name || data.user.user_metadata?.name || email.split('@')[0],
-      role: profileData?.role || data.user.user_metadata?.role || 'admin',
-      permissions: profileData?.permissions || data.user.user_metadata?.permissions || [],
+      role,
+      status: profileData?.status,
+      hasProfile: !!profileData,
+      permissions: await permissionsFor(
+        supabase,
+        role,
+        profileData?.permissions || data.user.user_metadata?.permissions || []
+      ),
     };
 
     return { user, error: null };
@@ -103,12 +130,19 @@ export async function getCurrentUser(): Promise<{ user: AuthUser | null; error: 
       .eq('id', user.id)
       .single();
 
+    const role = profileData?.role || user.user_metadata?.role || 'admin';
     const authUser: AuthUser = {
       id: user.id,
       email: user.email || '',
       name: profileData?.name || user.user_metadata?.name || user.email?.split('@')[0] || '',
-      role: profileData?.role || user.user_metadata?.role || 'admin',
-      permissions: profileData?.permissions || user.user_metadata?.permissions || [],
+      role,
+      status: profileData?.status,
+      hasProfile: !!profileData,
+      permissions: await permissionsFor(
+        supabase,
+        role,
+        profileData?.permissions || user.user_metadata?.permissions || []
+      ),
     };
 
     return { user: authUser, error: null };

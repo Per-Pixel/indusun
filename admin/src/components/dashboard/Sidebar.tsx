@@ -27,7 +27,9 @@ import {
   Lock,
   UploadCloud,
   Briefcase,
+  Shield,
 } from 'lucide-react';
+import { useAdminAuth } from '@/context/AdminAuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -39,6 +41,7 @@ interface NavItem {
   label: string;
   path?: string;
   badge?: number;
+  permission?: string;
   children?: { label: string; path: string }[];
 }
 
@@ -52,34 +55,34 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Main',
     items: [
       { icon: <LayoutDashboard size={17} />, label: 'Dashboard', path: '/dashboard' },
-      { icon: <Database size={17} />, label: 'Master Data', path: '/master-data' },
-      { icon: <UploadCloud size={17} />, label: 'Excel Import', path: '/data-import' },
+      { icon: <Database size={17} />, label: 'Master Data', path: '/master-data', permission: 'property_management' },
+      { icon: <UploadCloud size={17} />, label: 'Excel Import', path: '/data-import', permission: 'property_management' },
     ],
   },
   {
     title: 'CRM',
     items: [
-      { icon: <Users size={17} />, label: 'Lead Management', path: '/leads' },
-      { icon: <Calendar size={17} />, label: 'Site Visits', path: '/site-visits' },
-      { icon: <BookOpen size={17} />, label: 'Bookings', path: '/bookings' },
-      { icon: <UserCheck size={17} />, label: 'Customer Profiles', path: '/customers' },
-      { icon: <Briefcase size={17} />, label: 'Brokers & Codes', path: '/brokers' },
+      { icon: <Users size={17} />, label: 'Lead Management', path: '/leads', permission: 'lead_management' },
+      { icon: <Calendar size={17} />, label: 'Site Visits', path: '/site-visits', permission: 'booking_management' },
+      { icon: <BookOpen size={17} />, label: 'Bookings', path: '/bookings', permission: 'booking_management' },
+      { icon: <UserCheck size={17} />, label: 'Customer Profiles', path: '/customers', permission: 'lead_management' },
+      { icon: <Briefcase size={17} />, label: 'Brokers & Codes', path: '/brokers', permission: 'broker_management' },
     ],
   },
   {
     title: 'Properties',
     items: [
-      { icon: <Layers size={17} />, label: 'Projects', path: '/projects' },
-      { icon: <Building2 size={17} />, label: 'Properties', path: '/properties' },
-      { icon: <ImageIcon size={17} />, label: 'Media Library', path: '/media-library' },
+      { icon: <Layers size={17} />, label: 'Projects', path: '/projects', permission: 'property_management' },
+      { icon: <Building2 size={17} />, label: 'Properties', path: '/properties', permission: 'property_management' },
+      { icon: <ImageIcon size={17} />, label: 'Media Library', path: '/media-library', permission: 'cms_management' },
     ],
   },
   {
     title: 'Sales',
     items: [
-      { icon: <TrendingUp size={17} />, label: 'Sales Overview', path: '/sales' },
+      { icon: <TrendingUp size={17} />, label: 'Sales Overview', path: '/sales', permission: 'financial_reports' },
       {
-        icon: <DollarSign size={17} />, label: 'Billing & Invoices', path: '/billing',
+        icon: <DollarSign size={17} />, label: 'Billing & Invoices', path: '/billing', permission: 'billing_management',
         children: [
           { label: 'Billing', path: '/billing' },
           { label: 'Invoices', path: '/invoices' },
@@ -91,22 +94,23 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Communications',
     items: [
       { icon: <Bell size={17} />, label: 'Notifications', path: '/notifications' },
-      { icon: <MessageSquare size={17} />, label: 'Messages', path: '/messages' },
-      { icon: <Lock size={17} />, label: 'Internal Comms', path: '/internal-comms' },
+      { icon: <MessageSquare size={17} />, label: 'Messages', path: '/messages', permission: 'messaging' },
+      { icon: <Lock size={17} />, label: 'Internal Comms', path: '/internal-comms', permission: 'internal_comms' },
     ],
   },
   {
     title: 'CMS',
     items: [
-      { icon: <Globe size={17} />, label: 'Website CMS', path: '/website-cms' },
+      { icon: <Globe size={17} />, label: 'Website CMS', path: '/website-cms', permission: 'cms_management' },
     ],
   },
   {
     title: 'System',
     items: [
-      { icon: <BarChart3 size={17} />, label: 'Reports & Analytics', path: '/reports' },
-      { icon: <Activity size={17} />, label: 'Activity Logs', path: '/activity-logs' },
-      { icon: <ClipboardList size={17} />, label: 'Admin Users', path: '/admin-users' },
+      { icon: <BarChart3 size={17} />, label: 'Reports & Analytics', path: '/reports', permission: 'financial_reports' },
+      { icon: <Activity size={17} />, label: 'Activity Logs', path: '/activity-logs', permission: 'audit_logs' },
+      { icon: <ClipboardList size={17} />, label: 'Admin Users', path: '/admin-users', permission: 'user_management' },
+      { icon: <Shield size={17} />, label: 'Roles', path: '/roles', permission: 'role_management' },
       { icon: <Settings size={17} />, label: 'Settings', path: '/settings' },
     ],
   },
@@ -121,6 +125,15 @@ const NAV_SECTIONS: NavSection[] = [
 const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, isLoading, hasPermission } = useAdminAuth();
+
+  const visibleSections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => {
+      if (isLoading || !user || !item.permission) return true;
+      return hasPermission(item.permission);
+    }),
+  })).filter((section) => section.items.length > 0);
 
   // Track which sections with children are expanded
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -193,7 +206,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-2" style={{ scrollbarWidth: 'none' }}>
-          {NAV_SECTIONS.map((section) => (
+          {visibleSections.map((section) => (
             <div key={section.title}>
               <div className="sidebar-section-label">{section.title}</div>
               {section.items.map((item) => {

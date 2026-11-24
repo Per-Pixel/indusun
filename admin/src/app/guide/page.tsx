@@ -535,7 +535,8 @@ const SITEMAP_ITEMS = [
   { section: 'Workspace', name: 'Calendar', path: '/components/calendar', desc: 'Live CRM events plus persisted custom events', icon: <Calendar size={15} /> },
   { section: 'Workspace', name: 'Notes', path: '/components/notes', desc: 'Persistent notes stored in Supabase', icon: <StickyNote size={15} /> },
   { section: 'Workspace', name: 'Tasks', path: '/components/tasks', desc: 'Persistent Kanban task board stored in Supabase', icon: <CheckSquare size={15} /> },
-  { section: 'System', name: 'Admin Users', path: '/admin-users', desc: 'Create new admins, set roles and module permissions', icon: <Shield size={15} /> },
+  { section: 'System', name: 'Admin Users', path: '/admin-users', desc: 'Create new admins, assign a role, and adjust permissions', icon: <Shield size={15} /> },
+  { section: 'System', name: 'Roles', path: '/roles', desc: 'Create roles and choose the permissions each role grants', icon: <Shield size={15} /> },
   { section: 'System', name: 'Settings', path: '/settings', desc: 'Profile, security (2FA/password), active sessions, theme', icon: <Settings size={15} /> },
 ];
 

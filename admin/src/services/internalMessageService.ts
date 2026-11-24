@@ -43,7 +43,7 @@ export interface CreateMessageInput {
  */
 export async function listInternalMessages(
   userId: string,
-  userRole: 'admin' | 'super_admin',
+  userRole: string,
   options?: { limit?: number; offset?: number; search?: string }
 ): Promise<{
   messages: InternalMessageRow[];

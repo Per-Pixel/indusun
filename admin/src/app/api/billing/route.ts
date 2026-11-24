@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 import { withServerCache, invalidateServerCache } from '@/utils/serverCache';
+import { cachedRowCount } from '@/utils/rowCount';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
 const BILLING_COLS = 'id,client_name,contact_no,society_name,plot_no,emi_amount,emi_amount_num,paid_amount,paid_amount_num,emi_paid_date,emi_paid_date_iso,cancel_date,r_no,registration_no,emi_no,"broker\'s_name",broker_code';
@@ -54,29 +55,41 @@ export async function GET(request: NextRequest) {
     const supabase = createServiceClient();
 
     // ── Summary & trends via fast cached Postgres RPC ──────────────────────
-    const countCacheKey = `count:billing:${search}|${status}`;
-    const [aggData, { data: billRows }, { data, error }, count] = await Promise.all([
+    const unfiltered = !search.trim() && (!status || status === 'All');
+    const countCacheKey = unfiltered ? 'count:billing:estimated' : `count:billing:${search}|${status}`;
+    const billRowsPromise = page === 1
+      ? withServerCache('bills:billing-rows', async () => {
+          const { data: rows, error: billErr } = await supabase
+            .from('bills')
+            .select('id,bill_number,client_name,client_phone,society_name,plot_no,description,amount,date,status,payment_ref')
+            .order('created_at', { ascending: false })
+            .limit(200);
+          if (billErr) throw new Error(billErr.message);
+          return rows || [];
+        }).catch(() => [] as any[])
+      : Promise.resolve([] as any[]);
+
+    const [aggData, billRows, { data, error }, count] = await Promise.all([
       withServerCache('rpc:get_billing_aggregates_rpc', async () => {
         const { data: d, error: e } = await supabase.rpc('get_billing_aggregates_rpc');
         if (e || !d) throw new Error(e?.message || 'Failed to compute billing aggregates');
         return d;
       }),
-      supabase
-        .from('bills')
-        .select('id,bill_number,client_name,client_phone,society_name,plot_no,description,amount,date,status,payment_ref')
-        .order('created_at', { ascending: false }),
+      billRowsPromise,
       applyFilters(supabase.from(TABLE_NAME).select(BILLING_COLS), search, status)
         .order('id', { ascending: false })
         .range(offset, offset + limit - 1),
-      withServerCache(countCacheKey, async () => {
-        const { count: c, error: cErr } = await applyFilters(
-          supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true }),
+      cachedRowCount(
+        countCacheKey,
+        () => applyFilters(
+          supabase.from(TABLE_NAME).select('id', { count: 'exact', head: true }),
           search,
           status
-        );
-        if (cErr) throw new Error(cErr.message);
-        return c || 0;
-      }),
+        ),
+        unfiltered
+          ? () => supabase.from(TABLE_NAME).select('id', { count: 'estimated', head: true })
+          : undefined,
+      ),
     ]);
 
     if (error) throw new Error(error.message);

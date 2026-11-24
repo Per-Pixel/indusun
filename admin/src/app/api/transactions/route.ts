@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
         .range(offset, offset + limit - 1),
       withServerCache(countCacheKey, async () => {
         const { count: c, error: cErr } = await applyFilters(
-          supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true }),
+          supabase.from(TABLE_NAME).select('id', { count: 'exact', head: true }),
           search, status, brokerName, startDate, endDate
         );
         if (cErr) throw new Error(cErr.message);

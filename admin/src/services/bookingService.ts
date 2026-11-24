@@ -5,6 +5,8 @@
 import { createServiceClient } from '@/utils/supabase/service';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import { withServerCache } from '@/utils/serverCache';
+import { cachedRowCount } from '@/utils/rowCount';
+import { executeQuery } from '@/lib/db';
 
 const TABLE = 'Master Data Of Gurukrupa';
 const BOOKING_COLS = 'id,client_name,contact_no,society_name,plot_no,plot_size,plot_amount,paid_amount,emi_amount,emi_time,"broker\'s_name",date_of_form,date,cancel_date,cheque_cash,policy_number,remarks';
@@ -49,12 +51,79 @@ function deriveBookingStatus(row: MasterDataOfGurukrupa): BookingStatus {
   return 'token';
 }
 
+function likePattern(search: string) {
+  return `%${search.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+}
+
+function mapBooking(row: MasterDataOfGurukrupa): BookingRecord {
+  const plotAmt = parseAmt(row.plot_amount);
+  const paidAmt = parseAmt(row.paid_amount);
+  return {
+    id: row.id,
+    client_name: row.client_name,
+    contact_no: row.contact_no,
+    society_name: row.society_name,
+    plot_no: row.plot_no,
+    plot_size: row.plot_size,
+    plot_amount: plotAmt,
+    paid_amount: paidAmt,
+    balance_amount: Math.max(0, plotAmt - paidAmt),
+    payment_pct: plotAmt > 0 ? Math.min(100, Math.round((paidAmt / plotAmt) * 100)) : 0,
+    emi_amount: parseAmt(row.emi_amount),
+    emi_time: row.emi_time,
+    booking_status: deriveBookingStatus(row),
+    broker: row["broker's_name"],
+    booking_date: row.date_of_form ?? row.date ?? null,
+    cancel_date: row.cancel_date,
+    cheque_cash: row.cheque_cash,
+    policy_number: row.policy_number,
+    remarks: row.remarks,
+  };
+}
+
+function bookingStatusSql(status: BookingStatus | '') {
+  if (status === 'cancelled') return `cancel_date IS NOT NULL`;
+  if (status === 'possession') return `cancel_date IS NULL AND COALESCE(plot_amount_num, 0) > 0 AND COALESCE(paid_amount_num, 0) >= plot_amount_num * 0.9`;
+  if (status === 'registered') return `cancel_date IS NULL AND COALESCE(plot_amount_num, 0) > 0 AND COALESCE(paid_amount_num, 0) >= plot_amount_num * 0.5 AND COALESCE(paid_amount_num, 0) < plot_amount_num * 0.9`;
+  if (status === 'agreement') return `cancel_date IS NULL AND COALESCE(plot_amount_num, 0) > 0 AND COALESCE(paid_amount_num, 0) >= plot_amount_num * 0.1 AND COALESCE(paid_amount_num, 0) < plot_amount_num * 0.5`;
+  if (status === 'token') return `cancel_date IS NULL AND (COALESCE(plot_amount_num, 0) <= 0 OR COALESCE(paid_amount_num, 0) < plot_amount_num * 0.1)`;
+  return 'TRUE';
+}
+
 export async function getBookings({
-  page = 1, pageSize = 25, search = '', societyFilter = '',
-}: { page?: number; pageSize?: number; search?: string; societyFilter?: string }): Promise<{
+  page = 1, pageSize = 25, search = '', societyFilter = '', statusFilter = '',
+}: { page?: number; pageSize?: number; search?: string; societyFilter?: string; statusFilter?: BookingStatus | '' }): Promise<{
   data: BookingRecord[]; count: number; error: Error | null;
 }> {
   try {
+    if (statusFilter) {
+      const params: unknown[] = [];
+      const where = [`paid_amount IS NOT NULL`, bookingStatusSql(statusFilter)];
+      if (search) {
+        params.push(likePattern(search));
+        const p = `$${params.length}`;
+        where.push(`(client_name ILIKE ${p} OR contact_no ILIKE ${p} OR society_name ILIKE ${p} OR project_name ILIKE ${p} OR plot_no ILIKE ${p} OR "broker's_name" ILIKE ${p} OR broker_code ILIKE ${p} OR ba_code ILIKE ${p} OR broker_name_clean ILIKE ${p})`);
+      }
+      if (societyFilter) {
+        params.push(societyFilter);
+        where.push(`society_name = $${params.length}`);
+      }
+      const clause = where.join(' AND ');
+      const offset = (page - 1) * pageSize;
+      const [rows, counted] = await Promise.all([
+        executeQuery(
+          `SELECT ${BOOKING_COLS} FROM "${TABLE}" WHERE ${clause} ORDER BY id DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+          [...params, pageSize, offset],
+        ),
+        executeQuery(`SELECT count(*)::int AS count FROM "${TABLE}" WHERE ${clause}`, params),
+      ]);
+      return {
+        data: (rows.rows as MasterDataOfGurukrupa[]).map(mapBooking),
+        count: Number(counted.rows[0]?.count || 0),
+        error: null,
+      };
+    }
+
     const supabase = createServiceClient();
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -75,44 +144,15 @@ export async function getBookings({
       applyFilters(supabase.from(TABLE).select(BOOKING_COLS))
         .order('id', { ascending: false })
         .range(from, to),
-      withServerCache(countCacheKey, async () => {
-        const { count: c, error: cErr } = await applyFilters(
-          supabase.from(TABLE).select('*', { count: 'exact', head: true })
-        );
-        if (cErr) throw new Error(cErr.message);
-        return c || 0;
-      }),
+      cachedRowCount(
+        countCacheKey,
+        () => applyFilters(supabase.from(TABLE).select('id', { count: 'exact', head: true })),
+      ),
     ]);
 
     if (error) return { data: [], count: 0, error: new Error(error.message) };
 
-    const bookings: BookingRecord[] = (data as MasterDataOfGurukrupa[]).map((row) => {
-      const plotAmt = parseAmt(row.plot_amount);
-      const paidAmt = parseAmt(row.paid_amount);
-      return {
-        id: row.id,
-        client_name: row.client_name,
-        contact_no: row.contact_no,
-        society_name: row.society_name,
-        plot_no: row.plot_no,
-        plot_size: row.plot_size,
-        plot_amount: plotAmt,
-        paid_amount: paidAmt,
-        balance_amount: Math.max(0, plotAmt - paidAmt),
-        payment_pct: plotAmt > 0 ? Math.min(100, Math.round((paidAmt / plotAmt) * 100)) : 0,
-        emi_amount: parseAmt(row.emi_amount),
-        emi_time: row.emi_time,
-        booking_status: deriveBookingStatus(row),
-        broker: row["broker's_name"],
-        booking_date: row.date_of_form ?? row.date ?? null,
-        cancel_date: row.cancel_date,
-        cheque_cash: row.cheque_cash,
-        policy_number: row.policy_number,
-        remarks: row.remarks,
-      };
-    });
-
-    return { data: bookings, count: count || 0, error: null };
+    return { data: (data as MasterDataOfGurukrupa[]).map(mapBooking), count: count || 0, error: null };
   } catch (err) {
     return { data: [], count: 0, error: err as Error };
   }

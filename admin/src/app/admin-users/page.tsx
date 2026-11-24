@@ -7,28 +7,21 @@ import UserList, { User } from '@/components/users/UserList';
 import { toast } from 'react-hot-toast';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import {
-  UserPlus, Shield, Crown, X, Check, Eye, EyeOff, Loader2, AlertTriangle,
+  UserPlus, Shield, X, Check, Eye, EyeOff, Loader2, AlertTriangle,
 } from 'lucide-react';
+import { PERMISSIONS, ALL_PERMISSION_KEYS, BUILTIN_ROLES, DEFAULT_ADMIN_PERMISSIONS } from '@/lib/permissions';
 
-// All available permissions with labels
-const AVAILABLE_PERMISSIONS = [
-  { key: 'user_management', label: 'User Management', group: 'Users' },
-  { key: 'property_management', label: 'Property Management', group: 'Properties' },
-  { key: 'broker_management', label: 'Broker Management', group: 'Brokers' },
-  { key: 'financial_reports', label: 'Financial Reports', group: 'Finance' },
-  { key: 'billing_management', label: 'Billing Management', group: 'Finance' },
-  { key: 'system_settings', label: 'System Settings', group: 'System' },
-  { key: 'audit_logs', label: 'Audit Logs', group: 'System' },
-  { key: 'cms_management', label: 'CMS Management', group: 'Content' },
-  { key: 'messaging', label: 'Messaging', group: 'Communications' },
-  { key: 'internal_comms', label: 'Internal Communications', group: 'Communications' },
-  { key: 'lead_management', label: 'Lead Management', group: 'CRM' },
-  { key: 'booking_management', label: 'Booking Management', group: 'CRM' },
-];
+interface RoleOption {
+  id: string;
+  slug: string;
+  name: string;
+  permissions: string[];
+}
 
 export default function AdminUsersPage() {
   const router = useRouter();
-  const { user } = useAdminAuth();
+  const { user, hasPermission } = useAdminAuth();
+  const canManageUsers = hasPermission('user_management');
   const [adminUsers, setAdminUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -41,13 +34,34 @@ export default function AdminUsersPage() {
     email: '',
     password: '',
     phone: '',
-    role: 'admin' as 'admin' | 'super_admin',
-    permissions: [] as string[],
+    role: 'admin',
+    permissions: [...DEFAULT_ADMIN_PERMISSIONS],
   });
+  const [roles, setRoles] = useState<RoleOption[]>(BUILTIN_ROLES);
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const isSuperAdmin = user?.role === 'super_admin';
+
+  useEffect(() => {
+    fetch('/api/admin-roles')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.roles) && data.roles.length > 0) {
+          setRoles(data.roles);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const applyRole = (slug: string) => {
+    const match = roles.find((role) => role.slug === slug);
+    setNewAdmin((prev) => ({
+      ...prev,
+      role: slug,
+      permissions: slug === 'super_admin' ? [...ALL_PERMISSION_KEYS] : [...(match?.permissions || [])],
+    }));
+  };
 
   // Fetch admin users from API
   const fetchAdminUsers = useCallback(async () => {
@@ -116,7 +130,7 @@ export default function AdminUsersPage() {
       if (data.success) {
         toast.success(`${newAdmin.name} has been created as an admin`);
         setShowCreateForm(false);
-        setNewAdmin({ name: '', email: '', password: '', phone: '', role: 'admin', permissions: [] });
+        setNewAdmin({ name: '', email: '', password: '', phone: '', role: 'admin', permissions: [...DEFAULT_ADMIN_PERMISSIONS] });
         fetchAdminUsers();
       } else {
         toast.error(data.error || 'Failed to create admin');
@@ -185,13 +199,24 @@ export default function AdminUsersPage() {
   return (
     <CRMLayout>
       <div className="page-container">
-        <div className="mb-6">
-          <h1 className="page-title">Admin User Management</h1>
-          <p className="page-subtitle">Manage admin users and their permissions</p>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="page-title">Admin User Management</h1>
+            <p className="page-subtitle">Manage admin users, assign roles, and set what each person can do</p>
+          </div>
+          {hasPermission('role_management') && (
+            <button
+              onClick={() => router.push('/roles')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              <Shield size={16} />
+              Roles & permissions
+            </button>
+          )}
         </div>
 
-        {/* Create Admin Form (super_admin only) */}
-        {showCreateForm && isSuperAdmin && (
+        {/* Create Admin Form */}
+        {showCreateForm && canManageUsers && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -285,40 +310,30 @@ export default function AdminUsersPage() {
                 {/* Role */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setNewAdmin(prev => ({ ...prev, role: 'admin' }))}
-                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border-2 transition-all ${
-                        newAdmin.role === 'admin'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}
-                    >
-                      <Shield size={16} />
-                      Admin
-                    </button>
-                    <button
-                      onClick={() => setNewAdmin(prev => ({ ...prev, role: 'super_admin' }))}
-                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border-2 transition-all ${
-                        newAdmin.role === 'super_admin'
-                          ? 'border-purple-500 bg-purple-50 text-purple-700'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}
-                    >
-                      <Crown size={16} />
-                      Super Admin
-                    </button>
-                  </div>
+                  <select
+                    value={newAdmin.role}
+                    onChange={(e) => applyRole(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {roles
+                      .filter((role) => isSuperAdmin || role.slug !== 'super_admin')
+                      .map((role) => (
+                        <option key={role.slug} value={role.slug}>{role.name}</option>
+                      ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Permissions start from this role. You can adjust them for this person below.
+                  </p>
                 </div>
               </div>
 
               {/* Permissions */}
-              {newAdmin.role === 'admin' && (
+              {newAdmin.role !== 'super_admin' && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">Permissions</label>
                   <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {AVAILABLE_PERMISSIONS.map(perm => (
+                      {PERMISSIONS.map(perm => (
                         <label
                           key={perm.key}
                           className="flex items-center gap-2 text-sm cursor-pointer hover:bg-white p-2 rounded-md transition-colors"
@@ -334,11 +349,6 @@ export default function AdminUsersPage() {
                       ))}
                     </div>
                   </div>
-                  {newAdmin.role === 'admin' && (
-                    <p className="mt-2 text-xs text-gray-400">
-                      Super admins automatically have all permissions.
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -418,8 +428,8 @@ export default function AdminUsersPage() {
             title="Admin Users"
             userType="admin"
             onAddNew={() => {
-              if (!isSuperAdmin) {
-                toast.error('Only super admins can create new admin accounts');
+              if (!canManageUsers) {
+                toast.error('You do not have permission to create admin accounts');
                 return;
               }
               setShowCreateForm(true);

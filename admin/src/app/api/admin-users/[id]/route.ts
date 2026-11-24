@@ -4,11 +4,17 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminUser, updateAdminUser, deleteAdminUser } from '@/services/adminUserService';
+import { requireStaff } from '@/lib/adminAccess';
+import { assertRoleAssignable } from '@/services/adminRoleService';
+import { ALL_PERMISSION_KEYS } from '@/lib/permissions';
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireStaff('user_management');
+  if (access.denied) return access.denied;
+
   try {
     const { id } = await params;
     const { user, error } = await getAdminUser(id);
@@ -34,25 +40,34 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireStaff('user_management');
+  if (access.denied) return access.denied;
+
   try {
     const { id } = await params;
     const body = await req.json();
-    const { callerRole, callerId, ...updateData } = body;
+    const { callerRole: _callerRole, callerId: _callerId, callerPermissions: _callerPermissions, ...updateData } = body;
 
-    // Prevent self-role-escalation
-    if (callerId === id && updateData.role) {
+    if (access.user.id === id && updateData.role && updateData.role !== access.user.role) {
       return NextResponse.json(
         { success: false, error: 'You cannot change your own role' },
         { status: 403 }
       );
     }
 
-    // Only super_admin can change roles
-    if (updateData.role && callerRole !== 'super_admin') {
+    if (updateData.role === 'super_admin' && access.user.role !== 'super_admin') {
       return NextResponse.json(
-        { success: false, error: 'Only super admins can change user roles' },
+        { success: false, error: 'Only a super admin can grant the Super Admin role' },
         { status: 403 }
       );
+    }
+
+    if (updateData.role) {
+      const roleError = await assertRoleAssignable(updateData.role);
+      if (roleError) {
+        return NextResponse.json({ success: false, error: roleError }, { status: 400 });
+      }
+      if (updateData.role === 'super_admin') updateData.permissions = ALL_PERMISSION_KEYS;
     }
 
     const { user, error } = await updateAdminUser(id, updateData);
@@ -78,24 +93,23 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireStaff('user_management');
+  if (access.denied) return access.denied;
+
   try {
     const { id } = await params;
-    const { searchParams } = new URL(req.url);
-    const callerRole = searchParams.get('callerRole');
-    const callerId = searchParams.get('callerId');
 
-    // Prevent self-deletion
-    if (callerId === id) {
+    if (access.user.id === id) {
       return NextResponse.json(
         { success: false, error: 'You cannot delete your own account' },
         { status: 403 }
       );
     }
 
-    // Only super_admin can delete admins
-    if (callerRole !== 'super_admin') {
+    const existing = await getAdminUser(id);
+    if (existing.user?.role === 'super_admin' && access.user.role !== 'super_admin') {
       return NextResponse.json(
-        { success: false, error: 'Only super admins can delete admin accounts' },
+        { success: false, error: 'Only a super admin can delete a super admin account' },
         { status: 403 }
       );
     }

@@ -34,7 +34,7 @@ interface Props {
   page: number;
   summary: { totalBookings: number; totalRevenue: number; totalPaid: number; totalBalance: number; error: Error | null };
   societies: string[];
-  filters: { search: string; society: string };
+  filters: { search: string; society: string; status: string };
   error: Error | null;
 }
 
@@ -125,8 +125,8 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
   };
 
   const updateUrl = (updates: Record<string, string>) => {
-    const params = new URLSearchParams({ search: filters.search, society: filters.society, page: String(page), ...updates });
-    ['search', 'society'].forEach((k) => { if (!params.get(k)) params.delete(k); });
+    const params = new URLSearchParams({ search: filters.search, society: filters.society, status: filters.status, page: String(page), ...updates });
+    ['search', 'society', 'status'].forEach((k) => { if (!params.get(k)) params.delete(k); });
     if (params.get('page') === '1') params.delete('page');
     startTransition(() => router.push(`${pathname}?${params.toString()}`));
   };
@@ -190,6 +190,16 @@ export default function BookingsContent({ bookings, totalCount, page, summary, s
         >
           <option value="">All Societies</option>
           {societies.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select
+          className="input input-sm select w-auto"
+          value={filters.status}
+          onChange={(e) => updateUrl({ status: e.target.value, page: '1' })}
+        >
+          <option value="">All Statuses</option>
+          {(Object.keys(STATUS_MAP) as BookingStatus[]).map((key) => (
+            <option key={key} value={key}>{STATUS_MAP[key].label}</option>
+          ))}
         </select>
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-2">

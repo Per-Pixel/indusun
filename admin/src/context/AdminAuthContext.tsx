@@ -1,15 +1,17 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'react-hot-toast';
 import { createBrowserClient } from '@supabase/ssr';
+import { canAccessAdmin, resolvePermissions, userHasPermission } from '@/lib/permissions';
 
 interface AdminUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'super_admin';
+  role: string;
   permissions?: string[];
+  status?: string;
 }
 
 interface AdminAuthContextType {
@@ -23,8 +25,50 @@ interface AdminAuthContextType {
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
+async function buildAdminUser(supabase: any, authUser: any, profileData: any): Promise<AdminUser | 'inactive' | null> {
+  if (profileData?.status === 'inactive') return 'inactive';
+  const role = profileData?.role || authUser.user_metadata?.role || 'admin';
+  if (!canAccessAdmin({ role, hasProfile: !!profileData, status: profileData?.status })) return null;
+
+  let stored: string[] = profileData?.permissions || authUser.user_metadata?.permissions || [];
+  if (role !== 'super_admin' && stored.length === 0) {
+    const { data } = await supabase.from('admin_roles').select('permissions').eq('slug', role).maybeSingle();
+    if (Array.isArray(data?.permissions)) stored = data.permissions;
+  }
+
+  return {
+    id: authUser.id,
+    email: authUser.email || '',
+    name: profileData?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || '',
+    role,
+    status: profileData?.status,
+    permissions: resolvePermissions(role, stored),
+  };
+}
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const ADMIN_CACHE_KEY = 'indusun.adminUser';
+const PROFILE_COLS = 'name,role,status,permissions';
+
+function readCachedAdmin(): AdminUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(ADMIN_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AdminUser;
+    if (!parsed?.id || !parsed?.email) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedAdmin(user: AdminUser | null) {
+  if (typeof window === 'undefined') return;
+  if (!user) sessionStorage.removeItem(ADMIN_CACHE_KEY);
+  else sessionStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(user));
+}
 
 export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AdminUser | null>(null);
@@ -33,6 +77,11 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize Supabase client
   useEffect(() => {
+    const cached = readCachedAdmin();
+    if (cached) {
+      setUser(cached);
+      setIsLoading(false);
+    }
     if (supabaseUrl && supabaseKey) {
       const client = createBrowserClient(supabaseUrl, supabaseKey);
       setSupabase(client);
@@ -70,25 +119,24 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       // Fetch admin profile data
       const { data: profileData } = await supabase
         .from('admin_users')
-        .select('*')
+        .select(PROFILE_COLS)
         .eq('id', data.user.id)
         .single();
 
-      const adminUser: AdminUser = {
-        id: data.user.id,
-        email: data.user.email || '',
-        name: profileData?.name || data.user.user_metadata?.name || email.split('@')[0],
-        role: profileData?.role || data.user.user_metadata?.role || 'admin',
-        permissions: profileData?.permissions || data.user.user_metadata?.permissions || [],
-      };
+      const adminUser = await buildAdminUser(supabase, data.user, profileData);
 
-      // Check if user is admin
-      if (adminUser.role !== 'admin' && adminUser.role !== 'super_admin') {
+      if (adminUser === 'inactive') {
+        await supabase.auth.signOut();
+        toast.error('This account is inactive');
+        return { success: false, error: 'This account is inactive' };
+      }
+      if (!adminUser) {
         await supabase.auth.signOut();
         toast.error('Unauthorized - Admin access only');
         return { success: false, error: 'Unauthorized - Admin access only' };
       }
 
+      writeCachedAdmin(adminUser);
       setUser(adminUser);
       toast.success('Admin login successful');
       return { success: true };
@@ -114,6 +162,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         },
       });
 
+      writeCachedAdmin(null);
       setUser(null);
       toast.success('Logged out successfully');
 
@@ -122,96 +171,61 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Logout error:', error);
       // Even if API call fails, clear local state and redirect
+      writeCachedAdmin(null);
       setUser(null);
       window.location.href = '/auth/login';
     }
   };
 
   const checkAuth = async () => {
-    setIsLoading(true);
+    const hadCache = !!readCachedAdmin();
+    if (!hadCache) setIsLoading(true);
     try {
       if (!supabase) {
         setIsLoading(false);
         return;
       }
 
-      // Get current session from Supabase
+      // Cookie session is enough here. getUser() would add a network round trip on every load.
       const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-
-      // Get user details
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = session?.user;
 
       if (!authUser) {
+        writeCachedAdmin(null);
         setUser(null);
         setIsLoading(false);
         return;
       }
 
-      // Fetch admin profile data
       const { data: profileData } = await supabase
         .from('admin_users')
-        .select('*')
+        .select(PROFILE_COLS)
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle();
 
-      const adminUser: AdminUser = {
-        id: authUser.id,
-        email: authUser.email || '',
-        name: profileData?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || '',
-        role: profileData?.role || authUser.user_metadata?.role || 'admin',
-        permissions: profileData?.permissions || authUser.user_metadata?.permissions || [],
-      };
+      const adminUser = await buildAdminUser(supabase, authUser, profileData);
 
-      // Check if user is admin
-      if (adminUser.role !== 'admin' && adminUser.role !== 'super_admin') {
+      if (!adminUser || adminUser === 'inactive') {
+        writeCachedAdmin(null);
         setUser(null);
         await supabase.auth.signOut();
       } else {
+        writeCachedAdmin(adminUser);
         setUser(adminUser);
       }
 
     } catch (error) {
       console.error('Authentication check error:', error);
-      setUser(null);
+      if (!hadCache) setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Permission checking function
-  const hasPermission = (permission: string): boolean => {
+  const hasPermission = useCallback((permission: string): boolean => {
     if (!user) return false;
-
-    // If user has permissions array, check it
-    if (user.permissions && user.permissions.length > 0) {
-      return user.permissions.includes(permission);
-    }
-
-    // Fallback: Grant permissions based on role
-    // Super admin gets all permissions
-    if (user.role === 'super_admin') {
-      return true;
-    }
-
-    // Regular admin gets basic permissions
-    if (user.role === 'admin') {
-      const restrictedPermissions = [
-        'can_delete_users',
-        'can_delete_admins',
-        'can_view_admin_details',
-        'can_export_data'
-      ];
-      return !restrictedPermissions.includes(permission);
-    }
-
-    return false;
-  };
+    return userHasPermission(user.role, user.permissions, permission);
+  }, [user]);
 
   return (
     <AdminAuthContext.Provider value={{ user, isLoading, login, logout, checkAuth, hasPermission }}>

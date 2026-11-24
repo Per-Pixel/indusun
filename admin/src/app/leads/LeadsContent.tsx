@@ -52,7 +52,10 @@ interface LeadsContentProps {
   page: number;
   pipeline: Record<LeadStatus, number>;
   societies: string[];
-  filters: { search: string; society: string; status: string };
+  filters: {
+    search: string; society: string; status: string;
+    score: string; from: string; to: string; min: string; max: string;
+  };
   error: Error | null;
 }
 
@@ -63,7 +66,11 @@ export default function LeadsContent({
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [localSearch, setLocalSearch] = useState(filters.search);
-  const [showFilters, setShowFilters] = useState(false);
+  const advancedActive = Boolean(filters.score || filters.from || filters.to || filters.min || filters.max);
+  const [showFilters, setShowFilters] = useState(advancedActive);
+  const [draft, setDraft] = useState({
+    score: filters.score, from: filters.from, to: filters.to, min: filters.min, max: filters.max,
+  });
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -74,6 +81,10 @@ export default function LeadsContent({
   useEffect(() => {
     setSelectedIds(new Set());
   }, [page, leads]);
+
+  useEffect(() => {
+    setDraft({ score: filters.score, from: filters.from, to: filters.to, min: filters.min, max: filters.max });
+  }, [filters.score, filters.from, filters.to, filters.min, filters.max]);
 
   const allOnPageSelected = leads.length > 0 && leads.every((l) => selectedIds.has(l.id));
 
@@ -151,11 +162,16 @@ export default function LeadsContent({
       search: filters.search,
       society: filters.society,
       status: filters.status,
+      score: filters.score,
+      from: filters.from,
+      to: filters.to,
+      min: filters.min,
+      max: filters.max,
       page: String(page),
       ...updates,
     });
     // Remove empty params
-    ['search', 'society', 'status'].forEach((k) => {
+    ['search', 'society', 'status', 'score', 'from', 'to', 'min', 'max'].forEach((k) => {
       if (!params.get(k)) params.delete(k);
     });
     if (params.get('page') === '1') params.delete('page');
@@ -289,16 +305,20 @@ export default function LeadsContent({
 
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="btn btn-secondary btn-sm"
+            className={`btn btn-sm ${advancedActive ? 'btn-primary' : 'btn-secondary'}`}
           >
             <SlidersHorizontal size={14} />
             Filters
           </button>
 
-          {(filters.search || filters.society || filters.status) && (
+          {(filters.search || filters.society || filters.status || advancedActive) && (
             <button
               className="btn btn-ghost btn-sm text-red-500"
-              onClick={() => { setLocalSearch(''); updateUrl({ search: '', society: '', status: '', page: '1' }); }}
+              onClick={() => {
+                setLocalSearch('');
+                setDraft({ score: '', from: '', to: '', min: '', max: '' });
+                updateUrl({ search: '', society: '', status: '', score: '', from: '', to: '', min: '', max: '', page: '1' });
+              }}
             >
               <XCircle size={14} /> Clear
             </button>
@@ -529,37 +549,86 @@ export default function LeadsContent({
         )}
       </div>
 
-      {/* Filter panel placeholder */}
       {showFilters && (
-        <div className="card p-4">
+        <form
+          className="card p-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateUrl({
+              score: draft.score,
+              from: draft.from,
+              to: draft.to,
+              min: draft.min,
+              max: draft.max,
+              page: '1',
+            });
+          }}
+        >
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-h3 flex items-center gap-2"><Filter size={16} /> Advanced Filters</h3>
-            <button className="btn btn-ghost btn-sm" onClick={() => setShowFilters(false)}>Close</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowFilters(false)}>Close</button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div>
               <label className="label">Lead Score</label>
-              <select className="input input-sm select">
+              <select
+                className="input input-sm select"
+                value={draft.score}
+                onChange={(e) => setDraft((prev) => ({ ...prev, score: e.target.value }))}
+              >
                 <option value="">All Scores</option>
-                <option value="hot">🔥 Hot</option>
-                <option value="warm">🌡 Warm</option>
-                <option value="cold">❄️ Cold</option>
+                <option value="hot">Hot</option>
+                <option value="warm">Warm</option>
+                <option value="cold">Cold</option>
               </select>
             </div>
             <div>
-              <label className="label">Date Range</label>
-              <input type="date" className="input input-sm" />
+              <label className="label">Form date from</label>
+              <input
+                type="date"
+                className="input input-sm"
+                value={draft.from}
+                onChange={(e) => setDraft((prev) => ({ ...prev, from: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="label">Form date to</label>
+              <input
+                type="date"
+                className="input input-sm"
+                value={draft.to}
+                onChange={(e) => setDraft((prev) => ({ ...prev, to: e.target.value }))}
+              />
             </div>
             <div>
               <label className="label">Min Plot Amount</label>
-              <input type="number" placeholder="₹0" className="input input-sm" />
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                className="input input-sm"
+                value={draft.min}
+                onChange={(e) => setDraft((prev) => ({ ...prev, min: e.target.value }))}
+              />
             </div>
             <div>
               <label className="label">Max Plot Amount</label>
-              <input type="number" placeholder="No limit" className="input input-sm" />
+              <input
+                type="number"
+                min="0"
+                placeholder="No limit"
+                className="input input-sm"
+                value={draft.max}
+                onChange={(e) => setDraft((prev) => ({ ...prev, max: e.target.value }))}
+              />
             </div>
           </div>
-        </div>
+          <div className="mt-3">
+            <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">
+              {isPending ? 'Applying…' : 'Apply filters'}
+            </button>
+          </div>
+        </form>
       )}
     </div>
   );

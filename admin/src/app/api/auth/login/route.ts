@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { signInWithPassword } from "@/services/supabaseAuth";
+import { canAccessAdmin } from "@/lib/permissions";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,8 +18,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has admin role
-    if (user.role !== 'admin' && user.role !== 'super_admin') {
+    if (!canAccessAdmin(user)) {
       console.log('❌ User is not an admin:', user.email);
       return NextResponse.json(
         { error: "Unauthorized - Admin access only" },

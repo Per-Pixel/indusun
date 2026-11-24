@@ -7,32 +7,23 @@ import { toast } from 'react-hot-toast';
 import {
   ArrowLeft, Mail, Phone, Shield, Crown, Key, AlertTriangle,
   Check, Loader2, Eye, EyeOff, Calendar, Clock, Save, X,
-  MapPin, Globe, Edit,
+  MapPin, Globe, Edit, MessageSquare,
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
+import { ALL_PERMISSION_KEYS, BUILTIN_ROLES, PERMISSIONS, formatRoleLabel, permissionLabel } from '@/lib/permissions';
 
-// Permissions list (shared with the create form)
-const AVAILABLE_PERMISSIONS = [
-  { key: 'user_management', label: 'User Management', group: 'Users' },
-  { key: 'property_management', label: 'Property Management', group: 'Properties' },
-  { key: 'broker_management', label: 'Broker Management', group: 'Brokers' },
-  { key: 'financial_reports', label: 'Financial Reports', group: 'Finance' },
-  { key: 'billing_management', label: 'Billing Management', group: 'Finance' },
-  { key: 'system_settings', label: 'System Settings', group: 'System' },
-  { key: 'audit_logs', label: 'Audit Logs', group: 'System' },
-  { key: 'cms_management', label: 'CMS Management', group: 'Content' },
-  { key: 'messaging', label: 'Messaging', group: 'Communications' },
-  { key: 'internal_comms', label: 'Internal Communications', group: 'Communications' },
-  { key: 'lead_management', label: 'Lead Management', group: 'CRM' },
-  { key: 'booking_management', label: 'Booking Management', group: 'CRM' },
-];
+interface RoleOption {
+  slug: string;
+  name: string;
+  permissions: string[];
+}
 
 interface AdminUserDetail {
   id: string;
   name: string;
   email: string;
   phone: string | null;
-  role: 'admin' | 'super_admin';
+  role: string;
   status: 'active' | 'inactive' | 'pending';
   permissions: string[];
   avatar_url: string | null;
@@ -47,7 +38,7 @@ export default function AdminUserDetailPage() {
   const router = useRouter();
   const params = useParams();
   const adminId = params.id as string;
-  const { user: currentUser } = useAdminAuth();
+  const { user: currentUser, hasPermission } = useAdminAuth();
 
   const [adminUser, setAdminUser] = useState<AdminUserDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +50,7 @@ export default function AdminUserDetailPage() {
   const [editData, setEditData] = useState({
     name: '',
     phone: '',
-    role: 'admin' as 'admin' | 'super_admin',
+    role: 'admin',
     status: 'active' as 'active' | 'inactive' | 'pending',
     permissions: [] as string[],
     bio: '',
@@ -75,7 +66,9 @@ export default function AdminUserDetailPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
 
   const isSuperAdmin = currentUser?.role === 'super_admin';
+  const canManageUsers = hasPermission('user_management');
   const isSelf = currentUser?.id === adminId;
+  const [roles, setRoles] = useState<RoleOption[]>(BUILTIN_ROLES);
 
   // Fetch admin user detail
   const fetchUser = useCallback(async () => {
@@ -110,6 +103,28 @@ export default function AdminUserDetailPage() {
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
+
+  useEffect(() => {
+    fetch('/api/admin-roles')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.roles) && data.roles.length > 0) {
+          setRoles(data.roles);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const roleName = (slug: string) => roles.find((role) => role.slug === slug)?.name || formatRoleLabel(slug);
+
+  const applyRole = (slug: string) => {
+    const match = roles.find((role) => role.slug === slug);
+    setEditData((prev) => ({
+      ...prev,
+      role: slug,
+      permissions: slug === 'super_admin' ? [...ALL_PERMISSION_KEYS] : [...(match?.permissions || prev.permissions)],
+    }));
+  };
 
   // Save edits
   const handleSave = async () => {
@@ -268,7 +283,7 @@ export default function AdminUserDetailPage() {
                   adminUser.role === 'super_admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                 }`}>
                   {adminUser.role === 'super_admin' ? <Crown size={11} /> : <Shield size={11} />}
-                  {adminUser.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                  {roleName(adminUser.role)}
                 </span>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
                   adminUser.status === 'active' ? 'bg-green-100 text-green-700'
@@ -282,6 +297,15 @@ export default function AdminUserDetailPage() {
                   }`} />
                   {adminUser.status.charAt(0).toUpperCase() + adminUser.status.slice(1)}
                 </span>
+                {hasPermission('messaging') && !isSelf && (
+                  <button
+                    onClick={() => router.push('/messages')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                  >
+                    <MessageSquare size={12} />
+                    Send message
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -292,7 +316,7 @@ export default function AdminUserDetailPage() {
               <h2 className="text-base font-semibold text-gray-900">
                 {isEditing ? 'Edit Profile' : 'Profile Details'}
               </h2>
-              {!isEditing && isSuperAdmin && !isSelf && (
+              {!isEditing && canManageUsers && !isSelf && (adminUser.role !== 'super_admin' || isSuperAdmin) && (
                 <button
                   onClick={() => setIsEditing(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300 rounded-lg transition-colors"
@@ -346,11 +370,17 @@ export default function AdminUserDetailPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                     <select
                       value={editData.role}
-                      onChange={e => setEditData(prev => ({ ...prev, role: e.target.value as any }))}
+                      onChange={e => applyRole(e.target.value)}
                       className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="admin">Admin</option>
-                      <option value="super_admin">Super Admin</option>
+                      {roles
+                        .filter((role) => isSuperAdmin || role.slug !== 'super_admin' || role.slug === editData.role)
+                        .map((role) => (
+                          <option key={role.slug} value={role.slug}>{role.name}</option>
+                        ))}
+                      {!roles.some((role) => role.slug === editData.role) && (
+                        <option value={editData.role}>{formatRoleLabel(editData.role)}</option>
+                      )}
                     </select>
                   </div>
                   <div>
@@ -368,12 +398,12 @@ export default function AdminUserDetailPage() {
                 </div>
 
                 {/* Permissions */}
-                {editData.role === 'admin' && (
+                {editData.role !== 'super_admin' && (
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-3">Permissions</label>
                     <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {AVAILABLE_PERMISSIONS.map(perm => (
+                        {PERMISSIONS.map(perm => (
                           <label key={perm.key} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-white p-2 rounded-md transition-colors">
                             <input
                               type="checkbox"
@@ -471,7 +501,7 @@ export default function AdminUserDetailPage() {
                     <div className="flex flex-wrap gap-2">
                       {adminUser.permissions.map(p => (
                         <span key={p} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                          {AVAILABLE_PERMISSIONS.find(ap => ap.key === p)?.label || p}
+                          {permissionLabel(p)}
                         </span>
                       ))}
                     </div>
@@ -490,7 +520,7 @@ export default function AdminUserDetailPage() {
           </div>
 
           {/* Password Reset (super_admin only, cannot reset own from here) */}
-          {isSuperAdmin && !isSelf && (
+          {canManageUsers && !isSelf && (adminUser.role !== 'super_admin' || isSuperAdmin) && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
               <div className="p-6 border-b border-gray-100">
                 <h2 className="text-base font-semibold text-gray-900">Security</h2>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/services/supabaseAuth";
+import { canAccessAdmin } from "@/lib/permissions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,8 +14,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify the user is an admin or super_admin
-    if (user.role !== 'admin' && user.role !== 'super_admin') {
+    if (!canAccessAdmin(user)) {
       return NextResponse.json(
         { authenticated: false, message: "Unauthorized - Admin access only" },
         { status: 403 }

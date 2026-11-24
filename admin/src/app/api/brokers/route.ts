@@ -72,6 +72,7 @@ export async function GET(req: NextRequest) {
 
     const supabase = createServiceClient();
 
+    const { allBrokers, directoryCount, recordsCount } = await withServerCache('brokers:merged-v1', async () => {
     // ── Fetch both directory brokers and master-data derived stats in parallel ─
     const [{ data: dirRows, error: dirErr }, derivedData] = await Promise.all([
       supabase
@@ -150,7 +151,12 @@ export async function GET(req: NextRequest) {
         };
       });
 
-    const allBrokers = [...directory, ...derived];
+    return {
+      allBrokers: [...directory, ...derived],
+      directoryCount: directory.length,
+      recordsCount: derivedList.length,
+    };
+    });
 
     const codedCount = allBrokers.filter((b) => !!b.broker_code).length;
     const uncodedCount = allBrokers.length - codedCount;
@@ -223,8 +229,8 @@ export async function GET(req: NextRequest) {
       pagination: { page, limit, totalItems, totalPages },
       summary: {
         totalBrokers: allBrokers.length,
-        directoryCount: directory.length,
-        recordsCount: derivedList.length,
+        directoryCount,
+        recordsCount,
         codedCount,
         uncodedCount,
         totalDeals,

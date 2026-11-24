@@ -7,12 +7,19 @@ export const metadata = { title: 'Site Visits | Indusun CRM' };
 
 export default async function SiteVisitsPage({
   searchParams,
-}: { searchParams: Promise<{ page?: string; search?: string; society?: string }> }) {
+}: { searchParams: Promise<{ page?: string; search?: string; society?: string; status?: string }> }) {
   const params = await searchParams;
   const page = parseInt(params.page || '1', 10);
+  const status = params.status || '';
 
   const [visitsResult, statsResult, societiesResult] = await Promise.all([
-    getSiteVisits({ page, pageSize: 25, search: params.search || '', societyFilter: params.society || '' }),
+    getSiteVisits({
+      page,
+      pageSize: 25,
+      search: params.search || '',
+      societyFilter: params.society || '',
+      statusFilter: status as '' | 'scheduled' | 'completed' | 'no_show' | 'cancelled',
+    }),
     getVisitStatsSummary(),
     getUniqueSocieties(),
   ]);
@@ -25,7 +32,7 @@ export default async function SiteVisitsPage({
         page={page}
         stats={statsResult}
         societies={societiesResult.societies}
-        filters={{ search: params.search || '', society: params.society || '' }}
+        filters={{ search: params.search || '', society: params.society || '', status }}
         error={visitsResult.error}
       />
     </CRMLayout>

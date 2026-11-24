@@ -68,7 +68,8 @@ All features are grouped into intuitive sections in the left **Sidebar Navigatio
 | | **Notes** | `/components/notes` | Persistent CRM notes stored in Supabase (`_workspace` slug). |
 | | **Tasks** | `/components/tasks` | Persistent Kanban task board stored in Supabase (`_workspace` slug). |
 | **Communications** | **Message History** | `/messages/history` | Live delivery log of outbound SMS/emails from the `messages` table. |
-| **System** | **Admin Users** | `/admin-users` | **Super Admin Hub**: Create new admins, assign permissions, edit roles, and reset passwords. |
+| **System** | **Admin Users** | `/admin-users` | **Super Admin Hub**: Create new admins, assign a role, edit permissions, and reset passwords. |
+| | **Roles** | `/roles` | Create roles (Sales, Finance, and your own) and choose the permissions each role grants. |
 | | **Admin User Profile** | `/admin-users/[id]` | Individual admin profile with activity history, permission editor, and password reset. |
 | | **Settings** | `/settings` | System-wide preferences, security (2FA/password), active sessions, theme, and API console. |
 
@@ -118,6 +119,17 @@ All features are grouped into intuitive sections in the left **Sidebar Navigatio
 2. Click the **"Reset Password"** button at the top right.
 3. Enter a new password (minimum 8 characters) and confirm it.
 4. Click **"Update Password"**. The backend updates the password directly in Supabase Auth.
+
+### Roles and permissions
+Roles live at **System → Roles** (`/roles`). Each role is a named set of permissions. Assigning that role to an admin copies those permissions onto their account, and editing the role updates everyone who has it.
+
+Built-in roles:
+* **Super Admin** — every permission. This role cannot be deleted or narrowed.
+* **Admin** — day-to-day CRM, properties, billing, content, and messaging.
+
+You can create more roles (the SQL seed also adds Sales, Finance, and Content). On **Admin Users**, pick the role when you create or edit someone, then turn individual permissions on or off for that person.
+
+That migration is already applied on the Indusun database. `admin/sql/admin_roles.sql` is the record of it, including the change that lets `admin_users.role` store names other than Admin and Super Admin.
 
 ---
 

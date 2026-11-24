@@ -5,6 +5,8 @@
 import { createServiceClient } from '@/utils/supabase/service';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import { withServerCache } from '@/utils/serverCache';
+import { cachedRowCount } from '@/utils/rowCount';
+import { executeQuery } from '@/lib/db';
 
 const TABLE = 'Master Data Of Gurukrupa';
 
@@ -31,12 +33,76 @@ function deriveVisitStatus(row: MasterDataOfGurukrupa): SiteVisitRecord['status'
   return d < new Date() ? 'completed' : 'scheduled';
 }
 
+function likePattern(search: string) {
+  return `%${search.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+}
+
+function mapVisit(row: MasterDataOfGurukrupa): SiteVisitRecord {
+  return {
+    id: row.id,
+    client_name: row.client_name,
+    contact_no: row.contact_no,
+    society_name: row.society_name,
+    plot_no: row.plot_no,
+    visit_date: row.date_of_form ?? row.date ?? null,
+    status: deriveVisitStatus(row),
+    broker: row["broker's_name"],
+    remarks: row.remarks,
+  };
+}
+
+function visitStatusSql(status: SiteVisitRecord['status'] | '') {
+  const visitDay = `CASE
+    WHEN COALESCE(emi_paid_date_iso::text, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(emi_paid_date_iso::text, 10)::date
+    WHEN COALESCE(form_date_iso::text, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(form_date_iso::text, 10)::date
+    ELSE NULL
+  END`;
+  if (status === 'cancelled') return `cancel_date IS NOT NULL`;
+  if (status === 'completed') {
+    return `cancel_date IS NULL AND (COALESCE(paid_amount_num, 0) > 0 OR (${visitDay}) < CURRENT_DATE)`;
+  }
+  if (status === 'scheduled') {
+    return `cancel_date IS NULL AND COALESCE(paid_amount_num, 0) <= 0 AND ((${visitDay}) IS NULL OR (${visitDay}) >= CURRENT_DATE)`;
+  }
+  if (status === 'no_show') return 'FALSE';
+  return 'TRUE';
+}
+
 export async function getSiteVisits({
-  page = 1, pageSize = 25, search = '', societyFilter = '',
-}: { page?: number; pageSize?: number; search?: string; societyFilter?: string }): Promise<{
+  page = 1, pageSize = 25, search = '', societyFilter = '', statusFilter = '',
+}: { page?: number; pageSize?: number; search?: string; societyFilter?: string; statusFilter?: SiteVisitRecord['status'] | '' }): Promise<{
   data: SiteVisitRecord[]; count: number; error: Error | null;
 }> {
   try {
+    if (statusFilter) {
+      const params: unknown[] = [];
+      const where = [`date_of_form IS NOT NULL`, visitStatusSql(statusFilter)];
+      if (search) {
+        params.push(likePattern(search));
+        const p = `$${params.length}`;
+        where.push(`(client_name ILIKE ${p} OR contact_no ILIKE ${p} OR society_name ILIKE ${p} OR plot_no ILIKE ${p} OR "broker's_name" ILIKE ${p} OR broker_code ILIKE ${p} OR ba_code ILIKE ${p} OR broker_name_clean ILIKE ${p})`);
+      }
+      if (societyFilter) {
+        params.push(societyFilter);
+        where.push(`society_name = $${params.length}`);
+      }
+      const clause = where.join(' AND ');
+      const offset = (page - 1) * pageSize;
+      const cols = `id,client_name,contact_no,society_name,plot_no,emi_paid_date,date_of_form,date,paid_amount,cancel_date,"broker's_name",remarks`;
+      const [rows, counted] = await Promise.all([
+        executeQuery(
+          `SELECT ${cols} FROM "${TABLE}" WHERE ${clause} ORDER BY date_of_form DESC NULLS LAST LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+          [...params, pageSize, offset],
+        ),
+        executeQuery(`SELECT count(*)::int AS count FROM "${TABLE}" WHERE ${clause}`, params),
+      ]);
+      return {
+        data: (rows.rows as MasterDataOfGurukrupa[]).map(mapVisit),
+        count: Number(counted.rows[0]?.count || 0),
+        error: null,
+      };
+    }
+
     const supabase = createServiceClient();
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -58,30 +124,15 @@ export async function getSiteVisits({
       applyFilters(supabase.from(TABLE).select(COLS))
         .order('date_of_form', { ascending: false })
         .range(from, to),
-      withServerCache(countCacheKey, async () => {
-        const { count: c, error: cErr } = await applyFilters(
-          supabase.from(TABLE).select('*', { count: 'exact', head: true })
-        );
-        if (cErr) throw new Error(cErr.message);
-        return c || 0;
-      }),
+      cachedRowCount(
+        countCacheKey,
+        () => applyFilters(supabase.from(TABLE).select('id', { count: 'exact', head: true })),
+      ),
     ]);
 
     if (error) return { data: [], count: 0, error: new Error(error.message) };
 
-    const visits: SiteVisitRecord[] = (data as MasterDataOfGurukrupa[]).map((row) => ({
-      id: row.id,
-      client_name: row.client_name,
-      contact_no: row.contact_no,
-      society_name: row.society_name,
-      plot_no: row.plot_no,
-      visit_date: row.date_of_form ?? row.date ?? null,
-      status: deriveVisitStatus(row),
-      broker: row["broker's_name"],
-      remarks: row.remarks,
-    }));
-
-    return { data: visits, count: count || 0, error: null };
+    return { data: (data as MasterDataOfGurukrupa[]).map(mapVisit), count: count || 0, error: null };
   } catch (err) {
     return { data: [], count: 0, error: err as Error };
   }

@@ -1,21 +1,32 @@
 // POST /api/admin-users/[id]/reset-password — super_admin resets another admin's password
 
 import { NextRequest, NextResponse } from 'next/server';
-import { resetAdminPassword } from '@/services/adminUserService';
+import { getAdminUser, resetAdminPassword } from '@/services/adminUserService';
+import { requireStaff } from '@/lib/adminAccess';
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireStaff('user_management');
+  if (access.denied) return access.denied;
+
   try {
     const { id } = await params;
     const body = await req.json();
-    const { newPassword, callerRole, callerId } = body;
+    const { newPassword } = body;
 
-    // Only super_admin can reset passwords
-    if (callerRole !== 'super_admin') {
+    if (access.user.id === id) {
       return NextResponse.json(
-        { success: false, error: 'Only super admins can reset passwords' },
+        { success: false, error: 'Change your own password from Settings' },
+        { status: 403 }
+      );
+    }
+
+    const existing = await getAdminUser(id);
+    if (existing.user?.role === 'super_admin' && access.user.role !== 'super_admin') {
+      return NextResponse.json(
+        { success: false, error: 'Only a super admin can reset a super admin password' },
         { status: 403 }
       );
     }

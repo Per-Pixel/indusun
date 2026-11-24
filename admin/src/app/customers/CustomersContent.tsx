@@ -105,12 +105,13 @@ export default function CustomersContent({
   societies,
   brokers,
   filters,
-  summary,
+  summary: initialSummary,
   error,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  const [summary, setSummary] = useState<MasterDataSummary | null>(initialSummary ?? null);
   const [localSearch, setLocalSearch] = useState(filters.search);
   const [rows, setRows] = useState<MasterDataOfGurukrupa[]>(customers);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -121,6 +122,25 @@ export default function CustomersContent({
     setRows(customers);
     setSelectedIds(new Set());
   }, [customers]);
+
+  // Totals come from a full-table aggregate. Load them after the list so the
+  // table is not held behind that scan.
+  useEffect(() => {
+    if (initialSummary) {
+      setSummary(initialSummary);
+      return;
+    }
+    let cancelled = false;
+    fetch('/api/master-data/summary')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.summary) setSummary(d.summary);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSummary]);
 
   useEffect(() => {
     setLocalSearch(filters.search);
@@ -272,7 +292,9 @@ export default function CustomersContent({
           </p>
           <h1 className="page-title">Customers</h1>
           <p className="page-subtitle">
-            {(summary?.totalClients ?? 5401).toLocaleString('en-IN')} unique customers · {totalCount.toLocaleString('en-IN')} installment/plot records
+            {summary
+              ? `${summary.totalClients.toLocaleString('en-IN')} unique customers · ${totalCount.toLocaleString('en-IN')} installment/plot records`
+              : `${totalCount.toLocaleString('en-IN')} installment/plot records`}
           </p>
         </div>
         <div className="flex items-center gap-2">

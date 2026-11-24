@@ -4,6 +4,7 @@ import { createServiceClient } from '@/utils/supabase/service';
 import { MasterDataOfGurukrupa, MasterDataSummary } from '@/types/masterData';
 import { parseAmount } from '@/utils/dataUtils';
 import { withServerCache } from '@/utils/serverCache';
+import { cachedRowCount } from '@/utils/rowCount';
 
 // Table name with spaces needs special handling
 const TABLE_NAME = 'Master Data Of Gurukrupa';
@@ -45,39 +46,39 @@ export async function getPaginatedMasterData({
     const to = from + pageSize - 1;
 
     const searchTerm = (search || clientNameFilter).trim();
-    // Resolve custom bill_number matches -> client names so searching a BILL-... in Customers finds the customer
+    // Bill lookup only when the term looks like a number or invoice code.
+    // Name searches already match client columns directly.
+    const looksLikeDocument =
+      /^(inv|bill|r)[-\s]?\d/i.test(searchTerm) || /\d{3,}/.test(searchTerm);
+
     let billMatchedNames: string[] = [];
+    let brokerMatchedIdentifiers: string[] = [];
     if (searchTerm) {
-      const { data: matchedBills } = await supabase
-        .from('bills')
-        .select('client_name')
-        .ilike('bill_number', `%${searchTerm}%`)
-        .limit(20);
-      if (Array.isArray(matchedBills)) {
+      const [matchedBills, matchedBrokers] = await Promise.all([
+        looksLikeDocument
+          ? supabase.from('bills').select('client_name').ilike('bill_number', `%${searchTerm}%`).limit(20)
+          : Promise.resolve({ data: [] as { client_name?: string }[] }),
+        supabase
+          .from('brokers')
+          .select('name,broker_code,raw_identifier')
+          .or(`name.ilike.%${searchTerm}%,broker_code.ilike.%${searchTerm}%,raw_identifier.ilike.%${searchTerm}%`)
+          .limit(40),
+      ]);
+      if (Array.isArray(matchedBills.data)) {
         billMatchedNames = Array.from(
           new Set(
-            matchedBills
+            matchedBills.data
               .map((b: any) => String(b.client_name || '').trim())
               .filter(Boolean)
           )
         );
       }
-    }
-
-    // Resolve broker directory matches (name/code/raw_identifier) so searching a
-    // broker name or partial GKC code also matches master-data rows that store
-    // the full record identifier in "broker's_name" (e.g. GKC/10/RS/JUBER).
-    let brokerMatchedIdentifiers: string[] = [];
-    if (searchTerm) {
-      const { data: matchedBrokers } = await supabase
-        .from('brokers')
-        .select('name,broker_code,raw_identifier')
-        .or(`name.ilike.%${searchTerm}%,broker_code.ilike.%${searchTerm}%,raw_identifier.ilike.%${searchTerm}%`)
-        .limit(40);
-      if (Array.isArray(matchedBrokers)) {
+      // Broker directory matches so a short name also hits rows that store the
+      // full identifier in "broker's_name" (e.g. GKC/10/RS/JUBER).
+      if (Array.isArray(matchedBrokers.data)) {
         brokerMatchedIdentifiers = Array.from(
           new Set(
-            matchedBrokers
+            matchedBrokers.data
               .flatMap((b: any) => [b.raw_identifier, b.broker_code, b.name])
               .map((v: any) => String(v || '').trim())
               .filter(Boolean)
@@ -149,19 +150,22 @@ export async function getPaginatedMasterData({
     // Sorting
     const orderColumn = ['id', 'client_name'].includes(sortBy) ? sortBy : 'id';
     const ascending = sortOrder === 'desc' ? false : true;
-    const countCacheKey = `count:master:${searchTerm}|${societyFilter}|${brokerFilter}|${statusFilter}`;
+    const unfiltered = !searchTerm && !societyFilter && !brokerFilter && !statusFilter;
+    const countCacheKey = unfiltered
+      ? 'count:master:estimated'
+      : `count:master:${searchTerm}|${societyFilter}|${brokerFilter}|${statusFilter}`;
 
     const [{ data, error }, count] = await Promise.all([
       applyFilters(supabase.from(TABLE_NAME).select(LIST_COLS))
         .order(orderColumn, { ascending })
         .range(from, to),
-      withServerCache(countCacheKey, async () => {
-        const { count: c, error: cErr } = await applyFilters(
-          supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
-        );
-        if (cErr) throw new Error(cErr.message);
-        return c || 0;
-      }),
+      cachedRowCount(
+        countCacheKey,
+        () => applyFilters(supabase.from(TABLE_NAME).select('id', { count: 'exact', head: true })),
+        unfiltered
+          ? () => supabase.from(TABLE_NAME).select('id', { count: 'estimated', head: true })
+          : undefined,
+      ),
     ]);
 
     if (error) {
@@ -216,22 +220,25 @@ export async function getUniqueBrokers(): Promise<{
   error: Error | null;
 }> {
   try {
-    const [derived, { data: dirRows }] = await Promise.all([
-      withServerCache('rpc:get_unique_brokers_rpc', async () => {
-        const supabase = createServiceClient();
-        const { data, error } = await supabase.rpc('get_unique_brokers_rpc');
-        if (error) throw new Error(error.message);
-        return Array.isArray(data) ? (data as string[]) : [];
-      }),
-      supabaseSafeSelectBrokers(),
-    ]);
-    const merged = new Set<string>(derived.filter(Boolean));
-    for (const r of dirRows || []) {
-      if (r.raw_identifier) merged.add(r.raw_identifier);
-      else if (r.broker_code) merged.add(r.broker_code);
-      else if (r.name) merged.add(r.name);
-    }
-    return { brokers: Array.from(merged).sort((a, b) => a.localeCompare(b)), error: null };
+    const brokers = await withServerCache('brokers:unique-merged', async () => {
+      const [derived, { data: dirRows }] = await Promise.all([
+        withServerCache('rpc:get_unique_brokers_rpc', async () => {
+          const supabase = createServiceClient();
+          const { data, error } = await supabase.rpc('get_unique_brokers_rpc');
+          if (error) throw new Error(error.message);
+          return Array.isArray(data) ? (data as string[]) : [];
+        }),
+        supabaseSafeSelectBrokers(),
+      ]);
+      const merged = new Set<string>(derived.filter(Boolean));
+      for (const r of dirRows || []) {
+        if (r.raw_identifier) merged.add(r.raw_identifier);
+        else if (r.broker_code) merged.add(r.broker_code);
+        else if (r.name) merged.add(r.name);
+      }
+      return Array.from(merged).sort((a, b) => a.localeCompare(b));
+    });
+    return { brokers, error: null };
   } catch (err) {
     console.error('Unexpected error in getUniqueBrokers:', err);
     return { brokers: [], error: err as Error };

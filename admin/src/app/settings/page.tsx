@@ -12,6 +12,7 @@ import {
   RefreshCw, Database, MessageSquare, Server, ExternalLink
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { formatRoleLabel } from '@/lib/permissions';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -348,7 +349,7 @@ export default function SettingsPage() {
               user?.role === 'super_admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
             }`}>
               {user?.role === 'super_admin' ? <Crown size={11} /> : <Shield size={11} />}
-              {user?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+              {formatRoleLabel(user?.role)}
             </span>
           </div>
         </div>

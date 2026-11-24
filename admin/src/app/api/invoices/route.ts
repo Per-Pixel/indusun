@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 import { withServerCache, invalidateServerCache } from '@/utils/serverCache';
+import { cachedRowCount } from '@/utils/rowCount';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
 const INVOICE_COLS = 'id,client_name,contact_no,society_name,plot_no,emi_amount,emi_amount_num,paid_amount,paid_amount_num,emi_paid_date,cancel_date,r_no,registration_no,emi_no,"broker\'s_name",ba_code';
@@ -19,27 +20,49 @@ export async function GET(request: NextRequest) {
     const source = (searchParams.get('source') || 'all').toLowerCase(); // 'all' | 'custom' | 'master'
     const supabase = createServiceClient();
 
-    // ── Custom bills (bills table) — small set, fetched fully and merged ────
+    // Status totals overlap the bill fetch. They do not depend on the page.
+    const masterCountsPromise = withServerCache('invoices:master_status_counts', async () => {
+      const [paidRes, pendingRes, cancelledRes, totalRes] = await Promise.all([
+        supabase.from(TABLE_NAME).select('id', { count: 'exact', head: true })
+          .or('cancel_date.is.null,cancel_date.eq.')
+          .not('emi_paid_date', 'is', null).neq('emi_paid_date', ''),
+        supabase.from(TABLE_NAME).select('id', { count: 'exact', head: true })
+          .or('cancel_date.is.null,cancel_date.eq.')
+          .or('emi_paid_date.is.null,emi_paid_date.eq.'),
+        supabase.from(TABLE_NAME).select('id', { count: 'exact', head: true })
+          .not('cancel_date', 'is', null).neq('cancel_date', ''),
+        supabase.from(TABLE_NAME).select('id', { count: 'estimated', head: true }),
+      ]);
+      const paid = paidRes.count || 0;
+      const pending = pendingRes.count || 0;
+      const cancelled = cancelledRes.count || 0;
+      const estimatedTotal = totalRes.count || 0;
+      const total = estimatedTotal > 0 ? estimatedTotal : (paid + pending + cancelled);
+      return { paid, pending, cancelled, total };
+    });
+
+    // ── Custom bills (bills table) — capped and cached, then merged ────────
     let bills: any[] = [];
-    let billRows: any[] | null = null;
-    let billErr: any = null;
-
-    const res1 = await supabase
-      .from('bills')
-      .select('id,bill_number,client_name,client_phone,society_name,plot_no,reference_by,payment_ref,description,amount,date,due_date,status,payment_method')
-      .order('created_at', { ascending: false });
-    billRows = res1.data; billErr = res1.error;
-
-    // Retry without newer columns if migration hasn't added them yet
-    if (billErr) {
-      const res2 = await supabase
-        .from('bills')
-        .select('id,bill_number,client_name,description,amount,date,status,payment_method')
-        .order('created_at', { ascending: false });
-      billRows = res2.data; billErr = res2.error;
+    let allBillRows: any[] = [];
+    try {
+      allBillRows = await withServerCache('bills:invoice-rows', async () => {
+        const res1 = await supabase
+          .from('bills')
+          .select('id,bill_number,client_name,client_phone,society_name,plot_no,reference_by,payment_ref,description,amount,date,due_date,status,payment_method')
+          .order('created_at', { ascending: false })
+          .limit(500);
+        if (!res1.error) return res1.data || [];
+        const res2 = await supabase
+          .from('bills')
+          .select('id,bill_number,client_name,description,amount,date,status,payment_method')
+          .order('created_at', { ascending: false })
+          .limit(500);
+        if (res2.error) throw new Error(res2.error.message);
+        return res2.data || [];
+      });
+    } catch {
+      allBillRows = [];
     }
-
-    const allBillRows = !billErr && Array.isArray(billRows) ? billRows : [];
     const allBillsCount = allBillRows.length;
     const allBillsPaid = allBillRows.filter((b: any) => b.status === 'Paid').length;
     const allBillsPending = allBillsCount - allBillsPaid;
@@ -133,13 +156,13 @@ export async function GET(request: NextRequest) {
               .order('id', { ascending: false })
               .range(masterFrom, rangeEnd)
           : Promise.resolve({ data: [], error: null }),
-        withServerCache(countCacheKey, async () => {
-          const { count: c, error: cErr } = await applyMasterFilters(
-            supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
-          );
-          if (cErr) throw new Error(cErr.message);
-          return c || 0;
-        }),
+        cachedRowCount(
+          countCacheKey,
+          () => applyMasterFilters(supabase.from(TABLE_NAME).select('id', { count: 'exact', head: true })),
+          !search && (status === 'All' || !status)
+            ? () => supabase.from(TABLE_NAME).select('id', { count: 'estimated', head: true })
+            : undefined,
+        ),
       ]);
       if (error) throw new Error(error.message);
       masterCount = cachedCount || 0;
@@ -175,30 +198,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ── Summary counts (cached so pagination/search stays fast) ────────────
-    const masterCounts = await withServerCache('invoices:master_status_counts', async () => {
-      const [paidRes, pendingRes, cancelledRes, totalRes] = await Promise.all([
-        supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
-          .or('cancel_date.is.null,cancel_date.eq.')
-          .not('emi_paid_date', 'is', null).neq('emi_paid_date', ''),
-        supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
-          .or('cancel_date.is.null,cancel_date.eq.')
-          .or('emi_paid_date.is.null,emi_paid_date.eq.'),
-        supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true })
-          .not('cancel_date', 'is', null).neq('cancel_date', ''),
-        supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true }),
-      ]);
-      const paid = paidRes.count || 0;
-      const pending = pendingRes.count || 0;
-      const cancelled = cancelledRes.count || 0;
-      const total = totalRes.count || (paid + pending + cancelled);
-      return {
-        paid,
-        pending,
-        cancelled,
-        total,
-      };
-    });
+    const masterCounts = await masterCountsPromise;
 
     const totalItems = billsCount + masterCount;
     return NextResponse.json({

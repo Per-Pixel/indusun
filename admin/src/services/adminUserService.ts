@@ -8,7 +8,7 @@ export interface AdminUserRow {
   name: string;
   email: string;
   phone: string | null;
-  role: 'admin' | 'super_admin';
+  role: string;
   status: 'active' | 'inactive' | 'pending';
   permissions: string[];
   avatar_url: string | null;
@@ -26,14 +26,14 @@ export interface CreateAdminInput {
   email: string;
   password: string;
   phone?: string;
-  role: 'admin' | 'super_admin';
+  role: string;
   permissions?: string[];
 }
 
 export interface UpdateAdminInput {
   name?: string;
   phone?: string;
-  role?: 'admin' | 'super_admin';
+  role?: string;
   status?: 'active' | 'inactive' | 'pending';
   permissions?: string[];
   avatar_url?: string;
@@ -140,7 +140,13 @@ export async function createAdminUser(input: CreateAdminInput): Promise<{
     if (profileError) {
       // Rollback: delete the auth user we just created
       await supabase.auth.admin.deleteUser(authData.user.id);
-      return { user: null, error: 'Failed to create admin profile: ' + profileError.message };
+      const constraint = /check constraint/i.test(profileError.message) && /role/i.test(profileError.message);
+      return {
+        user: null,
+        error: constraint
+          ? 'This role is blocked by the database. Run admin/sql/admin_roles.sql in the Supabase SQL editor, then create the user again.'
+          : 'Failed to create admin profile: ' + profileError.message,
+      };
     }
 
     return { user: profileData as AdminUserRow, error: null };

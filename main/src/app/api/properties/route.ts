@@ -66,6 +66,11 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('q')?.trim() || '';
   const type = searchParams.get('type')?.trim() || '';
+  const sort = searchParams.get('sort')?.trim() || 'newest';
+  const minPriceRaw = searchParams.get('minPrice');
+  const maxPriceRaw = searchParams.get('maxPrice');
+  const minPrice = minPriceRaw != null && minPriceRaw !== '' ? Number(minPriceRaw) : null;
+  const maxPrice = maxPriceRaw != null && maxPriceRaw !== '' ? Number(maxPriceRaw) : null;
   const limitParam = searchParams.get('limit');
   const pageParam = searchParams.get('page');
   const cookieStore = await cookies();
@@ -77,7 +82,15 @@ export async function GET(request: Request) {
     if (search) {
       q = q.or(`society_name.ilike.%${search}%,client_name.ilike.%${search}%,plot_no.ilike.%${search}%,project_name.ilike.%${search}%`);
     }
+    if (minPrice != null && Number.isFinite(minPrice)) q = q.gte('plot_amount_num', minPrice);
+    if (maxPrice != null && Number.isFinite(maxPrice)) q = q.lte('plot_amount_num', maxPrice);
     return q;
+  };
+
+  const applySort = (q: any) => {
+    if (sort === 'price-asc') return q.order('plot_amount_num', { ascending: true, nullsFirst: false });
+    if (sort === 'price-desc') return q.order('plot_amount_num', { ascending: false, nullsFirst: false });
+    return q.order('id', { ascending: false });
   };
 
   // Default to fast paginated mode (limit=60) unless explicitly requesting limit=all
@@ -86,10 +99,9 @@ export async function GET(request: Request) {
     const page = Math.max(1, parseInt(pageParam || '1', 10) || 1);
     const from = (page - 1) * limit;
 
-    const { data, count, error } = await applyFilters(
+    const { data, count, error } = await applySort(applyFilters(
       supabase.from('Master Data Of Gurukrupa').select(COLS, { count: 'exact' })
-    )
-      .order('id', { ascending: false })
+    ))
       .range(from, from + limit - 1);
 
     if (error) {
@@ -120,8 +132,7 @@ export async function GET(request: Request) {
     const end = Math.min(b + 10, pages);
     const results = await Promise.all(
       Array.from({ length: end - b }, (_, i) =>
-        applyFilters(supabase.from('Master Data Of Gurukrupa').select(COLS))
-          .order('id', { ascending: false })
+        applySort(applyFilters(supabase.from('Master Data Of Gurukrupa').select(COLS)))
           .range((b + i) * PAGE, (b + i) * PAGE + PAGE - 1)
       )
     );

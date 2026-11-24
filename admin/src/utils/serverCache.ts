@@ -21,8 +21,8 @@ const inflight = g.__indusunCacheInflight ?? (g.__indusunCacheInflight = new Map
 export async function withServerCache<T>(
   key: string,
   fetcher: () => Promise<T>,
-  ttlMs = 120_000,
-  staleMs = 600_000
+  ttlMs = 300_000,
+  staleMs = 1_800_000
 ): Promise<T> {
   const now = Date.now();
   const cached = store.get(key);

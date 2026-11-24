@@ -8,6 +8,7 @@ import {
   BookOpen, Briefcase
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
+import { formatRoleLabel } from '@/lib/permissions';
 
 interface AdminTopNavbarProps {
   toggleSidebar: () => void;
@@ -226,7 +227,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
                   {user?.name || 'Admin User'}
                 </span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {user?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                  {formatRoleLabel(user?.role)}
                 </span>
               </div>
               <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} className={`hidden md:block transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
@@ -254,7 +255,7 @@ const AdminTopNavbar: React.FC<AdminTopNavbarProps> = ({ toggleSidebar }) => {
                         style={{ fontSize: '0.6rem' }}
                       >
                         {user?.role === 'super_admin' ? <Crown size={9} /> : <Shield size={9} />}
-                        {user?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                        {formatRoleLabel(user?.role)}
                       </span>
                     </div>
                   </div>

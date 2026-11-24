@@ -23,7 +23,7 @@ interface Props {
   page: number;
   stats: { total: number; scheduled: number; completed: number; cancelled: number; noShow: number; error: Error | null };
   societies: string[];
-  filters: { search: string; society: string };
+  filters: { search: string; society: string; status: string };
   error: Error | null;
 }
 
@@ -35,8 +35,8 @@ export default function SiteVisitsContent({ visits, totalCount, page, stats, soc
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const updateUrl = (updates: Record<string, string>) => {
-    const params = new URLSearchParams({ search: filters.search, society: filters.society, page: String(page), ...updates });
-    ['search', 'society'].forEach((k) => { if (!params.get(k)) params.delete(k); });
+    const params = new URLSearchParams({ search: filters.search, society: filters.society, status: filters.status, page: String(page), ...updates });
+    ['search', 'society', 'status'].forEach((k) => { if (!params.get(k)) params.delete(k); });
     if (params.get('page') === '1') params.delete('page');
     startTransition(() => router.push(`${pathname}?${params.toString()}`));
   };
@@ -109,6 +109,16 @@ export default function SiteVisitsContent({ visits, totalCount, page, stats, soc
         >
           <option value="">All Societies</option>
           {societies.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select
+          className="input input-sm select w-auto"
+          value={filters.status}
+          onChange={(e) => updateUrl({ status: e.target.value, page: '1' })}
+        >
+          <option value="">All Statuses</option>
+          {(Object.keys(STATUS_MAP) as Array<keyof typeof STATUS_MAP>).map((key) => (
+            <option key={key} value={key}>{STATUS_MAP[key].label}</option>
+          ))}
         </select>
       </div>
 

@@ -2,37 +2,15 @@
 // POST /api/admin-users — create a new admin (super_admin only)
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/utils/supabase/service';
 import { listAdminUsers, createAdminUser } from '@/services/adminUserService';
-
-/** Helper: extract the current user's role from Supabase session */
-async function getCallerRole(req: NextRequest): Promise<{
-  userId: string | null;
-  role: 'admin' | 'super_admin' | null;
-}> {
-  try {
-    // We use the service client to look up the session token
-    const supabase = createServiceClient();
-    const authHeader = req.headers.get('cookie') || '';
-
-    // Parse the access token from cookies
-    const tokenMatch = authHeader.match(/sb-[^=]+-auth-token=([^;]+)/);
-    if (!tokenMatch) {
-      // Try getting from the base64 encoded cookie
-      const base64Match = authHeader.match(/sb-[^=]+-auth-token\.0=([^;]+)/);
-      if (!base64Match) return { userId: null, role: null };
-    }
-
-    // Use a different approach: just look at the admin_users table
-    // since the middleware already validates the session
-    // We'll pass the user ID via a custom header or extract from session
-    return { userId: null, role: null };
-  } catch {
-    return { userId: null, role: null };
-  }
-}
+import { requireStaff } from '@/lib/adminAccess';
+import { assertRoleAssignable } from '@/services/adminRoleService';
+import { ALL_PERMISSION_KEYS } from '@/lib/permissions';
 
 export async function GET() {
+  const access = await requireStaff('user_management');
+  if (access.denied) return access.denied;
+
   try {
     const { users, error } = await listAdminUsers();
 
@@ -58,9 +36,13 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const access = await requireStaff('user_management');
+  if (access.denied) return access.denied;
+
   try {
     const body = await req.json();
-    const { name, email, password, phone, role, permissions, callerRole } = body;
+    const { name, email, password, phone, permissions } = body;
+    const role = (body.role as string) || 'admin';
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -70,22 +52,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Only super_admin can create new admins
-    // The caller's role is passed from the client (which gets it from the auth context)
-    // In production, you'd verify this server-side via the session
-    if (callerRole !== 'super_admin') {
+    if (role === 'super_admin' && access.user.role !== 'super_admin') {
       return NextResponse.json(
-        { success: false, error: 'Only super admins can create new admin accounts' },
+        { success: false, error: 'Only a super admin can create another super admin' },
         { status: 403 }
       );
     }
 
-    // Validate role
-    if (role && !['admin', 'super_admin'].includes(role)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid role. Must be admin or super_admin' },
-        { status: 400 }
-      );
+    const roleError = await assertRoleAssignable(role);
+    if (roleError) {
+      return NextResponse.json({ success: false, error: roleError }, { status: 400 });
     }
 
     // Validate password strength
@@ -101,8 +77,8 @@ export async function POST(req: NextRequest) {
       email,
       password,
       phone,
-      role: role || 'admin',
-      permissions: permissions || [],
+      role,
+      permissions: role === 'super_admin' ? ALL_PERMISSION_KEYS : (permissions || []),
     });
 
     if (error) {

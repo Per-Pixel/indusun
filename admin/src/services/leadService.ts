@@ -7,6 +7,8 @@
 import { createServiceClient } from '@/utils/supabase/service';
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import { withServerCache } from '@/utils/serverCache';
+import { cachedRowCount } from '@/utils/rowCount';
+import { executeQuery } from '@/lib/db';
 
 const TABLE = 'Master Data Of Gurukrupa';
 const LEAD_COLS = 'id,client_name,contact_no,society_name,project_name,plot_no,plot_size,plot_amount,paid_amount,emi_amount,"broker\'s_name",broker_code,broker_name_clean,cancel_date,date_of_form,date';
@@ -43,12 +45,99 @@ function deriveLeadScore(row: MasterDataOfGurukrupa): 'hot' | 'warm' | 'cold' {
   return 'cold';
 }
 
+function likePattern(search: string) {
+  return `%${search.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+}
+
+function leadStatusSql(status: string) {
+  if (status === 'cancelled') return `cancel_date IS NOT NULL`;
+  if (status === 'booked') return `cancel_date IS NULL AND COALESCE(paid_amount_num, 0) > 0`;
+  if (status === 'negotiation') return `cancel_date IS NULL AND COALESCE(paid_amount_num, 0) = 0 AND COALESCE(emi_amount_num, 0) > 0`;
+  if (status === 'interested') return `cancel_date IS NULL AND COALESCE(paid_amount_num, 0) = 0 AND COALESCE(emi_amount_num, 0) = 0 AND plot_no IS NOT NULL AND plot_no <> ''`;
+  if (status === 'new') return `cancel_date IS NULL AND COALESCE(paid_amount_num, 0) = 0 AND COALESCE(emi_amount_num, 0) = 0 AND (plot_no IS NULL OR plot_no = '')`;
+  return 'TRUE';
+}
+
+function leadScoreSql(score: string) {
+  if (score === 'hot') return `COALESCE(plot_amount_num, 0) > 0 AND COALESCE(paid_amount_num, 0) >= plot_amount_num * 0.5`;
+  if (score === 'warm') return `COALESCE(plot_amount_num, 0) > 0 AND COALESCE(paid_amount_num, 0) >= plot_amount_num * 0.15 AND COALESCE(paid_amount_num, 0) < plot_amount_num * 0.5`;
+  if (score === 'cold') return `COALESCE(plot_amount_num, 0) <= 0 OR COALESCE(paid_amount_num, 0) < plot_amount_num * 0.15`;
+  return 'TRUE';
+}
+
+/** Score compares paid and plot amounts, which the list API cannot express. */
+async function getLeadsByScore({
+  page, pageSize, search, societyFilter, statusFilter, scoreFilter, dateFrom, dateTo, minAmount, maxAmount, order,
+}: {
+  page: number;
+  pageSize: number;
+  search: string;
+  societyFilter: string;
+  statusFilter: string;
+  scoreFilter: string;
+  dateFrom: string;
+  dateTo: string;
+  minAmount: number | null;
+  maxAmount: number | null;
+  order: 'asc' | 'desc';
+}): Promise<{ data: LeadRecord[]; count: number; error: Error | null }> {
+  const params: unknown[] = [];
+  const where: string[] = [leadStatusSql(statusFilter), leadScoreSql(scoreFilter)];
+  if (search) {
+    params.push(likePattern(search));
+    const p = `$${params.length}`;
+    where.push(`(client_name ILIKE ${p} OR contact_no ILIKE ${p} OR society_name ILIKE ${p} OR project_name ILIKE ${p} OR plot_no ILIKE ${p} OR "broker's_name" ILIKE ${p} OR broker_code ILIKE ${p} OR ba_code ILIKE ${p} OR broker_name_clean ILIKE ${p})`);
+  }
+  if (societyFilter) {
+    params.push(societyFilter);
+    where.push(`society_name = $${params.length}`);
+  }
+  if (dateFrom) {
+    params.push(dateFrom);
+    where.push(`form_date_iso >= $${params.length}`);
+  }
+  if (dateTo) {
+    params.push(dateTo);
+    where.push(`form_date_iso <= $${params.length}`);
+  }
+  if (minAmount != null) {
+    params.push(minAmount);
+    where.push(`plot_amount_num >= $${params.length}`);
+  }
+  if (maxAmount != null) {
+    params.push(maxAmount);
+    where.push(`plot_amount_num <= $${params.length}`);
+  }
+
+  const clause = where.join(' AND ');
+  const offset = (page - 1) * pageSize;
+  const [rows, counted] = await Promise.all([
+    executeQuery(
+      `SELECT ${LEAD_COLS} FROM "${TABLE}" WHERE ${clause} ORDER BY id ${order === 'asc' ? 'ASC' : 'DESC'} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, pageSize, offset],
+    ),
+    executeQuery(`SELECT count(*)::int AS count FROM "${TABLE}" WHERE ${clause}`, params),
+  ]);
+
+  const leads = (rows.rows as MasterDataOfGurukrupa[]).map((row) => ({
+    ...row,
+    lead_status: deriveLeadStatus(row),
+    lead_score: deriveLeadScore(row),
+  }));
+  return { data: leads, count: Number(counted.rows[0]?.count || 0), error: null };
+}
+
 export async function getLeads({
   page = 1,
   pageSize = 25,
   search = '',
   societyFilter = '',
   statusFilter = '',
+  scoreFilter = '',
+  dateFrom = '',
+  dateTo = '',
+  minAmount = null,
+  maxAmount = null,
   order = 'desc',
 }: {
   page?: number;
@@ -56,9 +145,20 @@ export async function getLeads({
   search?: string;
   societyFilter?: string;
   statusFilter?: string;
+  scoreFilter?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  minAmount?: number | null;
+  maxAmount?: number | null;
   order?: 'asc' | 'desc';
 }): Promise<{ data: LeadRecord[]; count: number; error: Error | null }> {
   try {
+    if (scoreFilter) {
+      return await getLeadsByScore({
+        page, pageSize, search, societyFilter, statusFilter, scoreFilter, dateFrom, dateTo, minAmount, maxAmount, order,
+      });
+    }
+
     const supabase = createServiceClient();
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -85,21 +185,28 @@ export async function getLeads({
           q = q.is('cancel_date', null).eq('paid_amount_num', 0).eq('emi_amount_num', 0).or('plot_no.is.null,plot_no.eq.');
         }
       }
+      if (dateFrom) q = q.gte('form_date_iso', dateFrom);
+      if (dateTo) q = q.lte('form_date_iso', dateTo);
+      if (minAmount != null) q = q.gte('plot_amount_num', minAmount);
+      if (maxAmount != null) q = q.lte('plot_amount_num', maxAmount);
       return q;
     };
 
-    const countCacheKey = `count:leads:${search}|${societyFilter}|${statusFilter}`;
+    const unfiltered = !search && !societyFilter && !statusFilter && !dateFrom && !dateTo && minAmount == null && maxAmount == null;
+    const countCacheKey = unfiltered
+      ? 'count:leads:estimated'
+      : `count:leads:${search}|${societyFilter}|${statusFilter}|${dateFrom}|${dateTo}|${minAmount ?? ''}|${maxAmount ?? ''}`;
     const [{ data, error }, count] = await Promise.all([
       applyFilters(supabase.from(TABLE).select(LEAD_COLS))
         .order('id', { ascending: order === 'asc' })
         .range(from, to),
-      withServerCache(countCacheKey, async () => {
-        const { count: c, error: cErr } = await applyFilters(
-          supabase.from(TABLE).select('*', { count: 'exact', head: true })
-        );
-        if (cErr) throw new Error(cErr.message);
-        return c || 0;
-      }),
+      cachedRowCount(
+        countCacheKey,
+        () => applyFilters(supabase.from(TABLE).select('id', { count: 'exact', head: true })),
+        unfiltered
+          ? () => supabase.from(TABLE).select('id', { count: 'estimated', head: true })
+          : undefined,
+      ),
     ]);
 
     if (error) return { data: [], count: 0, error: new Error(error.message) };

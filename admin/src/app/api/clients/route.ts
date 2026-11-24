@@ -67,11 +67,42 @@ export async function GET(req: NextRequest) {
       ? (masterClientsData as MasterClientRpcItem[])
       : [];
 
-    let clients = masterList.map((item, idx) => rowToClient(item, idx, 'master'));
+    // Filter the raw lists first, then shape only the page that is returned.
+    const customSource = !customErr && customClients ? customClients : [];
+    const customFiltered = customSource
+      .map((c: any, idx: number) => ({ c, idx }))
+      .filter(({ c }) => {
+        if (!search) return true;
+        return (
+          String(c.name || '').toLowerCase().includes(search) ||
+          String(c.phone || '').includes(search) ||
+          String(c.location || '').toLowerCase().includes(search)
+        );
+      });
 
-    // 2. Merge writable clients table
-    if (!customErr && customClients && customClients.length > 0) {
-      const customFormatted = customClients.map((c: any, idx: number) => ({
+    const matchedIdx: number[] = [];
+    if (search) {
+      for (let i = 0; i < masterList.length; i++) {
+        const item = masterList[i];
+        const name = (item.display || '').toLowerCase();
+        const phone = item.phone || '';
+        const society = (item.society || '').toLowerCase();
+        if (name.includes(search) || phone.includes(search) || society.includes(search)) {
+          matchedIdx.push(i);
+        }
+      }
+    }
+
+    const masterTotal = search ? matchedIdx.length : masterList.length;
+    const totalItems = customFiltered.length + masterTotal;
+    const totalPages = Math.ceil(totalItems / limit) || 1;
+    const start = (page - 1) * limit;
+    const end = start + limit;
+
+    const clients: ReturnType<typeof rowToClient>[] = [];
+    for (let i = start; i < end && i < customFiltered.length; i++) {
+      const { c, idx } = customFiltered[i];
+      clients.push({
         id: `c-${c.id}`,
         name: c.name as string,
         rawName: c.name as string,
@@ -87,26 +118,19 @@ export async function GET(req: NextRequest) {
         lastActive: c.created_at ? (c.created_at as string).split('T')[0] : '',
         createdAt: c.created_at ? (c.created_at as string).split('T')[0] : '',
         source: 'custom' as const,
-      }));
-      clients = [...customFormatted, ...clients];
+      });
     }
 
-    // Apply search filter
-    if (search) {
-      clients = clients.filter(
-        (c) =>
-          c.name.toLowerCase().includes(search) ||
-          c.phone.includes(search) ||
-          (c.location && c.location.toLowerCase().includes(search))
-      );
+    const masterStart = Math.max(0, start - customFiltered.length);
+    const masterEnd = Math.max(0, end - customFiltered.length);
+    for (let offset = masterStart; offset < masterEnd; offset++) {
+      const idx = search ? matchedIdx[offset] : offset;
+      if (idx == null || !masterList[idx]) break;
+      clients.push(rowToClient(masterList[idx], idx, 'master'));
     }
-
-    const totalItems = clients.length;
-    const totalPages = Math.ceil(totalItems / limit);
-    const paged = clients.slice((page - 1) * limit, page * limit);
 
     return NextResponse.json({
-      clients: paged,
+      clients,
       pagination: { page, limit, totalItems, totalPages },
     });
   } catch (error) {

@@ -17,7 +17,6 @@ import {
   AlertCircle,
   Phone,
   Mail,
-  MessageCircle,
   Download,
   X
 } from 'lucide-react';
@@ -87,7 +86,8 @@ export default function MessagesPage() {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [messageText, setMessageText] = useState('');
-  const [messageType, setMessageType] = useState<'sms' | 'email' | 'whatsapp'>('sms');
+  const [messageType, setMessageType] = useState<'internal' | 'sms'>('internal');
+  const [emailSubject, setEmailSubject] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [messageStats, setMessageStats] = useState<MessageStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -388,37 +388,35 @@ export default function MessagesPage() {
       return;
     }
 
-    if (messageType !== 'sms') {
-      toast.error(`${messageType === 'email' ? 'Email' : 'WhatsApp'} sending is not yet integrated. Please use SMS for now.`);
-      return;
-    }
-
-    // Collect phone numbers and names of selected recipients
     const allRecipients = getAllRecipients();
     const selected = selectedRecipients
       .map(id => allRecipients.find(r => r.id === id))
-      .filter(Boolean) as typeof allRecipients;
+      .filter(Boolean) as MessageRecipient[];
 
-    const numbersWithNames = selected
-      .filter(r => r.phone && r.phone.trim())
-      .map(r => ({ phone: r.phone.trim(), name: r.name }));
-
-    if (numbersWithNames.length === 0) {
-      toast.error('None of the selected recipients have a phone number');
+    if (selected.length === 0) {
+      toast.error('Please select at least one recipient');
       return;
     }
 
+    const channelLabel = messageType === 'sms' ? 'SMS' : 'internal message';
     setIsSending(true);
-    const sendingToast = toast.loading(`Sending SMS to ${numbersWithNames.length} recipient(s)...`);
+    const sendingToast = toast.loading(`Sending ${channelLabel} to ${selected.length} recipient(s)...`);
 
     try {
-      const response = await fetch('/api/sms/send', {
+      const response = await fetch('/api/messages/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          numbers: numbersWithNames.map(r => r.phone),
+          channel: messageType,
+          subject: emailSubject.trim(),
           message: messageText.trim(),
-          recipientNames: numbersWithNames.map(r => r.name),
+          recipients: selected.map(r => ({
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            phone: r.phone,
+            type: r.type,
+          })),
         }),
       });
 
@@ -426,26 +424,19 @@ export default function MessagesPage() {
       toast.dismiss(sendingToast);
 
       if (data.success) {
-        const invalidMsg = data.invalidNumbers?.length
-          ? ` (${data.invalidNumbers.length} invalid number(s) skipped)`
-          : '';
-        toast.success(`SMS sent to ${data.count} recipient(s)${invalidMsg}`);
-
-        // Navigate to history with count info
-        router.push(`/messages/sent?count=${data.count}&type=sms`);
-
-        // Reset form
+        const failedNote = data.failed ? ` (${data.failed} failed)` : '';
+        toast.success(`Sent an ${channelLabel} to ${data.count} recipient(s)${failedNote}`);
+        if (data.warning) toast(data.warning, { duration: 6000 });
         setMessageText('');
+        setEmailSubject('');
         setSelectedRecipients([]);
+        router.push(data.inbox ? '/internal-comms' : `/messages/history`);
       } else {
-        // Partial or full failure
-        toast.error(`SMS failed: ${data.error || 'Unknown error'}`);
-        console.error('Fast2SMS error response:', data);
+        toast.error(data.error || `Could not send ${channelLabel}`);
       }
     } catch (err: any) {
       toast.dismiss(sendingToast);
-      toast.error(`Failed to send SMS: ${err.message || 'Network error'}`);
-      console.error('SMS send error:', err);
+      toast.error(`Failed to send ${channelLabel}: ${err.message || 'Network error'}`);
     } finally {
       setIsSending(false);
     }
@@ -757,6 +748,20 @@ export default function MessagesPage() {
                   <div className="p-4 border-b border-gray-200">
                     <div className="flex gap-4 flex-wrap">
                       <button
+                        onClick={() => setMessageType('internal')}
+                        className={`flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                          messageType === 'internal'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'border-gray-300 hover:bg-gray-50'
+                        }`}
+                        style={{
+                          color: messageType === 'internal' ? 'white' : '#374151'
+                        }}
+                      >
+                        <Mail size={16} className="mr-2" />
+                        <span>Internal mail</span>
+                      </button>
+                      <button
                         onClick={() => setMessageType('sms')}
                         className={`flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
                           messageType === 'sms'
@@ -770,39 +775,25 @@ export default function MessagesPage() {
                         <Phone size={16} className="mr-2" />
                         <span>Send SMS</span>
                       </button>
-                      <button
-                        onClick={() => setMessageType('email')}
-                        className={`flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
-                          messageType === 'email'
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'border-gray-300 hover:bg-gray-50'
-                        }`}
-                        style={{
-                          color: messageType === 'email' ? 'white' : '#374151'
-                        }}
-                      >
-                        <Mail size={16} className="mr-2" />
-                        <span>Send Email</span>
-                      </button>
-                      <button
-                        onClick={() => setMessageType('whatsapp')}
-                        className={`flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
-                          messageType === 'whatsapp'
-                            ? 'bg-green-600 text-white border-green-600'
-                            : 'border-gray-300 hover:bg-gray-50'
-                        }`}
-                        style={{
-                          color: messageType === 'whatsapp' ? 'white' : '#374151'
-                        }}
-                      >
-                        <MessageCircle size={16} className="mr-2" />
-                        <span>Send to WhatsApp</span>
-                      </button>
                     </div>
+                    <p className="mt-3 text-xs text-gray-500">
+                      {messageType === 'internal'
+                        ? 'Stays in the panel. Other admins read it in Internal Comms. Clients and brokers are saved in message history only.'
+                        : 'SMS still goes out through Message Central when that service is configured.'}
+                    </p>
                   </div>
 
                   {/* Message Input */}
                   <div className="p-4">
+                    {messageType === 'internal' && (
+                      <input
+                        type="text"
+                        placeholder="Subject"
+                        className="w-full mb-3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+                        value={emailSubject}
+                        onChange={(e) => setEmailSubject(e.target.value)}
+                      />
+                    )}
                     <textarea
                       placeholder="Type your message here..."
                       className="w-full h-40 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"

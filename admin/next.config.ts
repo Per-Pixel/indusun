@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    optimizePackageImports: [
+      'recharts',
+      'framer-motion',
+      'lucide-react',
+      '@heroicons/react',
+      'date-fns',
+    ],
+  },
   eslint: {
     // Pre-existing ESLint issues in legacy files — run `npm run lint` separately
     ignoreDuringBuilds: true,
