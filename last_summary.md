@@ -1,13 +1,15 @@
 # Last Summary
 
-Wired the filters that were visible but did not change the lists.
+Pushed the local admin and public-site work to GitHub and deployed both Vercel projects.
 
-## Admin
+## Git
 
-- Leads advanced filters now apply: score (hot, warm, cold), form date range, and min/max plot amount. Search, society, and status still work with them.
-- Bookings and site visits have a status dropdown. Booking status follows the same paid-versus-plot rules as the badge. Visit status follows cancelled, completed, and scheduled.
+- Commit `b5ee3eb` on `main`: https://github.com/Per-Pixel/indusun
+- Includes admin roles, faster lists, and the filters that now change the results.
+- Left `.devin/` untracked.
 
-## Public listings
+## Vercel production
 
-- The properties page filter row is open by default, with price bands and sort.
-- Price and newest/price sort run on the full catalog. Area sort reorders the listings already loaded.
+- Admin: https://admin-liard-chi-50.vercel.app
+- Public site: https://main-kohl-five-27.vercel.app
+- Both builds finished ready. Vercel Authentication is on, so the URLs ask for a login.
