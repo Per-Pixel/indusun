@@ -15,9 +15,12 @@ import {
   AlertCircle,
   XCircle,
   Trash2,
+  Printer,
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
 import ExportDropdown from '@/components/ui/ExportDropdown';
+import { useAdminAuth } from '@/context/AdminAuthContext';
+import { canDeleteBills, canSeeRevenue, isBillingDesk } from '@/lib/staffNav';
 
 interface Invoice {
   id: string;
@@ -44,6 +47,9 @@ interface Summary {
 
 export default function InvoicesPage() {
   const router = useRouter();
+  const { user } = useAdminAuth();
+  const showTotals = canSeeRevenue(user) || !isBillingDesk(user);
+  const allowDelete = canDeleteBills(user);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
@@ -239,6 +245,16 @@ export default function InvoicesPage() {
                 {selectedIds.length > 0 && (
                   <button
                     type="button"
+                    onClick={() => router.push(`/invoices/print?ids=${encodeURIComponent(selectedIds.join(','))}`)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800"
+                  >
+                    <Printer size={16} />
+                    <span>Print Selected ({selectedIds.length})</span>
+                  </button>
+                )}
+                {allowDelete && selectedIds.length > 0 && (
+                  <button
+                    type="button"
                     onClick={handleBulkDelete}
                     disabled={isDeleting}
                     className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
@@ -247,7 +263,7 @@ export default function InvoicesPage() {
                     <span>Delete Selected ({selectedIds.length})</span>
                   </button>
                 )}
-                <ExportDropdown
+                {showTotals && <ExportDropdown
                   label="Export"
                   filename="invoices"
                   disabled={invoices.length === 0}
@@ -269,7 +285,7 @@ export default function InvoicesPage() {
                     status:        inv.status,
                     _broker:       inv.broker || '',
                   }))}
-                />
+                />}
                 <button
                   onClick={() => router.push('/invoices/create')}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -299,7 +315,7 @@ export default function InvoicesPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {showTotals && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {summaryCards.map((item, index) => (
                 <div key={index} className={`p-4 rounded-lg border border-gray-200 ${item.bgColor}`}>
                   <div className="flex justify-between items-start">
@@ -314,7 +330,7 @@ export default function InvoicesPage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </div>}
 
             {/* Source filter pills */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -487,6 +503,7 @@ export default function InvoicesPage() {
                                 >
                                   View
                                 </button>
+                                {allowDelete && (
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteOne(invoice)}
@@ -496,6 +513,7 @@ export default function InvoicesPage() {
                                 >
                                   <Trash2 size={16} />
                                 </button>
+                                )}
                               </div>
                             </td>
                           </tr>

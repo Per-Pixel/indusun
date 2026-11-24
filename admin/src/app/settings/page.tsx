@@ -356,7 +356,7 @@ export default function SettingsPage() {
 
         {/* ── Horizontal pill tabs ── */}
         <div className="flex items-center gap-1 bg-white rounded-xl border border-gray-200 shadow-sm p-1 overflow-x-auto">
-          {TABS.map(tab => (
+          {TABS.filter((tab) => tab.id !== 'api_console' || user?.role === 'super_admin' || (user?.permissions || []).includes('system_settings')).map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}

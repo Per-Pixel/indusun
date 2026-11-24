@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { createServiceClient } from '@/utils/supabase/service';
 import { normalizeDate } from '@/utils/dataUtils';
+import { requireStaff } from '@/lib/adminAccess';
 
 /**
  * POST /api/data-import/execute
@@ -148,6 +149,8 @@ function coerceValue(raw: any, type: 'text' | 'number' | 'date'): any {
 // ── Main handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const access = await requireStaff('property_management');
+  if (access.denied) return access.denied;
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
@@ -376,6 +379,9 @@ export async function POST(req: NextRequest) {
 // ── GET: Return entity configs for the wizard UI ────────────────────────────
 
 export async function GET() {
+  const access = await requireStaff('property_management');
+  if (access.denied) return access.denied;
+
   const entities = Object.entries(ENTITY_CONFIGS).map(([key, config]) => ({
     key,
     tableName: config.tableName,

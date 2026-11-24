@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 import { withServerCache } from '@/utils/serverCache';
+import { requireStaff } from '@/lib/adminAccess';
 
 export async function GET(request: NextRequest) {
+  const access = await requireStaff('financial_reports');
+  if (access.denied) return access.denied;
   try {
     const searchParams = request.nextUrl.searchParams;
     const startDate  = searchParams.get('startDate')  || null;

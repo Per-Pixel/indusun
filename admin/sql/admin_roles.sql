@@ -77,6 +77,13 @@ VALUES
     'Website CMS and the media library.',
     '["cms_management","internal_comms"]'::jsonb,
     false
+  ),
+  (
+    'biller',
+    'Biller',
+    'Create, view, and print bills. No sales totals, reports, user management, or settings.',
+    '["billing_management"]'::jsonb,
+    true
   )
 ON CONFLICT (slug) DO NOTHING;
 

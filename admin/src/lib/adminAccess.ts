@@ -29,3 +29,12 @@ export async function requireStaff(permission?: string): Promise<
   }
   return { user, denied: null };
 }
+
+/** 403 when the signed-in user has none of the listed permissions. */
+export function forbidUnless(user: AuthUser, ...permissions: string[]): NextResponse | null {
+  if (permissions.some((key) => userHasPermission(user.role, user.permissions, key))) return null;
+  return NextResponse.json(
+    { success: false, error: 'You do not have permission for this action' },
+    { status: 403 }
+  );
+}

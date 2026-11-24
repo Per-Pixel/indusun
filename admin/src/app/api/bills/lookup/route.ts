@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
+import { requireStaff } from '@/lib/adminAccess';
 import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 
 const MASTER_TABLE = 'Master Data Of Gurukrupa';
@@ -176,6 +177,8 @@ function mapMasterRow(r: any): BillSuggestion {
 }
 
 export async function GET(req: NextRequest) {
+  const access = await requireStaff('billing_management');
+  if (access.denied) return access.denied;
   try {
     const { searchParams } = new URL(req.url);
     const q = (searchParams.get('q') || '').trim();

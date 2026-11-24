@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 import { invalidateServerCache } from '@/utils/serverCache';
+import { forbidUnless, requireStaff } from '@/lib/adminAccess';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
 
@@ -9,6 +10,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireStaff('billing_management');
+  if (access.denied) return access.denied;
   try {
     const { id } = await params;
     const supabase = createServiceClient();
@@ -182,6 +185,10 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireStaff();
+  if (access.denied) return access.denied;
+  const denied = forbidUnless(access.user, 'financial_reports', 'property_management', 'user_management');
+  if (denied) return denied;
   try {
     const { id } = await params;
     const supabase = createServiceClient();

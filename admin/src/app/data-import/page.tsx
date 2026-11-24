@@ -6,6 +6,8 @@ import { toast } from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import GurukrupaMasterImport from '@/components/import/GurukrupaMasterImport';
+import { readWorkbookSheetNames } from '@/lib/gurukrupaWorkbook';
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -174,6 +176,7 @@ function UniversalDataImportContent() {
   const [step, setStep] = useState<number>(1);
   const [selectedEntityKey, setSelectedEntityKey] = useState<string>(validEntity);
   const [file, setFile] = useState<File | null>(null);
+  const [masterFile, setMasterFile] = useState<File | null>(null);
   const [isParsing, setIsParsing] = useState<boolean>(false);
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
 
@@ -312,8 +315,30 @@ function UniversalDataImportContent() {
     }
   };
 
-  const onFileSelect = (selected: File) => {
+  const onFileSelect = async (selected: File) => {
     setFile(selected);
+    setMasterFile(null);
+    const lower = selected.name.toLowerCase();
+    if (lower.endsWith('.xlsx')) {
+      try {
+        const names = await readWorkbookSheetNames(await selected.arrayBuffer());
+        if (names.some((name) => name.trim() === 'MAIN SHEET')) {
+          setMasterFile(selected);
+          setStep(0);
+          toast.success('Recognised the Gurukrupa master workbook');
+          return;
+        }
+      } catch (err: unknown) {
+        if (selected.size > 10 * 1024 * 1024) {
+          toast.error(err instanceof Error ? err.message : 'Could not read this workbook');
+          return;
+        }
+      }
+    }
+    if (selected.size > 10 * 1024 * 1024) {
+      toast.error('Files over 10 MB need to be the Gurukrupa master workbook (MAIN SHEET).');
+      return;
+    }
     handleParseFile(selected, undefined, 1);
   };
 
@@ -422,7 +447,7 @@ function UniversalDataImportContent() {
                 Universal Excel Import Wizard
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                Seamlessly bulk import properties, customers, brokers, bills, and payments from any Excel (.xlsx/.xls) or CSV spreadsheet.
+                Import the original Gurukrupa workbook by property, or map any other spreadsheet.
               </p>
             </div>
 
@@ -438,8 +463,24 @@ function UniversalDataImportContent() {
             </div>
           </div>
 
+          {masterFile && (
+            <GurukrupaMasterImport
+              file={masterFile}
+              onUseGeneric={() => {
+                const chosen = masterFile;
+                setMasterFile(null);
+                setStep(1);
+                if (chosen.size > 10 * 1024 * 1024) {
+                  toast.error('The column mapper cannot open this 100 MB+ workbook. Use the property import above.');
+                  return;
+                }
+                handleParseFile(chosen, undefined, 1);
+              }}
+            />
+          )}
+
           {/* Stepper Wizard Indicator */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm">
+          {!masterFile && <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
                 { num: 1, label: 'Entity & Upload', icon: <UploadCloud className="w-4 h-4" /> },
@@ -484,7 +525,7 @@ function UniversalDataImportContent() {
                 );
               })}
             </div>
-          </div>
+          </div>}
 
           {/* ──────────────────────────────────────────────────────────────────
               STEP 1: Select Entity & Upload File

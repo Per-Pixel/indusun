@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { requireStaff } from '@/lib/adminAccess';
 
 /**
  * POST /api/data-import/parse
@@ -12,6 +13,8 @@ import * as XLSX from 'xlsx';
  *   - previewRows (optional): how many rows to return for preview. Defaults to 50.
  */
 export async function POST(req: NextRequest) {
+  const access = await requireStaff('property_management');
+  if (access.denied) return access.denied;
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;

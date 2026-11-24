@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 import { invalidateServerCache } from '@/utils/serverCache';
+import { requireStaff } from '@/lib/adminAccess';
 
 const MASTER_TABLE = 'Master Data Of Gurukrupa';
 
@@ -10,6 +11,8 @@ const MASTER_TABLE = 'Master Data Of Gurukrupa';
 // exist yet — the bill still saves without them.
 
 export async function GET(req: NextRequest) {
+  const access = await requireStaff('billing_management');
+  if (access.denied) return access.denied;
   try {
     const { searchParams } = new URL(req.url);
     const page   = Math.max(1, parseInt(searchParams.get('page')  || '1'));
@@ -44,6 +47,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const access = await requireStaff('billing_management');
+  if (access.denied) return access.denied;
   try {
     const body = await req.json();
     const {

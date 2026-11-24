@@ -3,6 +3,8 @@ import { createServiceClient } from '@/utils/supabase/service';
 import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 import { withServerCache, invalidateServerCache } from '@/utils/serverCache';
 import { cachedRowCount } from '@/utils/rowCount';
+import { forbidUnless, requireStaff } from '@/lib/adminAccess';
+import { canSeeRevenue } from '@/lib/staffNav';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
 const BILLING_COLS = 'id,client_name,contact_no,society_name,plot_no,emi_amount,emi_amount_num,paid_amount,paid_amount_num,emi_paid_date,emi_paid_date_iso,cancel_date,r_no,registration_no,emi_no,"broker\'s_name",broker_code';
@@ -45,6 +47,9 @@ function applyFilters(query: any, search: string, status: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const access = await requireStaff('billing_management');
+  if (access.denied) return access.denied;
+  const includeRevenue = canSeeRevenue(access.user);
   try {
     const { searchParams } = new URL(request.url);
     const page   = Math.max(1, parseInt(searchParams.get('page')   || '1'));
@@ -70,11 +75,13 @@ export async function GET(request: NextRequest) {
       : Promise.resolve([] as any[]);
 
     const [aggData, billRows, { data, error }, count] = await Promise.all([
-      withServerCache('rpc:get_billing_aggregates_rpc', async () => {
-        const { data: d, error: e } = await supabase.rpc('get_billing_aggregates_rpc');
-        if (e || !d) throw new Error(e?.message || 'Failed to compute billing aggregates');
-        return d;
-      }),
+      includeRevenue
+        ? withServerCache('rpc:get_billing_aggregates_rpc', async () => {
+            const { data: d, error: e } = await supabase.rpc('get_billing_aggregates_rpc');
+            if (e || !d) throw new Error(e?.message || 'Failed to compute billing aggregates');
+            return d;
+          })
+        : Promise.resolve(null),
       billRowsPromise,
       applyFilters(supabase.from(TABLE_NAME).select(BILLING_COLS), search, status)
         .order('id', { ascending: false })
@@ -94,7 +101,7 @@ export async function GET(request: NextRequest) {
 
     if (error) throw new Error(error.message);
 
-    const { summary, trends, sources } = aggData as {
+    const { summary, trends, sources } = (aggData || { summary: null, trends: [], sources: [] }) as {
       summary: {
         totalRevenue: number;
         pendingPayments: number;
@@ -172,6 +179,8 @@ export async function GET(request: NextRequest) {
 // PATCH /api/billing  { id }
 // Marks a master-data EMI row (or custom bill) as paid by stamping today's date on emi_paid_date.
 export async function PATCH(request: NextRequest) {
+  const access = await requireStaff('billing_management');
+  if (access.denied) return access.denied;
   try {
     const body = await request.json();
     const rawId = String(body.id ?? '').trim();
@@ -215,6 +224,10 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/billing  ?id= | { id, ids }
 export async function DELETE(request: NextRequest) {
+  const access = await requireStaff();
+  if (access.denied) return access.denied;
+  const denied = forbidUnless(access.user, 'financial_reports', 'property_management', 'user_management');
+  if (denied) return denied;
   try {
     const { searchParams } = new URL(request.url);
     const queryId = searchParams.get('id');

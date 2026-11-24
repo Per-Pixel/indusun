@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import AdminTopNavbar from '@/components/AdminTopNavbar';
+import AccessGuard from '@/components/AccessGuard';
 
 interface CRMLayoutProps {
   children: React.ReactNode;
@@ -27,7 +28,9 @@ export default function CRMLayout({ children }: CRMLayoutProps) {
         style={{ marginLeft: sidebarOpen ? '260px' : '0px', transition: 'margin-left 0.3s ease' }}
       >
         <AdminTopNavbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-        <main>{children}</main>
+        <main>
+          <AccessGuard>{children}</AccessGuard>
+        </main>
       </div>
     </div>
   );

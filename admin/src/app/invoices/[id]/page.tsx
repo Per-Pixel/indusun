@@ -20,6 +20,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
+import { useAdminAuth } from '@/context/AdminAuthContext';
+import { canDeleteBills } from '@/lib/staffNav';
 import {
   GurukrupaReceipt,
   PaymentQrSection,
@@ -127,6 +129,8 @@ const getGeneratorIcon = (generator: Invoice['generatedBy'], extraClasses = '') 
 export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useAdminAuth();
+  const allowDelete = canDeleteBills(user);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [viewMode, setViewMode] = useState<'receipt' | 'invoice'>('receipt');
   const [isLoading, setIsLoading] = useState(true);
@@ -277,6 +281,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                   <Printer size={16} />
                   <span>Print</span>
                 </button>
+                {allowDelete && (
                 <button
                   type="button"
                   onClick={handleDeleteInvoice}
@@ -286,6 +291,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                   <Trash2 size={16} />
                   <span>{isDeleting ? 'Deleting…' : 'Delete Bill / Receipt'}</span>
                 </button>
+                )}
               </div>
             </div>
 

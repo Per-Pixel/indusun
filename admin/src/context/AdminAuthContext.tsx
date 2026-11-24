@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useState, useEffect, Rea
 import { toast } from 'react-hot-toast';
 import { createBrowserClient } from '@supabase/ssr';
 import { canAccessAdmin, resolvePermissions, userHasPermission } from '@/lib/permissions';
+import { homePath } from '@/lib/staffNav';
 
 interface AdminUser {
   id: string;
@@ -17,7 +18,7 @@ interface AdminUser {
 interface AdminAuthContextType {
   user: AdminUser | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; home?: string }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -96,7 +97,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [supabase]);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; home?: string }> => {
     try {
       if (!supabase) {
         return { success: false, error: 'Supabase client not initialized' };
@@ -139,7 +140,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       writeCachedAdmin(adminUser);
       setUser(adminUser);
       toast.success('Admin login successful');
-      return { success: true };
+      return { success: true, home: homePath(adminUser) };
 
     } catch (err) {
       console.error('Login error:', err);

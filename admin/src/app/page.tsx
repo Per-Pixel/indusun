@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminAuth } from '@/context/AdminAuthContext';
+import { homePath } from '@/lib/staffNav';
 
 export default function AdminRoot() {
   const { user, isLoading } = useAdminAuth();
@@ -12,7 +13,7 @@ export default function AdminRoot() {
     if (!isLoading) {
       if (user) {
         // Changed from '/admin/dashboard' to '/dashboard'
-        router.push('/dashboard');
+        router.push(homePath(user));
       } else {
         // Keep the auth path the same for now
         router.push('/auth/login');

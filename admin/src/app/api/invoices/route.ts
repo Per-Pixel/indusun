@@ -3,6 +3,7 @@ import { createServiceClient } from '@/utils/supabase/service';
 import { parseAmount, normalizeDate, isPaid } from '@/utils/dataUtils';
 import { withServerCache, invalidateServerCache } from '@/utils/serverCache';
 import { cachedRowCount } from '@/utils/rowCount';
+import { forbidUnless, requireStaff } from '@/lib/adminAccess';
 
 const TABLE_NAME = 'Master Data Of Gurukrupa';
 const INVOICE_COLS = 'id,client_name,contact_no,society_name,plot_no,emi_amount,emi_amount_num,paid_amount,paid_amount_num,emi_paid_date,cancel_date,r_no,registration_no,emi_no,"broker\'s_name",ba_code';
@@ -11,6 +12,8 @@ const inr = (n: number) =>
   `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`;
 
 export async function GET(request: NextRequest) {
+  const access = await requireStaff('billing_management');
+  if (access.denied) return access.denied;
   try {
     const { searchParams } = new URL(request.url);
     const page   = Math.max(1, parseInt(searchParams.get('page')  || '1'));
@@ -221,6 +224,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const access = await requireStaff();
+  if (access.denied) return access.denied;
+  const denied = forbidUnless(access.user, 'financial_reports', 'property_management', 'user_management');
+  if (denied) return denied;
   try {
     const { searchParams } = new URL(request.url);
     const queryId = searchParams.get('id');

@@ -1,10 +1,17 @@
 // Dashboard page - Server Component with Supabase integration
+import { redirect } from 'next/navigation';
 import { getMasterDataSummary, getUniqueSocieties } from '@/services/masterDataService';
 import { getLeads, getLeadPipelineCounts } from '@/services/leadService';
+import { getCurrentUser } from '@/services/supabaseAuth';
+import { homePath, pathAllowed } from '@/lib/staffNav';
 import DashboardContent from './DashboardContent';
 import CRMLayout from '@/components/CRMLayout';
 
 export default async function DashboardPage() {
+  const { user } = await getCurrentUser();
+  if (!user) redirect('/auth/login');
+  if (!pathAllowed(user, '/dashboard')) redirect(homePath(user));
+
   const [{ summary, error }, { societies }, { data: leadRows }, { counts: pipelineCounts }] = await Promise.all([
     getMasterDataSummary(),
     getUniqueSocieties(),

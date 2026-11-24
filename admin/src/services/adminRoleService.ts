@@ -25,6 +25,14 @@ export interface RoleWriteInput {
 const MIGRATION_HINT =
   'Roles are not in the database yet. Run admin/sql/admin_roles.sql in the Supabase SQL editor, then try again.';
 
+const BILLER_ROLE = {
+  slug: 'biller',
+  name: 'Biller',
+  description: 'Create, view, and print bills. No sales totals, reports, user management, or settings.',
+  permissions: ['billing_management'],
+  is_system: true,
+};
+
 function isMissingTable(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
   if (error.code === '42P01' || error.code === 'PGRST205') return true;
@@ -80,8 +88,19 @@ export async function listAdminRoles(): Promise<{
       return { roles: [], needsMigration: false, error: error.message };
     }
 
+    let rows = data || [];
+    if (!rows.some((row) => (row as { slug?: string }).slug === 'biller')) {
+      await supabase.from('admin_roles').insert(BILLER_ROLE);
+      const again = await supabase
+        .from('admin_roles')
+        .select('*')
+        .order('is_system', { ascending: false })
+        .order('name', { ascending: true });
+      if (!again.error && again.data) rows = again.data;
+    }
+
     const counts = await userCounts(supabase);
-    const roles = ((data || []) as Omit<AdminRoleRow, 'user_count'>[]).map((row) => ({
+    const roles = (rows as Omit<AdminRoleRow, 'user_count'>[]).map((row) => ({
       ...row,
       permissions: Array.isArray(row.permissions) ? row.permissions : [],
       user_count: counts[row.slug] || 0,

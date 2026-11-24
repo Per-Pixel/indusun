@@ -53,7 +53,7 @@ export default function AdminLogin() {
       const result = await login(email, password);
 
       if (result.success) {
-        router.push('/dashboard');
+        router.push(result.home || '/dashboard');
       } else {
         toast.error(result.error || 'Login failed');
       }

@@ -60,6 +60,14 @@ export const BUILTIN_ROLES: RoleTemplate[] = [
     permissions: [...DEFAULT_ADMIN_PERMISSIONS],
     is_system: true,
   },
+  {
+    id: 'builtin-biller',
+    slug: 'biller',
+    name: 'Biller',
+    description: 'Create, view, and print bills. No sales totals, reports, user management, or settings.',
+    permissions: ['billing_management'],
+    is_system: true,
+  },
 ];
 
 export function formatRoleLabel(role?: string | null): string {

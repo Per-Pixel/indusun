@@ -29,6 +29,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import CRMLayout from '@/components/CRMLayout';
+import { useAdminAuth } from '@/context/AdminAuthContext';
+import { canDeleteBills, canSeeRevenue } from '@/lib/staffNav';
 import ExportDropdown from '@/components/ui/ExportDropdown';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -216,6 +218,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function BillingPage() {
   const router = useRouter();
+  const { user, hasPermission } = useAdminAuth();
+  const showRevenue = canSeeRevenue(user);
+  const allowDelete = canDeleteBills(user);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
@@ -538,6 +543,7 @@ export default function BillingPage() {
                     reference:   t.reference,
                   }))}
                 />
+                {hasPermission('property_management') && (
                 <Link
                   href="/data-import?entity=bill"
                   className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
@@ -545,6 +551,7 @@ export default function BillingPage() {
                   <Upload className="w-4 h-4 text-blue-600" />
                   Import Excel
                 </Link>
+                )}
                 <Link
                   href="/invoices/create"
                   className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white shadow-sm transition"
@@ -556,8 +563,8 @@ export default function BillingPage() {
               </div>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            {/* Summary Cards — revenue stays with administrators */}
+            {showRevenue && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
               {isLoading ? (
                 // Loading state for summary cards
                 Array(5).fill(0).map((_, index) => (
@@ -594,10 +601,10 @@ export default function BillingPage() {
                   </div>
                 ))
               )}
-            </div>
+            </div>}
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {showRevenue && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               {isLoading ? (
                 // Loading state for charts
                 <>
@@ -706,7 +713,7 @@ export default function BillingPage() {
                   </div>
                 </>
               )}
-            </div>
+            </div>}
 
             {/* Filters and Search */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -748,7 +755,7 @@ export default function BillingPage() {
               <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap justify-between items-center gap-2">
                 <h2 className="font-medium">Billing Transactions</h2>
                 <div className="flex items-center gap-3">
-                  {selectedIds.length > 0 && (
+                  {allowDelete && selectedIds.length > 0 && (
                     <button
                       type="button"
                       onClick={handleBulkDelete}
@@ -895,6 +902,7 @@ export default function BillingPage() {
                                   <Eye size={13} />
                                   View
                                 </button>
+                                {allowDelete && (
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteTransaction(transaction)}
@@ -905,6 +913,7 @@ export default function BillingPage() {
                                   <Trash2 size={13} />
                                   Delete
                                 </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1120,6 +1129,7 @@ export default function BillingPage() {
                   {isMarkingPaid ? 'Marking…' : 'Mark as Paid'}
                 </button>
               )}
+              {allowDelete && (
               <button
                 type="button"
                 disabled={isDeleting}
@@ -1129,6 +1139,7 @@ export default function BillingPage() {
                 <Trash2 size={16} />
                 {isDeleting ? 'Deleting…' : 'Delete Transaction'}
               </button>
+              )}
               <button
                 onClick={closeDrawer}
                 className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

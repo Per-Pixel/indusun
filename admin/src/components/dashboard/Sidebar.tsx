@@ -30,6 +30,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
+import { isBillingDesk } from '@/lib/staffNav';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -126,10 +127,12 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading, hasPermission } = useAdminAuth();
+  const billingDesk = isBillingDesk(user);
 
   const visibleSections = NAV_SECTIONS.map((section) => ({
     ...section,
     items: section.items.filter((item) => {
+      if (billingDesk && item.path === '/dashboard') return false;
       if (isLoading || !user || !item.permission) return true;
       return hasPermission(item.permission);
     }),

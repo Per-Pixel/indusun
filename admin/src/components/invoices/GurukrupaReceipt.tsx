@@ -219,10 +219,10 @@ export function GurukrupaReceipt({
 
   return (
     <>
-      <div className="bg-white border-2 border-black text-black font-serif select-text overflow-x-auto shadow-sm">
-        <div className="min-w-[680px]">
+      <div className="gk-receipt bg-white text-black select-text overflow-x-auto">
+        <div className="min-w-0">
           {/* Row 1: Top RECEIPT strip */}
-          <div className="flex border-b border-black bg-[#c0c0c0]">
+          <div className="flex border-b border-black bg-[#f4f1ea]">
             <div className="w-[150px] px-3 py-1 border-r border-black shrink-0">
               <span className="text-[#cc0000] font-bold text-sm tracking-wide uppercase">
                 RECEIPT
@@ -232,9 +232,9 @@ export function GurukrupaReceipt({
           </div>
 
           {/* Row 2: Company Name Banner */}
-          <div className="border-b border-black bg-[#c0c0c0] py-1.5 px-4 text-center">
+          <div className="border-b border-black bg-[#f7f5f0] py-2 px-4 text-center">
             <h1
-              className="text-2xl sm:text-[26px] font-extrabold tracking-wider text-black uppercase leading-tight"
+              className="text-[22px] font-extrabold tracking-[0.14em] text-black uppercase leading-tight"
               style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
             >
               GURUKRUPA CORPORATION
