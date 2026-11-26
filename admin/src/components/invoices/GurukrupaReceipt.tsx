@@ -219,22 +219,22 @@ export function GurukrupaReceipt({
 
   return (
     <>
-      <div className="gk-receipt bg-white text-black select-text overflow-x-auto">
-        <div className="min-w-0">
+      <div className="gk-receipt bg-white text-black select-text">
+        <div className="flex h-full min-h-0 flex-col">
           {/* Row 1: Top RECEIPT strip */}
-          <div className="flex border-b border-black bg-[#f4f1ea]">
-            <div className="w-[150px] px-3 py-1 border-r border-black shrink-0">
-              <span className="text-[#cc0000] font-bold text-sm tracking-wide uppercase">
+          <div className="flex shrink-0 border-b border-black bg-[#f4f1ea]">
+            <div className="w-[28mm] shrink-0 border-r border-black px-2 py-0.5">
+              <span className="text-[10px] font-bold uppercase tracking-wide text-[#cc0000]">
                 RECEIPT
               </span>
             </div>
-            <div className="flex-1 px-3 py-1" />
+            <div className="flex-1 px-2 py-0.5" />
           </div>
 
           {/* Row 2: Company Name Banner */}
-          <div className="border-b border-black bg-[#f7f5f0] py-2 px-4 text-center">
+          <div className="shrink-0 border-b border-black bg-[#f7f5f0] px-2 py-0.5 text-center">
             <h1
-              className="text-[22px] font-extrabold tracking-[0.14em] text-black uppercase leading-tight"
+              className="text-[15px] font-extrabold uppercase leading-none tracking-[0.12em] text-black"
               style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
             >
               GURUKRUPA CORPORATION
@@ -242,38 +242,38 @@ export function GurukrupaReceipt({
           </div>
 
           {/* Row 3: Address, Phone & Emblems */}
-          <div className="flex items-center justify-between px-3 py-2 border-b-2 border-black bg-white gap-3">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b-2 border-black bg-white px-2 py-0.5">
             <img
               src="/gurukrupa-emblem-left.png"
               alt="Emblem"
-              className="h-13 w-auto object-contain shrink-0"
+              className="h-[11mm] w-auto shrink-0 object-contain"
             />
             <div
-              className="text-center flex-1 px-2 min-w-0"
+              className="min-w-0 flex-1 px-1 text-center"
               style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
             >
-              <p className="text-xs sm:text-[13px] font-bold underline tracking-tight text-black uppercase leading-snug">
+              <p className="text-[10px] font-bold uppercase leading-tight tracking-tight text-black underline">
                 PLOT NO.7, NR. MARUTI COMPLEX, NASIK MARKANTILE BANK, SURAT - 395 002
               </p>
-              <p className="text-xs sm:text-[13px] font-bold text-black mt-1">
+              <p className="mt-0.5 text-[10px] font-bold leading-none text-black">
                 PH : (0261) - 4812727
               </p>
             </div>
             <img
               src="/gurukrupa-emblem-right.png"
               alt="Emblem"
-              className="h-13 w-auto object-contain shrink-0"
+              className="h-[11mm] w-auto shrink-0 object-contain"
             />
           </div>
 
           {/* Row 4: Party / Plot Details (left) & Receipt / Date / Total EMI No (right) */}
-          <div className="flex border-b border-black">
+          <div className="flex shrink-0 border-b border-black">
             {/* Left 64%: Party Details Table */}
-            <div className="w-[64%] border-r border-black py-2 px-3">
-              <table className="w-full text-[13px] border-collapse">
+            <div className="w-[64%] border-r border-black px-2 py-0.5">
+              <table className="w-full border-collapse text-[10px] leading-tight">
                 <tbody>
                   <tr>
-                    <td className="py-0.5 pr-3 w-[120px] text-center font-medium text-black whitespace-nowrap align-top">
+                    <td className="w-[22mm] whitespace-nowrap py-px pr-2 text-center align-top font-medium text-black">
                       Party Name
                     </td>
                     <td className="py-0.5 font-semibold text-black uppercase break-words">
@@ -281,42 +281,42 @@ export function GurukrupaReceipt({
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-0.5 pr-3 w-[120px] text-center italic text-black whitespace-nowrap align-top">
+                    <td className="w-[22mm] whitespace-nowrap py-px pr-2 text-center align-top italic text-black">
                       Mobile No
                     </td>
-                    <td className="py-0.5 text-black break-words">
+                    <td className="py-px text-black break-words">
                       {mobileNo || '—'}
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-0.5 pr-3 w-[120px] text-center font-medium text-black whitespace-nowrap align-top">
+                    <td className="w-[22mm] whitespace-nowrap py-px pr-2 text-center align-top font-medium text-black">
                       Society Name
                     </td>
-                    <td className="py-0.5 font-medium text-black uppercase break-words">
+                    <td className="py-px font-medium uppercase text-black break-words">
                       {societyName || '—'}
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-0.5 pr-3 w-[120px] text-center italic text-black whitespace-nowrap align-top">
+                    <td className="w-[22mm] whitespace-nowrap py-px pr-2 text-center align-top italic text-black">
                       Plot No.
                     </td>
-                    <td className="py-0.5 text-black break-words">
+                    <td className="py-px text-black break-words">
                       {plotNo || '—'}
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-0.5 pr-3 w-[120px] text-center font-medium text-black whitespace-nowrap align-top">
+                    <td className="w-[22mm] whitespace-nowrap py-px pr-2 text-center align-top font-medium text-black">
                       Plot Size
                     </td>
-                    <td className="py-0.5 text-black break-words">
+                    <td className="py-px text-black break-words">
                       {plotSize || '—'}
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-0.5 pr-3 w-[120px] text-center font-medium text-black whitespace-nowrap align-top">
+                    <td className="w-[22mm] whitespace-nowrap py-px pr-2 text-center align-top font-medium text-black">
                       Refrence BY
                     </td>
-                    <td className="py-0.5 text-black uppercase break-words">
+                    <td className="py-px uppercase text-black break-words">
                       {referenceBy || '—'}
                     </td>
                   </tr>
@@ -325,28 +325,28 @@ export function GurukrupaReceipt({
             </div>
 
             {/* Right 36%: Receipt #, Date, Total EMI No */}
-            <div className="w-[36%] flex flex-col text-[13px]">
-              <div className="flex border-b border-black bg-[#eaefe4] px-2.5 py-1.5 items-center gap-2">
-                <span className="w-[80px] font-medium text-black text-center shrink-0">
+            <div className="flex w-[36%] flex-col text-[10px]">
+              <div className="flex items-center gap-1 border-b border-black bg-[#eaefe4] px-1.5 py-0.5">
+                <span className="w-[16mm] shrink-0 text-center font-medium text-black">
                   RECIEPT
                 </span>
-                <span className="font-semibold text-black break-all">
+                <span className="break-all font-semibold text-black">
                   {receiptNumber || '—'}
                 </span>
               </div>
-              <div className="flex border-b border-black bg-[#eaefe4] px-2.5 py-2 items-center gap-2">
-                <span className="w-[80px] font-medium text-black text-center shrink-0">
+              <div className="flex items-center gap-1 border-b border-black bg-[#eaefe4] px-1.5 py-0.5">
+                <span className="w-[16mm] shrink-0 text-center font-medium text-black">
                   DATE :
                 </span>
                 <span className="font-medium text-black">
                   {formatReceiptLongDate(date)}
                 </span>
               </div>
-              <div className="px-2.5 py-2.5 text-center flex flex-col justify-center flex-1 bg-white min-h-[64px]">
-                <p className="text-xs font-medium text-black uppercase tracking-wide">
+              <div className="flex flex-1 flex-col justify-center bg-white px-1.5 py-0.5 text-center">
+                <p className="text-[9px] font-medium uppercase tracking-wide text-black">
                   TOTAL EMI NO.
                 </p>
-                <p className="text-sm font-bold text-black mt-1">
+                <p className="text-[11px] font-bold leading-tight text-black">
                   {totalEmiNo || '—'}
                 </p>
               </div>
@@ -354,7 +354,7 @@ export function GurukrupaReceipt({
           </div>
 
           {/* Row 5 & 6: BANK DETAILS | Description | Net Amount Table (zero column overlap) */}
-          <table className="w-full border-collapse border-b border-black table-fixed text-[11.5px]">
+          <table className="w-full shrink-0 table-fixed border-collapse border-b border-black text-[9px] leading-tight">
             <colgroup>
               {banks.map((_, idx) => (
                 <col key={idx} style={{ width: showQr ? '19%' : '25%' }} />
@@ -364,17 +364,17 @@ export function GurukrupaReceipt({
               <col style={{ width: '13%' }} />
             </colgroup>
             <thead>
-              <tr className="border-b border-black text-xs">
+              <tr className="border-b border-black text-[9px]">
                 <th
                   colSpan={bankColSpan}
-                  className="border-r border-black py-1 px-2 text-center italic font-semibold text-[#1a237e] uppercase"
+                  className="border-r border-black px-1 py-0.5 text-center font-semibold uppercase italic text-[#1a237e]"
                 >
                   BANK DETAILS
                 </th>
-                <th className="border-r border-black py-1 px-1.5 text-center italic font-semibold text-[#1a237e] whitespace-nowrap">
+                <th className="whitespace-nowrap border-r border-black px-1 py-0.5 text-center font-semibold uppercase italic text-[#1a237e]">
                   Description
                 </th>
-                <th className="py-1 px-1.5 text-center italic font-semibold text-[#1a237e] whitespace-nowrap">
+                <th className="whitespace-nowrap px-1 py-0.5 text-center font-semibold uppercase italic text-[#1a237e]">
                   Net Amount
                 </th>
               </tr>
@@ -385,24 +385,24 @@ export function GurukrupaReceipt({
                   <td
                     key={idx}
                     rowSpan={2}
-                    className="border-r border-black p-2 text-center align-top leading-snug break-words"
+                    className="break-words border-r border-black p-1 text-center align-top leading-tight"
                   >
-                    <p className="font-semibold text-black uppercase">
+                    <p className="font-semibold uppercase text-black">
                       {b.bankName}
                       {idx === 0 && !b.bankName.includes('DETAILS') ? ' DETAILS -' : ''}
                     </p>
                     {b.accountNo && (
-                      <p className="text-black mt-1 break-all">
+                      <p className="break-all text-black">
                         AC/{b.accountNo}
                       </p>
                     )}
                     {b.ifsc && (
-                      <p className="text-black mt-1 break-all">
+                      <p className="break-all text-black">
                         IFSC / {b.ifsc}
                       </p>
                     )}
                     {b.vpa && (
-                      <p className="text-black mt-1 break-all">
+                      <p className="break-all text-black">
                         VPA : {b.vpa}
                       </p>
                     )}
@@ -412,7 +412,7 @@ export function GurukrupaReceipt({
                 {showQr && (
                   <td
                     rowSpan={2}
-                    className="border-r border-black p-1.5 text-center align-middle bg-white"
+                    className="border-r border-black bg-white p-0.5 text-center align-middle"
                   >
                     <button
                       type="button"
@@ -423,88 +423,86 @@ export function GurukrupaReceipt({
                       <img
                         src="/gurukrupa-qr.png"
                         alt={`Payment QR Code (${upiVpa || DEFAULT_UPI_VPA})`}
-                        className="w-24 h-24 object-contain border border-gray-300"
+                        className="h-[16mm] w-[16mm] border border-gray-300 object-contain"
                       />
-                      <span className="text-[9px] text-gray-600 mt-0.5 font-sans no-print group-hover:text-blue-600 break-all">
-                        {upiVpa || DEFAULT_UPI_VPA}
-                      </span>
+                      <span className="sr-only">{upiVpa || DEFAULT_UPI_VPA}</span>
                     </button>
                   </td>
                 )}
 
                 <td
                   rowSpan={2}
-                  className="border-r border-black p-2 text-center align-top"
+                  className="border-r border-black p-1 text-center align-middle"
                 >
-                  <span className="font-bold text-[#5e2b63] uppercase text-xs break-words">
+                  <span className="break-words text-[10px] font-bold uppercase text-[#5e2b63]">
                     {paymentDescription || 'CASH'}
                   </span>
                 </td>
 
-                <td className="border-b border-black p-2 text-center align-top font-semibold text-black text-sm h-[68px]">
+                <td className="h-[7mm] border-b border-black p-1 text-center align-middle text-[11px] font-semibold text-black">
                   {formattedNetAmount}
                 </td>
               </tr>
               <tr>
-                <td className="p-2 h-[68px]" />
+                <td className="h-[7mm] p-1" />
               </tr>
             </tbody>
           </table>
 
           {/* Row 7: AMT IN WORD */}
-          <div className="flex border-b border-black items-stretch">
+          <div className="flex shrink-0 items-stretch border-b border-black">
             <div
-              className="w-[87%] border-r border-black px-3 py-2 flex items-center gap-3"
+              className="flex w-[87%] items-center gap-2 border-r border-black px-2 py-0.5"
               style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
             >
-              <span className="text-xs font-bold text-black uppercase shrink-0">
+              <span className="shrink-0 text-[9px] font-bold uppercase text-black">
                 AMT IN WORD
               </span>
-              <span className="text-xs sm:text-[13px] font-bold text-black uppercase text-center flex-1 break-words">
+              <span className="flex-1 break-words text-center text-[10px] font-bold uppercase leading-tight text-black">
                 {computedWords}
               </span>
             </div>
-            <div className="w-[13%] bg-[#ccf2ff] px-2 py-2 text-center font-bold text-black text-sm flex items-center justify-center">
+            <div className="flex w-[13%] items-center justify-center bg-[#ccf2ff] px-1 py-0.5 text-center text-[11px] font-bold text-black">
               {formattedNetAmount}
             </div>
           </div>
 
           {/* Row 8: REMARKS */}
           <div
-            className="flex border-b border-black items-stretch min-h-[38px]"
+            className="flex shrink-0 items-stretch border-b border-black"
             style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
           >
-            <div className="w-[125px] shrink-0 border-r border-black px-2.5 py-2 flex items-center justify-center text-center text-xs font-bold text-black uppercase">
+            <div className="flex w-[24mm] shrink-0 items-center justify-center border-r border-black px-1 py-0.5 text-center text-[9px] font-bold uppercase text-black">
               REMARKS :
             </div>
-            <div className="flex-1 px-3 py-2 flex items-center justify-center text-center text-xs font-bold text-black uppercase break-words">
+            <div className="flex flex-1 items-center justify-center break-words px-2 py-0.5 text-center text-[10px] font-bold uppercase text-black">
               {remarks || '—'}
             </div>
           </div>
 
           {/* Row 9: NOTE & Authorised Signatory */}
-          <div className="flex min-h-[95px]">
-            <div className="w-[58%] border-r border-black flex flex-col justify-between">
-              <div className="p-2.5 text-center flex-1 flex flex-col justify-center">
-                <p className="text-xs font-bold italic underline text-black uppercase">
+          <div className="flex min-h-0 flex-1">
+            <div className="flex w-[58%] flex-col justify-between border-r border-black">
+              <div className="flex flex-1 flex-col justify-center p-1.5 text-center">
+                <p className="text-[9px] font-bold uppercase italic text-black underline">
                   NOTE:
                 </p>
-                <p className="text-xs font-bold italic underline text-black uppercase mt-1 leading-relaxed break-words">
+                <p className="mt-0.5 break-words text-[9px] font-bold uppercase italic leading-tight text-black underline">
                   {finalNote}
                 </p>
               </div>
-              <div className="border-t border-black h-5" />
+              <div className="h-3 border-t border-black" />
             </div>
-            <div className="w-[42%] p-2.5 flex flex-col items-center justify-between text-center">
-              <p className="text-xs sm:text-[13px] font-bold text-[#1d398f] uppercase">
+            <div className="flex w-[42%] flex-col items-center justify-between p-1.5 text-center">
+              <p className="text-[10px] font-bold uppercase leading-tight text-[#1d398f]">
                 For GURUKRUPA CORPORATION
               </p>
               <img
                 src="/gurukrupa-sign.png"
                 alt="Authorised Signatory"
-                className="h-10 w-auto object-contain my-1"
+                className="my-0.5 h-[8mm] w-auto object-contain"
               />
-              <p className="text-[11px] font-bold text-[#1d398f]">
+              <p className="text-[9px] font-bold text-[#1d398f]">
                 Authorised Signatory
               </p>
             </div>

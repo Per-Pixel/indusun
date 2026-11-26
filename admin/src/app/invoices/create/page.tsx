@@ -807,9 +807,10 @@ export default function CreateInvoicePage() {
           #invoice-print-area, #invoice-print-area * { visibility: visible !important; }
           #invoice-print-area {
             position: fixed !important;
-            top: 0 !important; left: 0 !important;
-            width: 100% !important;
-            padding: 16px !important;
+            top: 6mm !important; left: 10mm !important;
+            width: 190mm !important;
+            padding: 0 !important;
+            margin: 0 !important;
             background: white !important;
           }
           .no-print { display: none !important; }

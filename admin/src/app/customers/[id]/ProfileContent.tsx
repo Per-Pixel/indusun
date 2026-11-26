@@ -14,10 +14,12 @@ import {
   Clock,
   CreditCard,
   Edit,
+  Eye,
   Home,
   MapPin,
   MessageSquare,
   Phone,
+  Plus,
   Receipt,
   Trash2,
   User,
@@ -27,13 +29,14 @@ import {
 import { MasterDataOfGurukrupa } from '@/types/masterData';
 import { normalizeDate, parseAmount } from '@/utils/dataUtils';
 import { formatIndianNumber } from '@/utils/format';
+import CustomerBills, { type BillAction } from './CustomerBills';
 
 interface Props {
   customer: MasterDataOfGurukrupa;
   portfolio: MasterDataOfGurukrupa[];
 }
 
-type TabKey = 'overview' | 'property' | 'payments' | 'broker';
+type TabKey = 'overview' | 'bills' | 'property' | 'payments' | 'broker';
 
 interface GroupedPlot {
   key: string;
@@ -115,6 +118,7 @@ function SectionCard({
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
+  { key: 'bills', label: 'Bills' },
   { key: 'property', label: 'Properties' },
   { key: 'payments', label: 'Payments' },
   { key: 'broker', label: 'Broker' },
@@ -123,6 +127,7 @@ const tabs: { key: TabKey; label: string }[] = [
 export default function ProfileContent({ customer: initialCustomer, portfolio: initialPortfolio }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [billAction, setBillAction] = useState<BillAction | null>(null);
   const [customer, setCustomer] = useState<MasterDataOfGurukrupa>(initialCustomer);
   const [portfolio, setPortfolio] = useState<MasterDataOfGurukrupa[]>(
     initialPortfolio.length > 0 ? initialPortfolio : [initialCustomer]
@@ -430,6 +435,17 @@ export default function ProfileContent({ customer: initialCustomer, portfolio: i
               </span>
               <button
                 type="button"
+                onClick={() => {
+                  setActiveTab('bills');
+                  setBillAction({ type: 'add' });
+                }}
+                className="btn btn-primary btn-sm flex items-center gap-1.5"
+              >
+                <Plus size={14} />
+                Add bill
+              </button>
+              <button
+                type="button"
                 onClick={openEditModal}
                 className="btn btn-secondary btn-sm flex items-center gap-1.5"
               >
@@ -522,7 +538,7 @@ export default function ProfileContent({ customer: initialCustomer, portfolio: i
               onClick={() => setActiveTab(t.key)}
               className={classNames('tab-item', activeTab === t.key && 'active')}
             >
-              {t.label}
+              {t.key === 'bills' ? `Bills (${portfolio.length})` : t.label}
             </button>
           ))}
         </div>
@@ -794,7 +810,25 @@ export default function ProfileContent({ customer: initialCustomer, portfolio: i
                                     <td className="py-2 pr-3 font-semibold" style={{ color: 'var(--success)' }}>
                                       {fmtINR(rPaid)}
                                     </td>
-                                    <td className="py-2 text-right">
+                                    <td className="py-2 text-right whitespace-nowrap">
+                                      <button
+                                        type="button"
+                                        onClick={() => setBillAction({ type: 'view', id: r.id })}
+                                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-slate-700 hover:bg-slate-100 transition-colors"
+                                        title="View this bill"
+                                      >
+                                        <Eye size={12} />
+                                        View
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setBillAction({ type: 'edit', id: r.id })}
+                                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-slate-700 hover:bg-slate-100 transition-colors"
+                                        title="Edit this bill"
+                                      >
+                                        <Edit size={12} />
+                                        Edit
+                                      </button>
                                       <button
                                         type="button"
                                         onClick={() => handleDeleteReceiptRow(r)}
@@ -802,7 +836,7 @@ export default function ProfileContent({ customer: initialCustomer, portfolio: i
                                         title="Delete this installment receipt"
                                       >
                                         <Trash2 size={12} />
-                                        Delete Receipt
+                                        Delete
                                       </button>
                                     </td>
                                   </tr>
@@ -935,6 +969,17 @@ export default function ProfileContent({ customer: initialCustomer, portfolio: i
             </motion.div>
           )}
         </AnimatePresence>
+
+        <CustomerBills
+          showList={activeTab === 'bills'}
+          customer={customer}
+          portfolio={portfolio}
+          setCustomer={setCustomer}
+          setPortfolio={setPortfolio}
+          onDeleteReceipt={handleDeleteReceiptRow}
+          externalAction={billAction}
+          onExternalActionHandled={() => setBillAction(null)}
+        />
       </div>
 
       {/* Edit Customer Modal */}

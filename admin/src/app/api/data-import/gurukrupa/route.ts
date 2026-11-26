@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
 import { requireStaff } from '@/lib/adminAccess';
 import { invalidateServerCache } from '@/utils/serverCache';
-import { ledgerKey, type GurukrupaLedgerRow } from '@/lib/gurukrupaWorkbook';
+import { ledgerKey, stableLedgerKey, type GurukrupaLedgerRow } from '@/lib/gurukrupaWorkbook';
 
 const TABLE = 'Master Data Of Gurukrupa';
 const LOOKUP_CHUNK = 150;
@@ -41,38 +41,72 @@ function recordForInsert(row: GurukrupaLedgerRow, includeNumeric: boolean) {
   return record;
 }
 
-async function existingKeys(
+type StoredReceipt = {
+  id: number;
+  r_no: string | null;
+  society_name: string | null;
+  plot_no: string | null;
+  emi_no: string | null;
+  emi_paid_date: string | null;
+  paid_amount: string | null;
+  client_name: string | null;
+};
+
+const RECEIPT_LOOKUP = 'id,r_no,society_name,plot_no,emi_no,emi_paid_date,paid_amount,client_name';
+
+async function loadStored(
   supabase: ReturnType<typeof createServiceClient>,
-  rows: GurukrupaLedgerRow[]
-): Promise<Set<string>> {
-  const keys = new Set<string>();
+  rows: Array<Pick<GurukrupaLedgerRow, 'r_no' | 'client_name'>>
+): Promise<StoredReceipt[]> {
+  const stored: StoredReceipt[] = [];
   const receiptNos = [...new Set(rows.map((row) => row.r_no).filter((value): value is string => !!value))];
   for (let i = 0; i < receiptNos.length; i += LOOKUP_CHUNK) {
     const slice = receiptNos.slice(i, i + LOOKUP_CHUNK);
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select('r_no,society_name,plot_no,emi_no,emi_paid_date,paid_amount,client_name')
-      .in('r_no', slice);
+    const { data, error } = await supabase.from(TABLE).select(RECEIPT_LOOKUP).in('r_no', slice);
     if (error) throw new Error(error.message);
-    for (const found of data || []) {
-      keys.add(ledgerKey(found));
-    }
+    stored.push(...((data || []) as StoredReceipt[]));
   }
 
   const withoutReceipt = rows.filter((row) => !row.r_no && row.client_name);
   const names = [...new Set(withoutReceipt.map((row) => row.client_name).filter((value): value is string => !!value))];
   for (let i = 0; i < names.length; i += LOOKUP_CHUNK) {
     const slice = names.slice(i, i + LOOKUP_CHUNK);
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select('r_no,society_name,plot_no,emi_no,emi_paid_date,paid_amount,client_name')
-      .in('client_name', slice);
+    const { data, error } = await supabase.from(TABLE).select(RECEIPT_LOOKUP).in('client_name', slice);
     if (error) throw new Error(error.message);
-    for (const found of data || []) {
-      keys.add(ledgerKey(found));
-    }
+    stored.push(...((data || []) as StoredReceipt[]));
   }
-  return keys;
+  return stored;
+}
+
+function indexStored(stored: StoredReceipt[]) {
+  const byExact = new Map<string, number[]>();
+  const byStable = new Map<string, number[]>();
+  for (const found of stored) {
+    const id = Number(found.id);
+    const exact = ledgerKey(found);
+    const exactIds = byExact.get(exact) || [];
+    exactIds.push(id);
+    byExact.set(exact, exactIds);
+    const stable = stableLedgerKey(found);
+    if (!stable) continue;
+    const stableIds = byStable.get(stable) || [];
+    stableIds.push(id);
+    byStable.set(stable, stableIds);
+  }
+  return { byExact, byStable };
+}
+
+function matchIds(
+  row: Pick<GurukrupaLedgerRow, 'ledgerKey' | 'stableKey' | 'r_no' | 'society_name' | 'plot_no' | 'emi_no' | 'client_name'>,
+  byExact: Map<string, number[]>,
+  byStable: Map<string, number[]>
+): number[] {
+  const exact = byExact.get(row.ledgerKey) || [];
+  if (exact.length > 0) return exact;
+  const stable = row.stableKey || stableLedgerKey(row);
+  if (!stable) return [];
+  const ids = byStable.get(stable) || [];
+  return ids.length === 1 ? ids : [];
 }
 
 export async function POST(req: NextRequest) {
@@ -81,6 +115,30 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+
+    if (body?.action === 'match') {
+      const incoming = (Array.isArray(body.rows) ? body.rows.slice(0, 800) : []) as Array<Record<string, unknown>>;
+      const probes = incoming
+        .map((row) => ({
+          ledgerKey: typeof row?.ledgerKey === 'string' ? row.ledgerKey : '',
+          stableKey: typeof row?.stableKey === 'string' ? row.stableKey : '',
+          r_no: typeof row?.r_no === 'string' ? row.r_no : null,
+          society_name: typeof row?.society_name === 'string' ? row.society_name : null,
+          plot_no: typeof row?.plot_no === 'string' ? row.plot_no : null,
+          emi_no: typeof row?.emi_no === 'string' ? row.emi_no : null,
+          client_name: typeof row?.client_name === 'string' ? row.client_name : null,
+        }))
+        .filter((row) => row.ledgerKey.length > 0);
+      if (probes.length === 0) return NextResponse.json({ existing: [] as string[] });
+      const supabase = createServiceClient();
+      const { byExact, byStable } = indexStored(await loadStored(supabase, probes));
+      return NextResponse.json({
+        existing: probes
+          .filter((row) => matchIds(row, byExact, byStable).length > 0)
+          .map((row) => row.ledgerKey),
+      });
+    }
+
     const scope = body?.scope === 'property' ? 'property' : 'all';
     const society = typeof body?.society === 'string' ? body.society.trim() : '';
     const incoming = Array.isArray(body?.rows) ? body.rows as GurukrupaLedgerRow[] : [];
@@ -106,6 +164,7 @@ export async function POST(req: NextRequest) {
     const stats = {
       received: incoming.length,
       imported: 0,
+      updated: 0,
       skipped: incoming.length - rows.length,
       failed: 0,
     };
@@ -116,44 +175,73 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createServiceClient();
-    const already = await existingKeys(supabase, rows);
-    const fresh = rows.filter((row) => {
-      if (already.has(row.ledgerKey)) {
-        stats.skipped++;
-        return false;
-      }
-      already.add(row.ledgerKey);
-      return true;
-    });
-
-    let includeNumeric = true;
-    for (let i = 0; i < fresh.length; i += INSERT_CHUNK) {
-      const chunk = fresh.slice(i, i + INSERT_CHUNK);
-      let payload = chunk.map((row) => recordForInsert(row, includeNumeric));
-      let { error } = await supabase.from(TABLE).insert(payload);
-      if (error && includeNumeric && /column|schema cache|plot_amount_num|emi_paid_date_iso/i.test(error.message)) {
-        includeNumeric = false;
-        payload = chunk.map((row) => recordForInsert(row, false));
-        ({ error } = await supabase.from(TABLE).insert(payload));
-      }
-      if (!error) {
-        stats.imported += chunk.length;
+    const { byExact, byStable } = indexStored(await loadStored(supabase, rows));
+    const fresh: GurukrupaLedgerRow[] = [];
+    const updates: { id: number; row: GurukrupaLedgerRow }[] = [];
+    const claimed = new Set<number>();
+    for (const row of rows) {
+      const ids = matchIds(row, byExact, byStable).filter((id) => !claimed.has(id));
+      if (ids.length === 0) {
+        fresh.push(row);
         continue;
       }
+      for (const id of ids) {
+        claimed.add(id);
+        updates.push({ id, row });
+      }
+      stats.updated++;
+    }
 
-      for (const row of chunk) {
-        const single = recordForInsert(row, includeNumeric);
-        const { error: oneError } = await supabase.from(TABLE).insert(single);
+    let includeNumeric = true;
+    const writeChunk = async (
+      chunk: { id?: number; row: GurukrupaLedgerRow }[],
+      kind: 'insert' | 'update'
+    ) => {
+      const payload = chunk.map((item) => ({
+        ...(item.id ? { id: item.id } : {}),
+        ...recordForInsert(item.row, includeNumeric),
+      }));
+      const run = (records: Record<string, unknown>[]) =>
+        kind === 'insert'
+          ? supabase.from(TABLE).insert(records)
+          : supabase.from(TABLE).upsert(records, { onConflict: 'id' });
+      let { error } = await run(payload);
+      if (error && includeNumeric && /column|schema cache|plot_amount_num|emi_paid_date_iso/i.test(error.message)) {
+        includeNumeric = false;
+        const retry = chunk.map((item) => ({
+          ...(item.id ? { id: item.id } : {}),
+          ...recordForInsert(item.row, false),
+        }));
+        ({ error } = await run(retry));
+      }
+      if (!error) {
+        if (kind === 'insert') stats.imported += chunk.length;
+        return;
+      }
+      for (const item of chunk) {
+        const single = {
+          ...(item.id ? { id: item.id } : {}),
+          ...recordForInsert(item.row, includeNumeric),
+        };
+        const { error: oneError } = await run([single]);
         if (oneError) {
+          if (kind === 'update') stats.updated = Math.max(0, stats.updated - 1);
           stats.failed++;
-          if (errors.length < 40) errors.push({ row: row.sourceRow || 0, message: oneError.message });
-        } else {
+          if (errors.length < 40) errors.push({ row: item.row.sourceRow || 0, message: oneError.message });
+        } else if (kind === 'insert') {
           stats.imported++;
         }
       }
+    };
+
+    for (let i = 0; i < updates.length; i += INSERT_CHUNK) {
+      await writeChunk(updates.slice(i, i + INSERT_CHUNK), 'update');
+    }
+    for (let i = 0; i < fresh.length; i += INSERT_CHUNK) {
+      await writeChunk(fresh.slice(i, i + INSERT_CHUNK).map((row) => ({ row })), 'insert');
     }
 
-    if (stats.imported > 0) invalidateServerCache();
+    if (stats.imported > 0 || stats.updated > 0) invalidateServerCache();
 
     return NextResponse.json({ success: true, stats, errors });
   } catch (err: unknown) {

@@ -32,6 +32,7 @@ export interface GurukrupaLedgerRow {
   emi_amount_num: number | null;
   emi_paid_date_iso: string | null;
   ledgerKey: string;
+  stableKey: string;
   sourceRow: number;
 }
 
@@ -270,6 +271,24 @@ export function ledgerKey(row: {
   ].join('|');
 }
 
+/** Identity of one instalment. Paid amount and date can change, so they are not part of this key. */
+export function stableLedgerKey(row: {
+  r_no?: string | null;
+  society_name?: string | null;
+  plot_no?: string | null;
+  emi_no?: string | null;
+  client_name?: string | null;
+}): string {
+  if (!normKeyPart(row.r_no)) return '';
+  return [
+    normKeyPart(row.r_no),
+    normKeyPart(row.society_name),
+    normKeyPart(row.plot_no),
+    normKeyPart(row.emi_no),
+    normKeyPart(row.client_name),
+  ].join('|');
+}
+
 function toRow(cells: Record<string, string>, sourceRow: number): { row: GurukrupaLedgerRow | null; reason?: string } {
   const society = clean(cells.B);
   const client = clean(cells.C);
@@ -322,9 +341,11 @@ function toRow(cells: Record<string, string>, sourceRow: number): { row: Gurukru
     emi_amount_num: amountNum(emiAmount),
     emi_paid_date_iso: emiDate,
     ledgerKey: '',
+    stableKey: '',
     sourceRow,
   };
   row.ledgerKey = ledgerKey(row);
+  row.stableKey = stableLedgerKey(row);
   return { row };
 }
 
@@ -382,11 +403,8 @@ export async function parseGurukrupaMaster(buffer: ArrayBuffer): Promise<Gurukru
     societies.set(society, (societies.get(society) || 0) + 1);
   }
 
-  const warnings = [
-    'Imported from MAIN SHEET only. Cash book, petty cash, salary slips, and the oversized A.C BOOK are not property records.',
-    'Each row is one receipt. The same client and plot repeat once per instalment, so duplicates are matched on receipt number, society, plot, EMI, date, amount, and client.',
-  ];
-  if (skipped.length) warnings.push(`${skipped.length} rows were left out as placeholders, blanks, or repeats inside the file.`);
+  const warnings: string[] = [];
+  if (skipped.length) warnings.push(`${skipped.length.toLocaleString('en-IN')} workbook rows were placeholders, blanks, or repeats, and are not part of the import.`);
 
   return {
     sheetName: MASTER_SHEET,

@@ -68,7 +68,7 @@ function PrintBatch() {
 
   return (
     <CRMLayout>
-      <div className="p-6">
+      <div className="p-6 print:p-0">
         <div className="max-w-[190mm] mx-auto mb-4 flex items-center justify-between gap-3 no-print">
           <button
             type="button"

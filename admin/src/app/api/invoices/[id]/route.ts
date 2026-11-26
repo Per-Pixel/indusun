@@ -10,8 +10,6 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const access = await requireStaff('billing_management');
-  if (access.denied) return access.denied;
   try {
     const { id } = await params;
     const supabase = createServiceClient();
@@ -185,12 +183,12 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
+    const { id } = await params;
   const access = await requireStaff();
   if (access.denied) return access.denied;
   const denied = forbidUnless(access.user, 'financial_reports', 'property_management', 'user_management');
   if (denied) return denied;
-  try {
-    const { id } = await params;
     const supabase = createServiceClient();
 
     if (id.startsWith('b')) {

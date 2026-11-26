@@ -721,17 +721,27 @@ body {
 }
 
 /* ── Print ─────────────────────────────────────────────────────── */
-/* Gurukrupa receipt — A4 portrait, same print box as the workbook voucher (paper size 9, ~190mm live area). */
+/* Gurukrupa receipt is half an A4 sheet: 190mm wide, 148.5mm tall. */
 .gk-receipt {
   width: 190mm;
+  height: 148.5mm;
   max-width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   border: 1px solid #111;
   box-shadow: 0 1px 2px rgba(17, 17, 17, 0.06);
+  overflow: hidden;
   font-family: Calibri, Arial, sans-serif;
 }
 .gk-print-sheet { margin-bottom: 1.5rem; }
 .gk-print-sheet:last-child { margin-bottom: 0; }
+
+@media screen and (max-width: 820px) {
+  .gk-receipt {
+    height: auto;
+    overflow: visible;
+  }
+}
 
 @media print {
   .sidebar, .topbar, .no-print { display: none !important; }
@@ -739,9 +749,12 @@ body {
   body { background: #FFFFFF; }
   .gk-receipt {
     width: 190mm;
+    height: 148.5mm;
     max-width: none;
+    max-height: 148.5mm;
     border-color: #000;
     box-shadow: none;
+    overflow: hidden;
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -749,12 +762,16 @@ body {
     break-after: page;
     page-break-after: always;
     margin: 0;
+    height: 148.5mm;
   }
   .gk-print-sheet:last-child {
     break-after: auto;
     page-break-after: auto;
   }
-  @page { size: A4 portrait; margin: 8mm; }
+  @page {
+    size: A4 portrait;
+    margin: 6mm 10mm;
+  }
 }
 
 /* ── Responsive ────────────────────────────────────────────────── */

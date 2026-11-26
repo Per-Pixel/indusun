@@ -15,16 +15,20 @@ export async function GET(req: NextRequest) {
   if (access.denied) return access.denied;
   try {
     const { searchParams } = new URL(req.url);
+    const client = (searchParams.get('client') || '').trim();
     const page   = Math.max(1, parseInt(searchParams.get('page')  || '1'));
-    const limit  = Math.max(1, parseInt(searchParams.get('limit') || '25'));
+    const parsedLimit = parseInt(searchParams.get('limit') || '', 10);
+    const limit = Math.max(1, Math.min(200, Number.isFinite(parsedLimit) ? parsedLimit : client ? 100 : 25));
     const offset = (page - 1) * limit;
 
     const supabase = createServiceClient();
-    const { data, error, count } = await supabase
-      .from('bills')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    let query = supabase.from('bills').select('*', { count: 'exact' });
+    if (client) {
+      query = query.ilike('client_name', client).order('date', { ascending: false });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+    const { data, error, count } = await query.range(offset, offset + limit - 1);
 
     if (error) {
       if (error.code === '42P01') {
@@ -150,6 +154,91 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('Bills POST error:', err);
     return NextResponse.json({ error: 'Failed to create bill' }, { status: 500 });
+  }
+}
+
+function cleanBillText(val: unknown): string | null {
+  if (val === null || val === undefined) return null;
+  const s = String(val).trim();
+  return s || null;
+}
+
+// PUT /api/bills  { id, ...fields }
+// Updates the bill fields sent in the body. Omitted fields are left as they are.
+export async function PUT(req: NextRequest) {
+  const access = await requireStaff('billing_management');
+  if (access.denied) return access.denied;
+  try {
+    const body = await req.json();
+    const id = parseInt(String(body.id ?? '').replace(/^b/i, ''), 10);
+    if (isNaN(id)) {
+      return NextResponse.json({ error: 'Valid bill id required' }, { status: 400 });
+    }
+
+    const base: Record<string, unknown> = {};
+    const extra: Record<string, unknown> = {};
+
+    if ('billNumber' in body) base.bill_number = cleanBillText(body.billNumber) || `BILL-${id}`;
+    if ('clientName' in body) {
+      const name = cleanBillText(body.clientName);
+      if (!name) return NextResponse.json({ error: 'clientName is required' }, { status: 400 });
+      base.client_name = name;
+    }
+    if ('clientPhone' in body) base.client_phone = cleanBillText(body.clientPhone);
+    if ('clientAddress' in body) base.client_address = cleanBillText(body.clientAddress);
+    if ('description' in body) base.description = cleanBillText(body.description);
+    if ('amount' in body) {
+      const parsedAmount = parseFloat(String(body.amount));
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        return NextResponse.json({ error: 'Valid amount is required' }, { status: 400 });
+      }
+      base.amount = parsedAmount;
+    }
+    if ('date' in body) base.date = cleanBillText(body.date);
+    if ('notes' in body) base.notes = cleanBillText(body.notes);
+    if ('paymentMethod' in body) base.payment_method = cleanBillText(body.paymentMethod);
+    if ('status' in body) base.status = body.status === 'Paid' ? 'Paid' : 'Pending';
+
+    if ('societyName' in body) extra.society_name = cleanBillText(body.societyName);
+    if ('plotNo' in body) extra.plot_no = cleanBillText(body.plotNo);
+    if ('plotSize' in body) extra.plot_size = cleanBillText(body.plotSize);
+    if ('referenceBy' in body) extra.reference_by = cleanBillText(body.referenceBy);
+    if ('totalEmiNo' in body) extra.total_emi_no = cleanBillText(body.totalEmiNo);
+    if ('plotAmount' in body) extra.plot_amount = Math.max(0, parseFloat(String(body.plotAmount)) || 0);
+    if ('amountInWords' in body) extra.amount_in_words = cleanBillText(body.amountInWords);
+    if ('remarks' in body) extra.remarks = cleanBillText(body.remarks);
+    if ('cancellationNote' in body) extra.cancellation_note = cleanBillText(body.cancellationNote);
+    if ('dueDate' in body) extra.due_date = cleanBillText(body.dueDate);
+    if ('paymentRef' in body) extra.payment_ref = cleanBillText(body.paymentRef);
+    if ('upiVpa' in body) extra.upi_vpa = cleanBillText(body.upiVpa);
+    if ('showQr' in body) extra.show_qr = body.showQr !== false;
+    if ('taxRate' in body) extra.tax_rate = Math.max(0, parseFloat(String(body.taxRate)) || 0);
+    if ('discount' in body) extra.discount = Math.max(0, parseFloat(String(body.discount)) || 0);
+
+    if (Object.keys(base).length === 0 && Object.keys(extra).length === 0) {
+      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+    let { data, error } = await supabase
+      .from('bills')
+      .update({ ...base, ...extra })
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error && (error.code === 'PGRST204' || error.code === '42703') && Object.keys(base).length > 0) {
+      const retry = await supabase.from('bills').update(base).eq('id', id).select('*').single();
+      data = retry.data;
+      error = retry.error;
+    }
+
+    if (error) throw new Error(error.message);
+    invalidateServerCache();
+    return NextResponse.json({ success: true, bill: data });
+  } catch (err: any) {
+    console.error('Bills PUT error:', err);
+    return NextResponse.json({ error: err.message || 'Failed to update bill' }, { status: 500 });
   }
 }
 
