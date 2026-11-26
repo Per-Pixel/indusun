@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import CRMLayout from '@/components/CRMLayout';
 import { toast } from 'react-hot-toast';
 import {
@@ -38,6 +38,9 @@ export default function AdminUserDetailPage() {
   const router = useRouter();
   const params = useParams();
   const adminId = params.id as string;
+  const fromStaff = useSearchParams().get('from') === 'staff';
+  const backHref = fromStaff ? '/staff' : '/admin-users';
+  const backLabel = fromStaff ? 'Back to Staff' : 'Back to Admin Users';
   const { user: currentUser, hasPermission } = useAdminAuth();
 
   const [adminUser, setAdminUser] = useState<AdminUserDetail | null>(null);
@@ -228,10 +231,10 @@ export default function AdminUserDetailPage() {
             <h2 className="text-lg font-semibold text-red-800 mb-1">Admin User Not Found</h2>
             <p className="text-sm text-red-600 mb-4">{fetchError || 'The admin user does not exist.'}</p>
             <button
-              onClick={() => router.push('/admin-users')}
+              onClick={() => router.push(backHref)}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
             >
-              Back to Admin Users
+              {backLabel}
             </button>
           </div>
         </div>
@@ -252,11 +255,11 @@ export default function AdminUserDetailPage() {
         <div className="max-w-4xl mx-auto">
           {/* Back button */}
           <button
-            onClick={() => router.push('/admin-users')}
+            onClick={() => router.push(backHref)}
             className="flex items-center text-gray-600 hover:text-gray-900 mb-6 text-sm"
           >
             <ArrowLeft size={16} className="mr-1" />
-            Back to Admin Users
+            {backLabel}
           </button>
 
           {/* Header card */}

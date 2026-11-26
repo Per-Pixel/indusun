@@ -56,6 +56,7 @@ const PERMISSION_ROUTES: { prefix: string; permission: string }[] = [
   { prefix: '/internal-comms', permission: 'internal_comms' },
   { prefix: '/activity-logs', permission: 'audit_logs' },
   { prefix: '/admin-users', permission: 'user_management' },
+  { prefix: '/staff', permission: 'user_management' },
   { prefix: '/roles', permission: 'role_management' },
   { prefix: '/billing', permission: 'billing_management' },
   { prefix: '/invoices', permission: 'billing_management' },

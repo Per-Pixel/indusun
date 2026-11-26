@@ -531,11 +531,12 @@ const SITEMAP_ITEMS = [
   { section: 'Communications', name: 'Message History', path: '/messages/history', desc: 'Live delivery log of SMS/emails from the messages table', icon: <MessageSquare size={15} /> },
   { section: 'Communications', name: 'Notifications', path: '/notifications', desc: 'Live alerts aggregated from bills, registrations, and messages', icon: <Bell size={15} /> },
   { section: 'Content', name: 'Website CMS', path: '/website-cms', desc: 'Real CMS backed by the page_content table — pages, blogs, SEO, banners', icon: <Globe size={15} /> },
-  { section: 'Content', name: 'Media Library', path: '/media-library', desc: 'Real asset repository — uploads, QR codes, emblems, bill attachments', icon: <ImageIcon size={15} /> },
+  { section: 'System', name: 'Media Library', path: '/media-library', desc: 'Real asset repository — uploads, QR codes, emblems, bill attachments', icon: <ImageIcon size={15} /> },
   { section: 'Workspace', name: 'Calendar', path: '/components/calendar', desc: 'Live CRM events plus persisted custom events', icon: <Calendar size={15} /> },
   { section: 'Workspace', name: 'Notes', path: '/components/notes', desc: 'Persistent notes stored in Supabase', icon: <StickyNote size={15} /> },
   { section: 'Workspace', name: 'Tasks', path: '/components/tasks', desc: 'Persistent Kanban task board stored in Supabase', icon: <CheckSquare size={15} /> },
   { section: 'System', name: 'Admin Users', path: '/admin-users', desc: 'Create new admins, assign a role, and adjust permissions', icon: <Shield size={15} /> },
+  { section: 'System', name: 'Staff', path: '/staff', desc: 'Add people who use the system without an admin role', icon: <UserPlus size={15} /> },
   { section: 'System', name: 'Roles', path: '/roles', desc: 'Create roles and choose the permissions each role grants', icon: <Shield size={15} /> },
   { section: 'System', name: 'Settings', path: '/settings', desc: 'Profile, security (2FA/password), active sessions, theme', icon: <Settings size={15} /> },
 ];

@@ -52,6 +52,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (body.accountKind === 'staff' && (role === 'admin' || role === 'super_admin')) {
+      return NextResponse.json(
+        { success: false, error: 'Staff accounts cannot use the Admin role. Choose another role.' },
+        { status: 400 }
+      );
+    }
+
     if (role === 'super_admin' && access.user.role !== 'super_admin') {
       return NextResponse.json(
         { success: false, error: 'Only a super admin can create another super admin' },

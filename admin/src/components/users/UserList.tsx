@@ -35,7 +35,7 @@ export interface User {
 interface UserListProps {
   users: User[];
   title: string;
-  userType: 'client' | 'broker' | 'admin';
+  userType: 'client' | 'broker' | 'admin' | 'staff';
   onAddNew: () => void;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
@@ -56,6 +56,7 @@ const UserList: React.FC<UserListProps> = ({
   externalSearchQuery
 }) => {
   const router = useRouter();
+  const plural = userType === 'staff' ? 'staff' : `${userType}s`;
   const [searchQuery, setSearchQuery] = useState(externalSearchQuery || '');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>('all');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -122,7 +123,7 @@ const UserList: React.FC<UserListProps> = ({
             <div className="relative">
               <input
                 type="text"
-                placeholder={`Search ${userType}s...`}
+                placeholder={`Search ${plural}...`}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64 placeholder-dark"
                 value={searchQuery}
                 onChange={(e) => {
@@ -207,7 +208,7 @@ const UserList: React.FC<UserListProps> = ({
             {/* Export Dropdown */}
             <ExportDropdown
               label="Export"
-              filename={`${userType}s`}
+              filename={plural}
               disabled={filteredUsers.length === 0}
               columns={[
                 { header: 'Name',    key: 'name' },
@@ -340,7 +341,7 @@ const UserList: React.FC<UserListProps> = ({
             ) : (
               <tr>
                 <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                  No {userType}s found matching your criteria
+                  No {plural} found matching your criteria
                 </td>
               </tr>
             )}

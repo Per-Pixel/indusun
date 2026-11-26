@@ -28,6 +28,7 @@ import {
   UploadCloud,
   Briefcase,
   Shield,
+  Contact,
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { isBillingDesk } from '@/lib/staffNav';
@@ -75,7 +76,6 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { icon: <Layers size={17} />, label: 'Projects', path: '/projects', permission: 'property_management' },
       { icon: <Building2 size={17} />, label: 'Properties', path: '/properties', permission: 'property_management' },
-      { icon: <ImageIcon size={17} />, label: 'Media Library', path: '/media-library', permission: 'cms_management' },
     ],
   },
   {
@@ -111,7 +111,9 @@ const NAV_SECTIONS: NavSection[] = [
       { icon: <BarChart3 size={17} />, label: 'Reports & Analytics', path: '/reports', permission: 'financial_reports' },
       { icon: <Activity size={17} />, label: 'Activity Logs', path: '/activity-logs', permission: 'audit_logs' },
       { icon: <ClipboardList size={17} />, label: 'Admin Users', path: '/admin-users', permission: 'user_management' },
+      { icon: <Contact size={17} />, label: 'Staff', path: '/staff', permission: 'user_management' },
       { icon: <Shield size={17} />, label: 'Roles', path: '/roles', permission: 'role_management' },
+      { icon: <ImageIcon size={17} />, label: 'Media Library', path: '/media-library', permission: 'cms_management' },
       { icon: <Settings size={17} />, label: 'Settings', path: '/settings' },
     ],
   },
