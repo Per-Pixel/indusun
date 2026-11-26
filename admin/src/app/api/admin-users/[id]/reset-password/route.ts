@@ -16,6 +16,13 @@ export async function POST(
     const body = await req.json();
     const { newPassword } = body;
 
+    if (access.user.role !== 'super_admin') {
+      return NextResponse.json(
+        { success: false, error: 'Only a super admin can change a password' },
+        { status: 403 }
+      );
+    }
+
     if (access.user.id === id) {
       return NextResponse.json(
         { success: false, error: 'Change your own password from Settings' },

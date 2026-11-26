@@ -112,6 +112,11 @@ export function userHasPermission(
   return resolvePermissions(role, permissions).includes(key);
 }
 
+/** Office staff: anyone who can sign in but is not an Admin or Super Admin. */
+export function isOfficeStaff(role?: string | null): boolean {
+  return !!role && role !== 'super_admin' && role !== 'admin';
+}
+
 /** Anyone with an admin_users row can sign in, including custom roles. */
 export function canAccessAdmin(user: {
   role?: string | null;

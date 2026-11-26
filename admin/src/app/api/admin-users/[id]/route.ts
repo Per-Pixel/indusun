@@ -48,6 +48,13 @@ export async function PUT(
     const body = await req.json();
     const { callerRole: _callerRole, callerId: _callerId, callerPermissions: _callerPermissions, ...updateData } = body;
 
+    if (updateData.email !== undefined && access.user.role !== 'super_admin') {
+      return NextResponse.json(
+        { success: false, error: 'Only a super admin can change an email address' },
+        { status: 403 }
+      );
+    }
+
     if (access.user.id === id && updateData.role && updateData.role !== access.user.role) {
       return NextResponse.json(
         { success: false, error: 'You cannot change your own role' },

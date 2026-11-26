@@ -12,7 +12,7 @@ import {
   RefreshCw, Database, MessageSquare, Server, ExternalLink
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { formatRoleLabel } from '@/lib/permissions';
+import { formatRoleLabel, isOfficeStaff } from '@/lib/permissions';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -91,9 +91,10 @@ function ToggleRow({ label, sub, enabled, onChange }: { label: string; sub: stri
   );
 }
 
-function FieldInput({ label, type = 'text', icon, placeholder, value, onChange }: {
+function FieldInput({ label, type = 'text', icon, placeholder, value, onChange, disabled, hint }: {
   label: string; type?: string; icon: React.ReactNode;
   placeholder: string; value: string; onChange: (v: string) => void;
+  disabled?: boolean; hint?: string;
 }) {
   return (
     <div>
@@ -101,9 +102,11 @@ function FieldInput({ label, type = 'text', icon, placeholder, value, onChange }
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</span>
         <input type={type} placeholder={placeholder} value={value}
+          disabled={disabled}
           onChange={e => onChange(e.target.value)}
-          className="w-full pl-9 pr-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+          className={`w-full pl-9 pr-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${disabled ? 'text-gray-500 cursor-not-allowed' : ''}`} />
       </div>
+      {hint && <p className="mt-1 text-[11px] text-gray-400">{hint}</p>}
     </div>
   );
 }
@@ -111,6 +114,7 @@ function FieldInput({ label, type = 'text', icon, placeholder, value, onChange }
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const { user } = useAdminAuth();
+  const limitedStaff = isOfficeStaff(user?.role);
 
   const supabase = useMemo(() =>
     SUPA_URL && SUPA_KEY ? createBrowserClient(SUPA_URL, SUPA_KEY) : null, []);
@@ -241,11 +245,31 @@ export default function SettingsPage() {
       const path = `${user.id}/avatar.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('avatars').upload(path, file, { upsert: true });
-      if (upErr) { toast.error('Upload failed: ' + upErr.message); return; }
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-      setAvatarUrl(urlData.publicUrl);
-      await supabase.from('admin_users')
-        .update({ avatar_url: urlData.publicUrl }).eq('id', user.id);
+      let publicUrl = '';
+      if (!upErr) {
+        publicUrl = supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+      } else {
+        const body = new FormData();
+        body.append('file', file);
+        const uploaded = await fetch('/api/uploads', { method: 'POST', body });
+        const payload = await uploaded.json();
+        if (!uploaded.ok || !payload.url) {
+          toast.error('Upload failed: ' + (upErr.message || payload.error || 'try again'));
+          return;
+        }
+        publicUrl = payload.url;
+      }
+      setAvatarUrl(publicUrl);
+      const saved = await fetch('/api/account', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: publicUrl }),
+      });
+      const savedBody = await saved.json();
+      if (!saved.ok || !savedBody.success) {
+        toast.error(savedBody.error || 'Photo uploaded, but the profile did not save');
+        return;
+      }
       toast.success('Profile photo updated');
     } catch { toast.error('Upload failed'); }
     finally   { setUploading(false); }
@@ -260,16 +284,24 @@ export default function SettingsPage() {
           toast.success('Profile saved locally');
           return;
         }
-        const { error } = await supabase.from('admin_users').update({
-          name:     profile.name,
-          phone:    profile.phone    || null,
-          bio:      profile.bio      || null,
-          location: profile.location || null,
-          website:  profile.website  || null,
-          language: profile.language,
-          timezone: profile.timezone,
-        }).eq('id', user.id);
-        if (error) toast.error('Save failed: ' + error.message);
+        const payload = limitedStaff
+          ? { name: profile.name, phone: profile.phone || null }
+          : {
+              name: profile.name,
+              phone: profile.phone || null,
+              bio: profile.bio || null,
+              location: profile.location || null,
+              website: profile.website || null,
+              language: profile.language,
+              timezone: profile.timezone,
+            };
+        const response = await fetch('/api/account', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) toast.error(data.error || 'Save failed');
         else toast.success('Profile saved');
       } else if (activeTab === 'notifications') {
         localStorage.setItem('admin_notif_settings', JSON.stringify(notifs));
@@ -287,6 +319,7 @@ export default function SettingsPage() {
   };
 
   const handlePasswordUpdate = async () => {
+    if (limitedStaff) { toast.error('A super admin sets your password'); return; }
     if (!pw.next || pw.next.length < 8) { toast.error('New password must be at least 8 characters'); return; }
     if (pw.next !== pw.confirm)          { toast.error('Passwords do not match'); return; }
     if (!supabase) { toast.error('Auth service not connected'); return; }
@@ -402,16 +435,21 @@ export default function SettingsPage() {
                 <SectionHeader title="Personal Information" />
                 <div className="grid sm:grid-cols-2 gap-4">
                   <FieldInput label="Full Name"     icon={<User size={14} />}  placeholder="Your full name"     value={profile.name}     onChange={v => setProfile(p => ({ ...p, name: v }))} />
-                  <FieldInput label="Email Address" icon={<Mail size={14} />}  placeholder="your@email.com"    value={profile.email}    onChange={v => setProfile(p => ({ ...p, email: v }))}   type="email" />
+                  <FieldInput label="Email Address" icon={<Mail size={14} />}  placeholder="your@email.com"    value={profile.email}    onChange={v => setProfile(p => ({ ...p, email: v }))}   type="email" disabled={limitedStaff} hint={limitedStaff ? 'Only a Super Admin can change your email' : undefined} />
                   <FieldInput label="Phone Number"  icon={<Phone size={14} />} placeholder="+91 98765 43210"   value={profile.phone}    onChange={v => setProfile(p => ({ ...p, phone: v }))}   type="tel" />
-                  <FieldInput label="Location"      icon={<MapPin size={14} />} placeholder="City, Country"   value={profile.location} onChange={v => setProfile(p => ({ ...p, location: v }))} />
-                  <div className="sm:col-span-2">
-                    <FieldInput label="Website" icon={<Globe size={14} />} placeholder="https://yoursite.com" value={profile.website} onChange={v => setProfile(p => ({ ...p, website: v }))} type="url" />
-                  </div>
+                  {!limitedStaff && (
+                    <>
+                      <FieldInput label="Location"      icon={<MapPin size={14} />} placeholder="City, Country"   value={profile.location} onChange={v => setProfile(p => ({ ...p, location: v }))} />
+                      <div className="sm:col-span-2">
+                        <FieldInput label="Website" icon={<Globe size={14} />} placeholder="https://yoursite.com" value={profile.website} onChange={v => setProfile(p => ({ ...p, website: v }))} type="url" />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* Bio + preferences */}
+              {!limitedStaff && (
               <div className="p-6">
                 <SectionHeader title="Additional Details" />
                 <div className="space-y-4">
@@ -447,6 +485,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+              )}
             </div>
           )}
 
@@ -595,6 +634,13 @@ export default function SettingsPage() {
 
               {/* Change password */}
               <div className="p-6">
+                {limitedStaff ? (
+                  <div>
+                    <SectionHeader title="Password" description="A Super Admin sets your password" />
+                    <p className="text-sm text-gray-500">You can change your name, photo, and phone number. Email and password stay with a Super Admin.</p>
+                  </div>
+                ) : (
+                <>
                 <SectionHeader title="Change Password" description="Use a strong password with at least 8 characters" />
                 <div className="max-w-md space-y-4">
                   {([
@@ -674,6 +720,8 @@ export default function SettingsPage() {
                     Update Password
                   </button>
                 </div>
+                </>
+                )}
               </div>
 
               {/* 2FA */}

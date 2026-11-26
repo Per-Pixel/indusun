@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import CRMLayout from '@/components/CRMLayout';
 import { toast } from 'react-hot-toast';
 import {
   ArrowLeft, Mail, Phone, Shield, Crown, Key, AlertTriangle,
   Check, Loader2, Eye, EyeOff, Calendar, Clock, Save, X,
-  MapPin, Globe, Edit, MessageSquare,
+  MapPin, Globe, Edit, MessageSquare, Camera,
 } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { ALL_PERMISSION_KEYS, BUILTIN_ROLES, PERMISSIONS, formatRoleLabel, permissionLabel } from '@/lib/permissions';
@@ -52,6 +52,7 @@ export default function AdminUserDetailPage() {
   const [saving, setSaving] = useState(false);
   const [editData, setEditData] = useState({
     name: '',
+    email: '',
     phone: '',
     role: 'admin',
     status: 'active' as 'active' | 'inactive' | 'pending',
@@ -59,7 +60,10 @@ export default function AdminUserDetailPage() {
     bio: '',
     location: '',
     website: '',
+    avatar_url: '',
   });
+  const photoRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Password reset
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -85,6 +89,7 @@ export default function AdminUserDetailPage() {
         setAdminUser(data.user);
         setEditData({
           name: data.user.name,
+          email: data.user.email || '',
           phone: data.user.phone || '',
           role: data.user.role,
           status: data.user.status,
@@ -92,6 +97,7 @@ export default function AdminUserDetailPage() {
           bio: data.user.bio || '',
           location: data.user.location || '',
           website: data.user.website || '',
+          avatar_url: data.user.avatar_url || '',
         });
       } else {
         setFetchError(data.error || 'Admin user not found');
@@ -138,6 +144,10 @@ export default function AdminUserDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...editData,
+          email: isSuperAdmin && editData.email.trim().toLowerCase() !== (adminUser?.email || '').trim().toLowerCase()
+            ? editData.email
+            : undefined,
+          avatar_url: isSuperAdmin ? (editData.avatar_url || undefined) : undefined,
           callerRole: currentUser?.role,
           callerId: currentUser?.id,
         }),
@@ -155,6 +165,36 @@ export default function AdminUserDetailPage() {
       toast.error('Network error — could not save');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePhoto = async (file: File) => {
+    setUploadingPhoto(true);
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const uploaded = await fetch('/api/uploads', { method: 'POST', body });
+      const payload = await uploaded.json();
+      if (!uploaded.ok || !payload.url) {
+        toast.error(payload.error || 'Photo upload failed');
+        return;
+      }
+      const saved = await fetch(`/api/admin-users/${adminId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: payload.url }),
+      });
+      const savedBody = await saved.json();
+      if (!saved.ok || !savedBody.success) {
+        toast.error(savedBody.error || 'Photo uploaded, but it did not save');
+        return;
+      }
+      setEditData((prev) => ({ ...prev, avatar_url: payload.url }));
+      setAdminUser(savedBody.user);
+    } catch {
+      toast.error('Photo upload failed');
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -267,14 +307,38 @@ export default function AdminUserDetailPage() {
             <div className="h-24 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500" />
             <div className="px-6 -mt-8 pb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
               <div className="flex items-end gap-4">
-                <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg border-[3px] border-white overflow-hidden">
-                  {adminUser.avatar_url ? (
-                    <img src={adminUser.avatar_url} alt={adminUser.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-white text-2xl font-bold">
-                      {adminUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                    </span>
+                <div className="relative">
+                  <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg border-[3px] border-white overflow-hidden">
+                    {(editData.avatar_url || adminUser.avatar_url) ? (
+                      <img src={editData.avatar_url || adminUser.avatar_url || ''} alt={adminUser.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-white text-2xl font-bold">
+                        {adminUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </span>
+                    )}
+                  </div>
+                  {isSuperAdmin && !isSelf && (
+                    <button
+                      type="button"
+                      onClick={() => photoRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="absolute -bottom-1 -right-1 h-6 w-6 bg-white rounded-full border border-gray-200 shadow flex items-center justify-center"
+                      aria-label="Change photo"
+                    >
+                      {uploadingPhoto ? <Loader2 size={12} className="animate-spin text-blue-600" /> : <Camera size={12} className="text-gray-600" />}
+                    </button>
                   )}
+                  <input
+                    ref={photoRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handlePhoto(file);
+                      e.target.value = '';
+                    }}
+                  />
                 </div>
                 <div className="mb-1">
                   <h1 className="text-xl font-bold text-gray-900">{adminUser.name}</h1>
@@ -342,6 +406,17 @@ export default function AdminUserDetailPage() {
                       className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+                  {isSuperAdmin && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={editData.email}
+                        onChange={e => setEditData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
@@ -523,7 +598,7 @@ export default function AdminUserDetailPage() {
           </div>
 
           {/* Password Reset (super_admin only, cannot reset own from here) */}
-          {canManageUsers && !isSelf && (adminUser.role !== 'super_admin' || isSuperAdmin) && (
+          {isSuperAdmin && !isSelf && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
               <div className="p-6 border-b border-gray-100">
                 <h2 className="text-base font-semibold text-gray-900">Security</h2>

@@ -32,6 +32,7 @@ export interface CreateAdminInput {
 
 export interface UpdateAdminInput {
   name?: string;
+  email?: string;
   phone?: string;
   role?: string;
   status?: 'active' | 'inactive' | 'pending';
@@ -169,6 +170,19 @@ export async function updateAdminUser(
     const updates: Record<string, any> = {};
     if (input.name !== undefined) updates.name = input.name;
     if (input.phone !== undefined) updates.phone = input.phone;
+
+    if (input.email !== undefined) {
+      const email = input.email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return { user: null, error: 'Enter a valid email address' };
+      }
+      const { error: authError } = await supabase.auth.admin.updateUserById(id, {
+        email,
+        email_confirm: true,
+      });
+      if (authError) return { user: null, error: authError.message };
+      updates.email = email;
+    }
     if (input.role !== undefined) updates.role = input.role;
     if (input.status !== undefined) updates.status = input.status;
     if (input.permissions !== undefined) updates.permissions = input.permissions;
