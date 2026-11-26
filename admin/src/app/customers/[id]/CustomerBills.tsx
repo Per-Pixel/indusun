@@ -265,7 +265,8 @@ export default function CustomerBills({
       samePlotRows(portfolio, customer.society_name || '', customer.plot_no || '')[0] || customer;
     const matches = samePlotRows(portfolio, template.society_name || '', template.plot_no || '');
     const emiAmount = template.emi_amount || '';
-    const paidSeed = parseAmount(emiAmount) > 0 ? String(emiAmount) : '';
+    const emiValue = parseAmount(emiAmount);
+    const paidSeed = emiValue > 0 ? String(emiValue) : '';
     const date = todayIso();
     setViewer(null);
     setEditor({
@@ -283,7 +284,7 @@ export default function CustomerBills({
       emiAmount,
       paidAmount: paidSeed,
       paymentMode: normalizeMode(template.cheque_cash),
-      words: paidSeed ? numberToIndianWords(parseAmount(paidSeed)) : '',
+      words: emiValue > 0 ? numberToIndianWords(emiValue) : '',
       remarks: '',
       cancelled: false,
       cancelDate: '',
@@ -432,7 +433,7 @@ export default function CustomerBills({
       emi_date: draft.emiDate,
       emi_paid_date: paidDate,
       cheque_cash: draft.paymentMode,
-      month_and_year: isoDate ? monthYearFromIso(isoDate) : '',
+      ...(isoDate ? { month_and_year: monthYearFromIso(isoDate) } : {}),
       amount_in_word: words,
       remarks: draft.remarks,
       cancel_date: draft.cancelled ? draft.cancelDate || todayIso() : '',
@@ -471,7 +472,7 @@ export default function CustomerBills({
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to add bill');
+        if (!res.ok || !data.customer?.id) throw new Error(data.error || 'Failed to add bill');
         const created = data.customer as MasterDataOfGurukrupa;
         setPortfolio((prev) => [created, ...prev.filter((row) => row.id !== created.id)]);
         toast.success('Bill added');
@@ -640,9 +641,9 @@ export default function CustomerBills({
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-auto max-h-[32rem]">
                 <table className="min-w-full text-xs">
-                  <thead>
+                  <thead className="sticky top-0 bg-white z-10">
                     <tr className="border-b text-left" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
                       <th className="py-2 pr-3">Receipt</th>
                       <th className="py-2 pr-3">Plot</th>
@@ -729,10 +730,10 @@ export default function CustomerBills({
               <div>
                 <h3 className="text-h3">Saved invoices</h3>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Bills created from Invoices for {customer.client_name}. These sit beside the account receipts above.
+                  Invoices saved for {customer.client_name}. Open one to view or edit it.
                 </p>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-auto max-h-[24rem]">
                 <table className="min-w-full text-xs">
                   <thead>
                     <tr className="border-b text-left" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
@@ -883,7 +884,9 @@ export default function CustomerBills({
                     onChange={(e) => applyPlot(e.target.value)}
                   >
                     {!plotOptions.some((option) => option.key === selectedPlot) && (
-                      <option value="">Custom plot</option>
+                      <option value="" disabled>
+                        Custom plot
+                      </option>
                     )}
                     {plotOptions.map((option) => (
                       <option key={option.key} value={option.key}>

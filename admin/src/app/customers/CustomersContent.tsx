@@ -385,49 +385,48 @@ export default function CustomersContent({
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="card p-4 space-y-4"
+        className="card p-4 space-y-3"
       >
-        <div className="flex flex-col lg:flex-row gap-3">
-          {/* Search */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              updateUrl({ search: localSearch, page: '1' });
-            }}
-            className="search-wrapper flex-1 min-w-[220px] flex items-center gap-2"
-          >
-            <div className="relative flex-1">
-              <Search size={16} className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search by name, Reg/R. No., bill #, phone, society, plot or broker…"
-                className="input input-sm pl-9 pr-8"
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-              />
-              {localSearch && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalSearch('');
-                    updateUrl({ search: '', page: '1' });
-                  }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-            <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">
-              {isPending ? 'Searching…' : 'Search'}
-            </button>
-          </form>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateUrl({ search: localSearch, page: '1' });
+          }}
+          className="flex items-center gap-2"
+        >
+          <div className="search-wrapper relative min-w-0 flex-1">
+            <Search size={16} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search by name, Reg/R. No., bill #, phone, society, plot or broker…"
+              className="input input-sm w-full pl-9 pr-8"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+            />
+            {localSearch && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalSearch('');
+                  updateUrl({ search: '', page: '1' });
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <button type="submit" disabled={isPending} className="btn btn-primary btn-sm shrink-0">
+            {isPending ? 'Searching…' : 'Search'}
+          </button>
+        </form>
 
-          {/* Society */}
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-2">
           <select
-            className="input input-sm select lg:w-56"
+            className="input input-sm select w-full min-w-0"
             value={filters.society}
             onChange={(e) => updateUrl({ society: e.target.value, page: '1' })}
+            aria-label="Society"
           >
             <option value="">All Societies</option>
             {societies.map((s) => (
@@ -437,11 +436,11 @@ export default function CustomersContent({
             ))}
           </select>
 
-          {/* Broker */}
           <select
-            className="input input-sm select lg:w-56"
+            className="input input-sm select w-full min-w-0"
             value={filters.broker}
             onChange={(e) => updateUrl({ broker: e.target.value, page: '1' })}
+            aria-label="Broker"
           >
             <option value="">All Brokers</option>
             {brokers.map((b) => (
@@ -451,11 +450,11 @@ export default function CustomersContent({
             ))}
           </select>
 
-          {/* Sort */}
           <select
-            className="input input-sm select lg:w-48"
+            className="input input-sm select w-full min-w-0"
             value={filters.sort}
             onChange={(e) => updateUrl({ sort: e.target.value })}
+            aria-label="Sort"
           >
             {SORT_OPTIONS.map((s) => (
               <option key={s.key} value={s.key}>
@@ -629,24 +628,30 @@ export default function CustomersContent({
                 key={c.id}
                 variants={itemVariants}
                 whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                onClick={() => router.push(`/customers/${c.id}`)}
                 className={classNames(
                   'card p-5 cursor-pointer relative overflow-hidden group transition-shadow',
                   isSelected && 'ring-2 ring-amber-500'
                 )}
               >
+                <Link
+                  href={`/customers/${c.id}`}
+                  className="absolute inset-0 z-0"
+                  aria-label={`View profile of ${c.client_name || 'customer'}`}
+                />
                 {/* subtle gold accent on hover */}
-                <div className="absolute inset-y-0 left-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'var(--gold)' }} />
+                <div className="pointer-events-none absolute inset-y-0 left-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'var(--gold)' }} />
 
+                <div className="relative z-10 pointer-events-none">
                 <div className="flex items-start justify-between gap-2 mb-4">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <button
                       type="button"
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         toggleSelect(c.id);
                       }}
-                      className="text-gray-400 hover:text-amber-600 shrink-0"
+                      className="pointer-events-auto text-gray-400 hover:text-amber-600 shrink-0"
                       title="Select record"
                     >
                       {isSelected ? (
@@ -686,10 +691,11 @@ export default function CustomersContent({
                     <button
                       type="button"
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         setDeleteTarget(c);
                       }}
-                      className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      className="pointer-events-auto p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                       title="Delete customer or record"
                     >
                       <Trash2 size={14} />
@@ -761,14 +767,13 @@ export default function CustomersContent({
                     <p className="text-xs flex items-center gap-1.5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
                       <User size={11} />
                       Broker:{' '}
-                      <a
+                      <Link
                         href={`/brokers/${encodeURIComponent(c.broker_code || c.ba_code || c["broker's_name"])}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="font-medium hover:underline"
+                        className="pointer-events-auto font-medium hover:underline"
                         style={{ color: 'var(--gold)' }}
                       >
                         {c.broker_name_clean || c["broker's_name"]}
-                      </a>
+                      </Link>
                       {(c.broker_code || c.ba_code) && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-50 text-amber-800 border border-amber-200">
                           {c.broker_code || c.ba_code}
@@ -785,9 +790,10 @@ export default function CustomersContent({
                   <span className="text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>
                     #{c.id}
                   </span>
-                  <span className="btn btn-ghost btn-sm pointer-events-none">
+                  <span className="btn btn-ghost btn-sm">
                     <Eye size={14} /> View Profile
                   </span>
+                </div>
                 </div>
               </motion.div>
             );
